@@ -108,13 +108,13 @@ and --config-dir::
 
 Option values are parsed from any supplied config files using
 openstack.common.iniparser. If none are specified, a default set is used
-e.g. chronos-api.conf and chronos-common.conf::
+e.g. glance-api.conf and glance-common.conf::
 
-    chronos-api.conf:
+    glance-api.conf:
       [DEFAULT]
       bind_port = 9292
 
-    chronos-common.conf:
+    glance-common.conf:
       [DEFAULT]
       bind_host = 0.0.0.0
 
@@ -160,7 +160,7 @@ need not be explicitly registered e.g.
 If no group is specified, options belong to the 'DEFAULT' section of config
 files::
 
-    chronos-api.conf:
+    glance-api.conf:
       [DEFAULT]
       bind_port = 9292
       ...
@@ -406,7 +406,7 @@ def _search_dirs(dirs, basename, extension=""):
     found with the supplied name and extension.
 
     :param dirs: a list of directories
-    :param basename: the filename, e.g. 'chronos-api'
+    :param basename: the filename, e.g. 'glance-api'
     :param extension: the file extension, e.g. '.conf'
     :returns: the path to a matching file, or None
     """
@@ -1296,7 +1296,6 @@ class ConfigOpts(collections.Mapping):
         :param basename: the filename, e.g. 'policy.json'
         :returns: the path to a matching file, or None
         """
-
         dirs = []
         if self.config_dir:
             dirs.append(_fixpath(self.config_dir))
