@@ -17,9 +17,10 @@ CONF.register_opts(paste_deploy_opts, group='paste_deploy')
 
 def parse_args(args=None, usage=None, default_config_files=None):
     return CONF(args=args,
-        project='chronos',
-        usage=usage,
-        default_config_files=default_config_files)
+                project='chronos',
+                usage=usage,
+                default_config_files=default_config_files)
+
 
 def _get_deployment_flavor():
     """
@@ -45,7 +46,8 @@ def _get_paste_config_path():
 def _get_deployment_config_file():
     """
     Retrieve the deployment_config_file config item, formatted as an
-    absolute pathname.def parse_args(args=None, usage=None, default_config_files=None):
+    absolute pathname.def parse_args(args=None, usage=None,
+    default_config_files=None):
     return CONF(args=args,
                 project='glance',
                 version=version.deferred_version_string(prefix="%prog "),
