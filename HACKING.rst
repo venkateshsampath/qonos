@@ -1,4 +1,4 @@
-Chronos Style Commandments
+QonoS Style Commandments
 =======================
 
 - Step 1: Read http://www.python.org/dev/peps/pep-0008/
@@ -28,7 +28,7 @@ Example::
   \n
   {{third-party lib imports in human alphabetical order}}
   \n
-  {{chronos imports in human alphabetical order}}
+  {{qonos imports in human alphabetical order}}
   \n
   \n
   {{begin your code}}
@@ -48,12 +48,12 @@ Example::
   import eventlet
   import webob.exc
 
-  import chronos.api.middleware
-  from chronos.api import images
-  from chronos.auth import users
-  import chronos.common
-  from chronos.endpoint import cloud
-  from chronos import test
+  import qonos.api.middleware
+  from qonos.api import images
+  from qonos.auth import users
+  import qonos.common
+  from qonos.endpoint import cloud
+  from qonos import test
 
 
 Docstrings

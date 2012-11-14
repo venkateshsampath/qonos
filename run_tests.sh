@@ -2,7 +2,7 @@
 
 function usage {
   echo "Usage: $0 [OPTION]..."
-  echo "Run Chronos' test suite(s)"
+  echo "Run QonoS' test suite(s)"
   echo ""
   echo "  -V, --virtual-env        Always use virtualenv.  Install automatically if not present"
   echo "  -N, --no-virtual-env     Don't use virtualenv.  Run tests in local environment"
@@ -24,8 +24,8 @@ function process_option {
     -N|--no-virtual-env) let always_venv=0; let never_venv=1;;
     -p|--pep8) let just_pep8=1;;
     -f|--force) let force=1;;
-    --unittests-only) noseopts="$noseopts --exclude-dir=chronos/tests/functional";;
-    -c|--coverage) noseopts="$noseopts --with-coverage --cover-package=chronos";;
+    --unittests-only) noseopts="$noseopts --exclude-dir=qonos/tests/functional";;
+    -c|--coverage) noseopts="$noseopts --with-coverage --cover-package=qonos";;
     -*) noseopts="$noseopts $1";;
     *) noseargs="$noseargs $1"
   esac

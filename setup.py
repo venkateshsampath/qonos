@@ -16,21 +16,21 @@
 
 import setuptools
 
-from chronos.openstack.common import setup
-from chronos.version import version_info as version
+from qonos.openstack.common import setup
+from qonos.version import version_info as version
 
 requires = setup.parse_requirements()
 depend_links = setup.parse_dependency_links()
 
 setuptools.setup(
-    name='chronos',
+    name='qonos',
     version=version.canonical_version_string(always=True),
-    description='The Chronos project provides services for scheduling '
+    description='The QonoS project provides services for scheduling '
                 'instance snapshots.',
     license='Apache License (2.0)',
     #author='OpenStack',
     #author_email='openstack@lists.launchpad.net',
-    #url='http://chronos.openstack.org/',
+    #url='http://qonos.openstack.org/',
     packages=setuptools.find_packages(exclude=['bin']),
     test_suite='nose.collector',
     cmdclass=setup.get_cmdclass(),
@@ -45,5 +45,5 @@ setuptools.setup(
         'Environment :: No Input/Output (Daemon)',
         'Environment :: OpenStack',
     ],
-    scripts=['bin/chronos-api'],
+    scripts=['bin/qonos-api'],
     py_modules=[])

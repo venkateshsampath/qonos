@@ -19,7 +19,7 @@
 #    under the License.
 
 """
-Installation script for Chronos' development virtualenv
+Installation script for QonoS' development virtualenv
 """
 
 import os
@@ -71,7 +71,7 @@ def check_dependencies():
             print 'Installing virtualenv via easy_install...',
             if not run_command(['which', 'easy_install']):
                 die('ERROR: virtualenv not found.\n\n'
-                    'Chronos development requires virtualenv, please install'
+                    'QonoS development requires virtualenv, please install'
                     ' it using your favorite package management tool')
             print 'done.'
     print 'done.'
@@ -106,9 +106,9 @@ def install_dependencies(venv=VENV):
     pip_install('-r', PIP_REQUIRES)
     pip_install('-r', TEST_REQUIRES)
 
-    # Tell the virtual env how to "import chronos"
+    # Tell the virtual env how to "import qonos"
     py_ver = _detect_python_version(venv)
-    pthfile = os.path.join(venv, "lib", py_ver, "site-packages", "chronos.pth")
+    pthfile = os.path.join(venv, "lib", py_ver, "site-packages", "qonos.pth")
     f = open(pthfile, 'w')
     f.write("%s\n" % ROOT)
 
@@ -123,12 +123,12 @@ def _detect_python_version(venv):
 
 def print_help():
     help = """
- Chronos development environment setup is complete.
+ QonoS development environment setup is complete.
 
- Chronos development uses virtualenv to track and manage Python dependencies
+ QonoS development uses virtualenv to track and manage Python dependencies
  while in development and testing.
 
- To activate the Chronos virtualenv for the extent of your current shell
+ To activate the QonoS virtualenv for the extent of your current shell
  session you can run:
 
  $ source .venv/bin/activate
