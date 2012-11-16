@@ -1,6 +1,9 @@
 from webob.exc import (HTTPNotImplemented)
 
+import qonos.openstack.common.log as logging
 from qonos.openstack.common import wsgi
+
+LOG = logging.getLogger(__name__)
 
 
 class TasksController(object):
@@ -12,6 +15,7 @@ class TasksController(object):
         raise HTTPNotImplemented
 
     def get_task(self, req, id):
+        LOG.error("test")
         raise HTTPNotImplemented
 
     def update_task(self, req, id, body=None):
