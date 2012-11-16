@@ -3,24 +3,24 @@ from webob.exc import HTTPNotImplemented
 from qonos.openstack.common import wsgi
 
 
-class TasksController(object):
+class SchedulesController(object):
 
-    def list_tasks(self, req):
+    def list(self, request):
         raise HTTPNotImplemented
 
-    def create_task(self, req, body=None):
+    def create(self, request, body):
         raise HTTPNotImplemented
 
-    def get_task(self, req, id):
+    def get(self, request, id):
         raise HTTPNotImplemented
 
-    def update_task(self, req, id, body=None):
+    def delete(self, request, id):
         raise HTTPNotImplemented
 
-    def delete_task(self, req, id):
+    def update(self, request, id, body):
         raise HTTPNotImplemented
 
 
 def create_resource():
     """QonoS resource factory method"""
-    return wsgi.Resource(TasksController())
+    return wsgi.Resource(SchedulesController())
