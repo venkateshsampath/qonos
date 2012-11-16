@@ -24,24 +24,20 @@ def get_fake_request(path='', method='GET'):
 def get_schedule(id=None, tenant_id=TENANT1, job_type=None, schedule=None,
                  metadata=None):
     schedule = {'schedule': {
-
         'id': id,
         'tenant_id': tenant_id,
         'job_type': job_type,
         'schedule': schedule,
         'metadata': metadata
-
     }}
     return schedule
 
 
 def get_job(id=None, schedule_id=SCHEDULE_UUID1, status=None, heartbeat=None):
     job = {'job': {
-
         'id': id,
         'schedule_id': schedule_id,
         'status': status,
         'heartbeat': heartbeat
-
     }}
     return job
