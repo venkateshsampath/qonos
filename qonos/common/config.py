@@ -1,4 +1,8 @@
+import logging
+import logging.config
+import logging.handlers
 import os
+import sys
 
 from paste import deploy
 
@@ -12,7 +16,6 @@ paste_deploy_opts = [
 CONF = cfg.CONF
 
 CONF.register_opts(paste_deploy_opts, group='paste_deploy')
-#CONF.register_opts(common_opts)
 
 
 def parse_args(args=None, usage=None, default_config_files=None):
@@ -20,6 +23,51 @@ def parse_args(args=None, usage=None, default_config_files=None):
                 project='qonos',
                 usage=usage,
                 default_config_files=default_config_files)
+
+
+def setup_logging():
+    """
+    Sets up the logging options for a log with supplied name
+    """
+
+    if CONF.log_config:
+        # Use a logging configuration file for all settings...
+        if os.path.exists(CONF.log_config):
+            logging.config.fileConfig(CONF.log_config)
+            return
+        else:
+            raise RuntimeError("Unable to locate specified logging "
+                               "config file: %s" % CONF.log_config)
+
+    root_logger = logging.root
+    if CONF.debug:
+        root_logger.setLevel(logging.DEBUG)
+    elif CONF.verbose:
+        root_logger.setLevel(logging.INFO)
+    else:
+        root_logger.setLevel(logging.WARNING)
+
+    formatter = logging.Formatter(CONF.log_format, CONF.log_date_format)
+
+    if CONF.use_syslog:
+        try:
+            facility = getattr(logging.handlers.SysLogHandler,
+                               CONF.syslog_log_facility)
+        except AttributeError:
+            raise ValueError(_("Invalid syslog facility"))
+
+        handler = logging.handlers.SysLogHandler(address='/dev/log',
+                                                 facility=facility)
+    elif CONF.log_file:
+        logfile = CONF.log_file
+        if CONF.log_dir:
+            logfile = os.path.join(CONF.log_dir, logfile)
+        handler = logging.handlers.WatchedFileHandler(logfile)
+    else:
+        handler = logging.StreamHandler(sys.stdout)
+
+    handler.setFormatter(formatter)
+    root_logger.addHandler(handler)
 
 
 def _get_deployment_flavor():
@@ -85,15 +133,15 @@ def load_paste_app(app_name=None):
     conf_file = _get_deployment_config_file()
 
     try:
-        '''logger = logging.getLogger(__name__)
+        logger = logging.getLogger(__name__)
         logger.debug(_("Loading %(app_name)s from %(conf_file)s"),
-                {'conf_file': conf_file, 'app_name': app_name})'''
+                     {'conf_file': conf_file, 'app_name': app_name})
 
         app = deploy.loadapp("config:%s" % conf_file, name=app_name)
 
         # Log the options used when starting if we're in debug mode...
-        '''if CONF.debug:
-            CONF.log_opt_values(logger, logging.DEBUG)'''
+        if CONF.debug:
+            CONF.log_opt_values(logger, logging.DEBUG)
 
         return app
     except (LookupError, ImportError), e:
