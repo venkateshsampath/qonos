@@ -11,6 +11,7 @@ DATA = {
     'job_faults': {},
 }
 
+
 def reset():
     global DATA
     for k in DATA:
