@@ -1,3 +1,6 @@
+import uuid
+
+from qonos.common import exception
 import qonos.db.simple.api as db_api
 from qonos.openstack.common import uuidutils
 from qonos.tests import utils as utils
@@ -26,6 +29,11 @@ class TestSimpleDBApi(utils.BaseTestCase):
         worker = db_api.worker_create({'host': 'mydomain'})
         self.assertEquals(db_api.worker_get_by_id(worker['id']), worker)
 
+    def test_worker_get_by_id_not_found(self):
+        worker_id = str(uuid.uuid4())
+        self.assertRaises(exception.NotFound,
+                          db_api.worker_get_by_id, worker_id)
+
     def test_worker_create(self):
         fixture = {'host': 'i.am.cowman'}
         worker = db_api.worker_create(fixture)
@@ -40,3 +48,7 @@ class TestSimpleDBApi(utils.BaseTestCase):
         self.assertTrue(worker in db_api.worker_get_all())
         db_api.worker_delete(worker['id'])
         self.assertFalse(worker in db_api.worker_get_all())
+
+    def test_worker_delete_not_found(self):
+        worker_id = str(uuid.uuid4())
+        self.assertRaises(exception.NotFound, db_api.worker_delete, worker_id)

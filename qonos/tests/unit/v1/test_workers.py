@@ -1,6 +1,8 @@
+import uuid
 import webob.exc
 
 from qonos.api.v1 import workers
+from qonos.common import exception
 import qonos.db.simple.api as db_api
 from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_test_utils
@@ -25,6 +27,12 @@ class TestWorkersApi(test_utils.BaseTestCase):
         actual = self.controller.get(request, expected['id']).get('worker')
         self.assertEqual(actual, expected)
 
+    def test_get_not_found(self):
+        request = unit_test_utils.get_fake_request(method='GET')
+        worker_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.get, request, worker_id)
+
     def test_create(self):
         request = unit_test_utils.get_fake_request(method='POST')
         host = 'ameade.cow'
@@ -37,7 +45,14 @@ class TestWorkersApi(test_utils.BaseTestCase):
         worker = db_api.worker_create({'host': 'ameade.cow'})
         request = unit_test_utils.get_fake_request(method='DELETE')
         self.controller.delete(request, worker['id'])
-        self.assertRaises(Exception, db_api.worker_get_by_id, id)
+        self.assertRaises(exception.NotFound, db_api.worker_get_by_id,
+                          worker['id'])
+
+    def test_delete_not_found(self):
+        request = unit_test_utils.get_fake_request(method='DELETE')
+        worker_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.delete, request, worker_id)
 
     def test_get_next_job_unimplemented(self):
         request = unit_test_utils.get_fake_request(method='PUT')
