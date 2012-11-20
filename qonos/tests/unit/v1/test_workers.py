@@ -9,23 +9,40 @@ from qonos.tests.unit import utils as unit_test_utils
 from qonos.tests.unit.utils import WORKER_UUID1
 
 
+WORKER_ATTRS = ['id', 'host']
+
+
 class TestWorkersApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestWorkersApi, self).setUp()
         self.controller = workers.WorkersController()
+        self._create_workers()
+
+    def tearDown(self):
+        super(TestWorkersApi, self).tearDown()
+        db_api.reset()
+
+    def _create_workers(self):
+        fixture = {'host': 'ameade.cow'}
+        self.worker_1 = db_api.worker_create(fixture)
+        fixture = {'host': 'foo.bar'}
+        self.worker_2 = db_api.worker_create(fixture)
 
     def test_list(self):
         request = unit_test_utils.get_fake_request(method='GET')
-        worker = db_api.worker_create({'host': 'ameade.cow'})
         workers = self.controller.list(request).get('workers')
-        self.assertTrue(worker in workers)
+        self.assertEqual(len(workers), 2)
+        for k in WORKER_ATTRS:
+            self.assertEqual(set([s[k] for s in workers]),
+                             set([self.worker_1[k], self.worker_2[k]]))
 
     def test_get(self):
         request = unit_test_utils.get_fake_request(method='GET')
-        expected = db_api.worker_create({'host': 'ameade.cow'})
-        actual = self.controller.get(request, expected['id']).get('worker')
-        self.assertEqual(actual, expected)
+        actual = self.controller.get(request,
+                                     self.worker_1['id']).get('worker')
+        for k in WORKER_ATTRS:
+            self.assertEqual(actual[k], self.worker_1[k])
 
     def test_get_not_found(self):
         request = unit_test_utils.get_fake_request(method='GET')
@@ -35,18 +52,17 @@ class TestWorkersApi(test_utils.BaseTestCase):
 
     def test_create(self):
         request = unit_test_utils.get_fake_request(method='POST')
-        host = 'ameade.cow'
+        host = 'blah'
         fixture = {'worker': {'host': host}}
         actual = self.controller.create(request, fixture)['worker']
         self.assertEqual(host, actual['host'])
 
     def test_delete(self):
         request = unit_test_utils.get_fake_request(method='GET')
-        worker = db_api.worker_create({'host': 'ameade.cow'})
         request = unit_test_utils.get_fake_request(method='DELETE')
-        self.controller.delete(request, worker['id'])
+        self.controller.delete(request, self.worker_1['id'])
         self.assertRaises(exception.NotFound, db_api.worker_get_by_id,
-                          worker['id'])
+                          self.worker_1['id'])
 
     def test_delete_not_found(self):
         request = unit_test_utils.get_fake_request(method='DELETE')

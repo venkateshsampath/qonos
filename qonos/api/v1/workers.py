@@ -1,6 +1,7 @@
 import webob.exc
 
 from qonos.common import exception
+from qonos.common import utils
 import qonos.db.simple.api as db_api
 from qonos.openstack.common import wsgi
 from qonos.openstack.common.gettextutils import _
@@ -9,10 +10,14 @@ from qonos.openstack.common.gettextutils import _
 class WorkersController(object):
 
     def list(self, request):
-        return {'workers': db_api.worker_get_all()}
+        workers = db_api.worker_get_all()
+        [utils.serialize_datetimes(worker) for worker in workers]
+        return {'workers': workers}
 
     def create(self, request, body):
-        return {'worker': db_api.worker_create(body.get('worker'))}
+        worker = db_api.worker_create(body.get('worker'))
+        utils.serialize_datetimes(worker)
+        return {'worker': worker}
 
     def get(self, request, worker_id):
         try:
@@ -20,6 +25,7 @@ class WorkersController(object):
         except exception.NotFound:
             msg = _('Worker %s could not be found.') % worker_id
             raise webob.exc.HTTPNotFound(explanation=msg)
+        utils.serialize_datetimes(worker)
         return {'worker': worker}
 
     def delete(self, request, worker_id):
