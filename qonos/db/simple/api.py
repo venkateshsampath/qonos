@@ -52,6 +52,8 @@ def schedule_create(values):
 
 def schedule_update(schedule_id, values):
     global DATA
+    if schedule_id not in DATA['schedules']:
+        raise exception.NotFound()
     schedule = DATA['schedules'][schedule_id]
     schedule.update(values)
     schedule['updated_at'] = timeutils.isotime()
