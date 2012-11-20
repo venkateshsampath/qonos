@@ -81,7 +81,6 @@ class TestJobs(utils.BaseTestCase):
         }
         self.job_2 = db_api.job_create(fixture)
 
-
     def test_job_create(self):
         fixture = {
             'schedule_id': unit_utils.SCHEDULE_UUID2,
@@ -110,6 +109,27 @@ class TestJobs(utils.BaseTestCase):
         self.assertEqual(actual['status'], expected['status'])
         self.assertEqual(actual['retry_count'], expected['retry_count'])
 
+    def test_job_get_by_id_not_found(self):
+        self.assertRaises(exception.NotFound,
+                          db_api.job_get_by_id, str(uuid.uuid4))
+
+    def test_job_updated_at_get_by_id(self):
+        expected = self.job_1.get('updated_at')
+        actual = db_api.job_updated_at_get_by_id(self.job_1['id'])
+        self.assertEqual(actual, expected)
+
+    def test_job_updated_at_get_by_id_job_not_found(self):
+        self.assertRaises(exception.NotFound,
+                          db_api.job_updated_at_get_by_id, str(uuid.uuid4))
+
+    def test_job_status_get_by_id(self):
+        expected = self.job_1.get('status')
+        actual = db_api.job_status_get_by_id(self.job_1['id'])
+        self.assertEqual(actual, expected)
+
+    def test_job_status_get_by_id_job_not_found(self):
+        self.assertRaises(exception.NotFound,
+                          db_api.job_status_get_by_id, str(uuid.uuid4))
 
     def test_job_update(self):
         fixture = {
@@ -135,4 +155,4 @@ class TestJobs(utils.BaseTestCase):
 
     def test_job_delete_not_found(self):
         self.assertRaises(exception.NotFound,
-                         db_api.job_delete, str(uuid.uuid4))
+                          db_api.job_delete, str(uuid.uuid4))

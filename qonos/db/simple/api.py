@@ -22,8 +22,8 @@ def reset():
 def _gen_base_attributes():
     values = {}
     values['id'] = str(uuid.uuid4())
-    values['created_at'] = timeutils.isotime()
-    values['updated_at'] = timeutils.isotime()
+    values['created_at'] = timeutils.utcnow()
+    values['updated_at'] = timeutils.utcnow()
     return values
 
 
@@ -72,14 +72,28 @@ def job_get_by_id(job_id):
     return DATA['jobs'][job_id].copy()
 
 
+def job_updated_at_get_by_id(job_id):
+    if job_id not in DATA['jobs']:
+        raise exception.NotFound()
+    return DATA['jobs'][job_id]['updated_at']
+
+
+def job_status_get_by_id(job_id):
+    if job_id not in DATA['jobs']:
+        raise exception.NotFound()
+    return DATA['jobs'][job_id]['status']
+
+
 def job_update(job_id, values):
     global DATA
     if job_id not in DATA['jobs']:
         raise exception.NotFound()
 
     job = DATA['jobs'][job_id]
+    #NOTE(ameade): This must come before update specified values since
+    # we may be trying to manually set updated_at
+    job['updated_at'] = timeutils.utcnow()
     job.update(values)
-    job['updated_at'] = timeutils.isotime()
     return job
 
 
