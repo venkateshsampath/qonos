@@ -2,7 +2,7 @@ import webob.exc
 
 from qonos.common import exception
 from qonos.common import utils
-import qonos.db.simple.api as db_api
+import qonos.db
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 from qonos.openstack.common.gettextutils import _
@@ -10,26 +10,29 @@ from qonos.openstack.common.gettextutils import _
 
 class JobsController(object):
 
+    def __init__(self, db_api=None):
+        self.db_api = db_api or qonos.db.get_api()
+
     def list(self, request):
-        jobs = db_api.job_get_all()
+        jobs = self.db_api.job_get_all()
         [utils.serialize_datetimes(job) for job in jobs]
         return {'jobs': jobs}
 
     def get(self, request, job_id):
-        job = db_api.job_get_by_id(job_id)
+        job = self.db_api.job_get_by_id(job_id)
         utils.serialize_datetimes(job)
         return {'job': job}
 
     def delete(self, request, job_id):
         try:
-            db_api.job_delete(job_id)
+            self.db_api.job_delete(job_id)
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
     def get_heartbeat(self, request, job_id):
         try:
-            updated_at = db_api.job_updated_at_get_by_id(job_id)
+            updated_at = self.db_api.job_updated_at_get_by_id(job_id)
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
@@ -50,14 +53,14 @@ class JobsController(object):
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
         try:
-            db_api.job_update(job_id, {'updated_at': updated_at})
+            self.db_api.job_update(job_id, {'updated_at': updated_at})
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
     def get_status(self, request, job_id):
         try:
-            status = db_api.job_status_get_by_id(job_id)
+            status = self.db_api.job_status_get_by_id(job_id)
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
@@ -70,7 +73,7 @@ class JobsController(object):
             raise webob.exc.HTTPBadRequest()
 
         try:
-            db_api.job_update(job_id, {'status': status})
+            self.db_api.job_update(job_id, {'status': status})
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)

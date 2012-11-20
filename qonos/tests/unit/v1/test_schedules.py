@@ -4,7 +4,6 @@ import webob.exc
 from qonos.api.v1 import schedules
 from qonos.db.simple import api as db_api
 from qonos.common import exception
-from qonos.common import utils
 from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
 
@@ -17,7 +16,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestSchedulesApi, self).setUp()
-        self.controller = schedules.SchedulesController()
+        self.controller = schedules.SchedulesController(db_api=db_api)
         self._create_schedules()
 
     def tearDown(self):
