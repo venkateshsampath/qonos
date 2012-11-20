@@ -2,6 +2,7 @@ import uuid
 
 from qonos.common import exception
 from qonos.openstack.common import timeutils
+from qonos.openstack.common.gettextutils import _
 
 
 DATA = {
@@ -28,6 +29,7 @@ def _gen_base_attributes():
 
 
 def _schedule_create(values):
+    global DATA
     DATA['schedules'][values['id']] = values
     return values.copy()
 
@@ -43,7 +45,6 @@ def schedule_get_by_id(schedule_id):
 
 
 def schedule_create(values):
-    global DATA
     schedule = {}
     schedule.update(values)
     schedule.update(_gen_base_attributes())
@@ -66,6 +67,64 @@ def schedule_delete(schedule_id):
     if schedule_id not in DATA['schedules']:
         raise exception.NotFound()
     del DATA['schedules'][schedule_id]
+
+
+def schedule_meta_create(schedule_id, values):
+    global DATA
+    if DATA['schedules'].get(schedule_id) is None:
+        msg = _('Schedule %s could not be found') % schedule_id
+        raise exception.NotFound(message=msg)
+
+    if DATA['schedule_metadata'].get(schedule_id) is None:
+        DATA['schedule_metadata'][schedule_id] = {}
+
+    meta = {}
+    meta.update(values)
+    meta.update(_gen_base_attributes())
+    DATA['schedule_metadata'][schedule_id][values['key']] = meta
+    return meta.copy()
+
+
+def schedule_meta_get_all(schedule_id):
+    if DATA['schedule_metadata'].get(schedule_id) is None:
+        return []
+    return DATA['schedule_metadata'][schedule_id].values()
+
+
+def _check_meta_exists(schedule_id, key):
+    if DATA['schedules'].get(schedule_id) is None:
+        msg = _('Schedule %s could not be found') % schedule_id
+        raise exception.NotFound(message=msg)
+
+    if (DATA['schedule_metadata'].get(schedule_id) is None or
+            DATA['schedule_metadata'][schedule_id].get(key) is None):
+        msg = _('Meta %s could not be found for Schedule %s ')
+        msg = msg % (key, schedule_id)
+        raise exception.NotFound(message=msg)
+
+
+def schedule_meta_get(schedule_id, key):
+    _check_meta_exists(schedule_id, key)
+
+    return DATA['schedule_metadata'][schedule_id][key]
+
+
+def schedule_meta_update(schedule_id, key, values):
+    global DATA
+    _check_meta_exists(schedule_id, key)
+
+    meta = DATA['schedule_metadata'][schedule_id][key]
+    meta.update(values)
+    meta['updated_at'] = timeutils.utcnow()
+    DATA['schedule_metadata'][schedule_id][key] = meta
+
+    return meta.copy()
+
+
+def schedule_meta_delete(schedule_id, key):
+    _check_meta_exists(schedule_id, key)
+
+    del DATA['schedule_metadata'][schedule_id][key]
 
 
 def worker_get_all():
