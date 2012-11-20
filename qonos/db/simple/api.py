@@ -101,7 +101,6 @@ def _check_meta_exists(schedule_id, key):
         msg = _('Meta %s could not be found for Schedule %s ')
         msg = msg % (key, schedule_id)
         raise exception.NotFound(message=msg)
-        raise exception.NotFound(message=msg)
 
 
 def schedule_meta_get(schedule_id, key):
