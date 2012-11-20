@@ -12,6 +12,9 @@ class SchedulesController(object):
         return {'schedules': db_api.schedule_get_all()}
 
     def create(self, request, body):
+        if body is None or body.get('schedule') is None:
+            raise webob.exc.HTTPBadRequest()
+
         return {'schedule': db_api.schedule_create(body['schedule'])}
 
     def get(self, request, schedule_id):
@@ -30,6 +33,9 @@ class SchedulesController(object):
             raise webob.exc.HTTPNotFound(explanation=msg)
 
     def update(self, request, schedule_id, body):
+        if body is None or body.get('schedule') is None:
+            raise webob.exc.HTTPBadRequest()
+
         try:
             schedule = db_api.schedule_update(schedule_id, body['schedule'])
         except exception.NotFound:

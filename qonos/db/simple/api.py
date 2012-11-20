@@ -56,7 +56,7 @@ def schedule_update(schedule_id, values):
         raise exception.NotFound()
     schedule = DATA['schedules'][schedule_id]
     schedule.update(values)
-    schedule['updated_at'] = timeutils.isotime()
+    schedule['updated_at'] = timeutils.utcnow()
     DATA['schedules'][schedule_id] = schedule
     return schedule
 

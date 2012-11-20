@@ -61,6 +61,18 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(expected['minute'], actual['minute'])
         self.assertEqual(expected['hour'], actual['hour'])
 
+    def test_create_no_body_bad_request(self):
+        request = unit_test_utils.get_fake_request(method='POST')
+        schedule_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
+                          request, None)
+
+    def test_create_no_schedule_bad_request(self):
+        request = unit_test_utils.get_fake_request(method='POST')
+        schedule_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
+                          request, {'minute': '5'})
+
     def test_delete(self):
         request = unit_test_utils.get_fake_request(method='GET')
         fixture = self._create_test_fixture()
@@ -96,6 +108,18 @@ class TestSchedulesApi(test_utils.BaseTestCase):
     def test_update_not_found(self):
         request = unit_test_utils.get_fake_request(method='PUT')
         schedule_id = str(uuid.uuid4())
-        self.assertRaises(webob.exc.HTTPNotFound,
-                          self.controller.update, request, schedule_id,
-                          {'schedule': {}})
+        self.assertRaises(webob.exc.HTTPNotFound, self.controller.update,
+                          request, schedule_id, {'schedule': {}})
+
+    def test_update_no_body_bad_request(self):
+        request = unit_test_utils.get_fake_request(method='PUT')
+        schedule_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, None)
+
+    def test_update_no_schedule_bad_request(self):
+        request = unit_test_utils.get_fake_request(method='PUT')
+        schedule_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, {'minute': '5'})
+
