@@ -24,12 +24,12 @@ def _gen_base_attributes():
     values['id'] = str(uuid.uuid4())
     values['created_at'] = timeutils.utcnow()
     values['updated_at'] = timeutils.utcnow()
-    return values
+    return values.copy()
 
 
 def _schedule_create(values):
     DATA['schedules'][values['id']] = values
-    return values
+    return values.copy()
 
 
 def schedule_get_all():
@@ -84,7 +84,7 @@ def worker_create(values):
     worker.update(values)
     worker.update(_gen_base_attributes())
     DATA['workers'][worker['id']] = worker
-    return worker
+    return worker.copy()
 
 
 def worker_delete(worker_id):
@@ -100,7 +100,7 @@ def job_create(values):
     job.update(values)
     job.update(_gen_base_attributes())
     DATA['jobs'][job['id']] = job
-    return job
+    return job.copy()
 
 
 def job_get_all():

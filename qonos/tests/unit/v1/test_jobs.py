@@ -10,6 +10,9 @@ from qonos.tests.unit import utils as unit_test_utils
 from qonos.tests.unit import utils as unit_utils
 
 
+JOB_ATTRS = ['id', 'schedule_id', 'worker_id', 'retry_count', 'status']
+
+
 class TestJobsApi(test_utils.BaseTestCase):
 
     def setUp(self):
@@ -41,12 +44,9 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_test_utils.get_fake_request(method='GET')
         jobs = self.controller.list(request).get('jobs')
         self.assertEqual(len(jobs), 2)
-        self.assertEqual(self.job_1['created_at'], jobs[0]['created_at'])
-        self.assertEqual(self.job_1['updated_at'], jobs[0]['updated_at'])
-        self.assertEqual(self.job_1['schedule_id'], jobs[0]['schedule_id'])
-        self.assertEqual(self.job_1['worker_id'], jobs[0]['worker_id'])
-        self.assertEqual(self.job_1['status'], jobs[0]['status'])
-        self.assertEqual(self.job_1['retry_count'], jobs[0]['retry_count'])
+        for k in JOB_ATTRS:
+            self.assertEqual(set([s[k] for s in jobs]),
+                             set([self.job_1[k], self.job_2[k]]))
 
     def test_get(self):
         request = unit_test_utils.get_fake_request(method='GET')

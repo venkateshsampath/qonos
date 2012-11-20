@@ -9,6 +9,10 @@ from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
 
 
+SCHEDULE_ATTRS = ['id', 'tenant_id', 'action',
+                  'minute', 'hour']
+
+
 class TestSchedulesApi(test_utils.BaseTestCase):
 
     def setUp(self):
@@ -36,54 +40,20 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         }
         self.schedule_2 = db_api.schedule_create(fixture)
 
-    def _create_test_fixture(self):
-        fixture = {
-            'schedule': {
-                'tenant_id': str(uuid.uuid4()),
-                'action': 'snapshot',
-                'minute': '30',
-                'hour': '2',
-            }
-        }
-        return fixture
-
     def test_list(self):
         request = unit_utils.get_fake_request(method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 2)
-        self.assertEqual(schedules[0]['tenant_id'],
-                         self.schedule_1['tenant_id'])
-        self.assertEqual(schedules[0]['action'],
-                         self.schedule_1['action'])
-        self.assertEqual(schedules[0]['minute'],
-                         self.schedule_1['minute'])
-        self.assertEqual(schedules[0]['hour'],
-                         self.schedule_1['hour'])
-        self.assertEqual(schedules[0]['id'],
-                         self.schedule_1['id'])
-        self.assertEqual(schedules[0]['created_at'],
-                         self.schedule_1['created_at'])
-        self.assertEqual(schedules[0]['updated_at'],
-                         self.schedule_1['updated_at'])
+        for k in SCHEDULE_ATTRS:
+            self.assertEqual(set([s[k] for s in schedules]),
+                             set([self.schedule_1[k], self.schedule_2[k]]))
 
     def test_get(self):
         request = unit_utils.get_fake_request(method='GET')
         actual = self.controller.get(request,
                                      self.schedule_1['id']).get('schedule')
-        self.assertEqual(actual['tenant_id'],
-                         self.schedule_1['tenant_id'])
-        self.assertEqual(actual['action'],
-                         self.schedule_1['action'])
-        self.assertEqual(actual['minute'],
-                         self.schedule_1['minute'])
-        self.assertEqual(actual['hour'],
-                         self.schedule_1['hour'])
-        self.assertEqual(actual['id'],
-                         self.schedule_1['id'])
-        self.assertEqual(actual['created_at'],
-                         self.schedule_1['created_at'])
-        self.assertEqual(actual['updated_at'],
-                         self.schedule_1['updated_at'])
+        for k in SCHEDULE_ATTRS:
+            self.assertEqual(actual[k], self.schedule_1[k])
 
     def test_get_not_found(self):
         request = unit_utils.get_fake_request(method='GET')
@@ -92,7 +62,12 @@ class TestSchedulesApi(test_utils.BaseTestCase):
                           self.controller.get, request, schedule_id)
 
     def test_create(self):
-        fixture = self._create_test_fixture()
+        fixture = {'schedule': {
+            'tenant_id': unit_utils.TENANT1,
+            'action': 'snapshot',
+            'minute': '30',
+            'hour': '2',
+        }}
         expected = fixture['schedule']
         request = unit_utils.get_fake_request(method='POST')
 

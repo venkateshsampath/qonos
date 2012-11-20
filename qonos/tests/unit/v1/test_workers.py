@@ -9,6 +9,9 @@ from qonos.tests.unit import utils as unit_test_utils
 from qonos.tests.unit.utils import WORKER_UUID1
 
 
+WORKER_ATTRS = ['id', 'host']
+
+
 class TestWorkersApi(test_utils.BaseTestCase):
 
     def setUp(self):
@@ -30,14 +33,16 @@ class TestWorkersApi(test_utils.BaseTestCase):
         request = unit_test_utils.get_fake_request(method='GET')
         workers = self.controller.list(request).get('workers')
         self.assertEqual(len(workers), 2)
-        self.assertEqual(workers[0]['host'], self.worker_1['host'])
-        self.assertEqual(workers[1]['host'], self.worker_2['host'])
+        for k in WORKER_ATTRS:
+            self.assertEqual(set([s[k] for s in workers]),
+                             set([self.worker_1[k], self.worker_2[k]]))
 
     def test_get(self):
         request = unit_test_utils.get_fake_request(method='GET')
         actual = self.controller.get(request,
                                      self.worker_1['id']).get('worker')
-        self.assertEqual(actual, self.worker_1)
+        for k in WORKER_ATTRS:
+            self.assertEqual(actual[k], self.worker_1[k])
 
     def test_get_not_found(self):
         request = unit_test_utils.get_fake_request(method='GET')
