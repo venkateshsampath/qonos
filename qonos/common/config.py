@@ -7,15 +7,22 @@ import sys
 from paste import deploy
 
 from qonos.openstack.common import cfg
+from qonos.openstack.common.gettextutils import _
 
 paste_deploy_opts = [
     cfg.StrOpt('flavor'),
     cfg.StrOpt('config_file'),
 ]
 
+common_opts = [
+    cfg.StrOpt('db_api', default='qonos.db.simple.api',
+               help=_('Python module path of database access API')),
+]
+
 CONF = cfg.CONF
 
 CONF.register_opts(paste_deploy_opts, group='paste_deploy')
+CONF.register_opts(common_opts)
 
 
 def parse_args(args=None, usage=None, default_config_files=None):

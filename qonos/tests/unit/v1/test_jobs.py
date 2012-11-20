@@ -17,7 +17,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestJobsApi, self).setUp()
-        self.controller = jobs.JobsController()
+        self.controller = jobs.JobsController(db_api=db_api)
         self._create_jobs()
 
     def tearDown(self):

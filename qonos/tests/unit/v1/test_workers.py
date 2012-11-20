@@ -16,7 +16,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestWorkersApi, self).setUp()
-        self.controller = workers.WorkersController()
+        self.controller = workers.WorkersController(db_api=db_api)
         self._create_workers()
 
     def tearDown(self):
