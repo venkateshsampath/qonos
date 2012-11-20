@@ -103,6 +103,98 @@ class TestSimpleDBApi(utils.BaseTestCase):
         self.assertRaises(exception.NotFound, db_api.schedule_delete,
                           schedule_id)
 
+    def test_metadata_create(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.schedule_meta_create(schedule['id'], fixture)
+        SCHED_METADATA_DATA = db_api.DATA['schedule_metadata']
+        self.assertIsNotNone(SCHED_METADATA_DATA.get(schedule['id']))
+        self.assertIsNotNone(SCHED_METADATA_DATA[schedule['id']].get('key1'))
+        self.assertEquals(fixture['key'],
+                          SCHED_METADATA_DATA[schedule['id']]['key1']['key'])
+        self.assertEquals(fixture['value'],
+                          SCHED_METADATA_DATA[schedule['id']]['key1']['value'])
+        self.assertEquals(fixture['key'], meta['key'])
+        self.assertEquals(fixture['value'], meta['value'])
+        self.assertIsNotNone(meta['created_at'])
+        self.assertIsNotNone(meta['updated_at'])
+        self.assertIsNotNone(meta['id'])
+
+    def test_metadata_get(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.schedule_meta_create(schedule['id'], fixture)
+        meta = db_api.schedule_meta_get(schedule['id'], fixture['key'])
+        self.assertIsNotNone(meta['created_at'])
+        self.assertIsNotNone(meta['updated_at'])
+        self.assertIsNotNone(meta['id'])
+        self.assertEquals(fixture['key'], meta['key'])
+        self.assertEquals(fixture['value'], meta['value'])
+
+    def test_metadata_get_all(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.schedule_meta_create(schedule['id'], fixture)
+        metadata = db_api.schedule_meta_get_all(schedule['id'])
+        self.assertEqual(1, len(metadata))
+        self.assertTrue(meta in metadata)
+
+    def test_metadata_delete(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.schedule_meta_create(schedule['id'], fixture)
+        db_api.schedule_meta_delete(schedule['id'], fixture['key'])
+        metadata = db_api.schedule_meta_get_all(schedule['id'])
+        self.assertEqual(0, len(metadata))
+        self.assertFalse(meta in metadata)
+
+    def test_metadata_delete_not_found(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.schedule_meta_create(schedule['id'], fixture)
+        db_api.schedule_meta_delete(schedule['id'], fixture['key'])
+        self.assertRaises(exception.NotFound, db_api.schedule_meta_get,
+                          schedule['id'], fixture['key'])
+
+    def test_metadata_update(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.schedule_meta_create(schedule['id'], fixture)
+        update_fixture = {'key': 'key1', 'value': 'value2'}
+        updated_meta = db_api.schedule_meta_update(schedule['id'],
+                                                   fixture['key'],
+                                                   update_fixture)
+        self.assertEquals(meta['key'], updated_meta['key'])
+        self.assertNotEquals(meta['value'], updated_meta['value'])
+
+    def test_metadata_update_schedule_not_found(self):
+        schedule_id = uuid.uuid4()
+        self.assertRaises(exception.NotFound, db_api.schedule_meta_update,
+                          schedule_id, 'key2', {})
+
+    def test_metadata_update_key_not_found(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.schedule_meta_create(schedule['id'], fixture)
+        self.assertRaises(exception.NotFound, db_api.schedule_meta_update,
+                          schedule['id'], 'key2', {})
+
+    def test_metadata_get_all_empty_when_schedule_doesnt_exists(self):
+        schedule_id = uuid.uuid4()
+        self.assertEqual(0, len(db_api.schedule_meta_get_all(schedule_id)))
+
+    def test_metadata_get_schedule_not_found(self):
+        schedule_id = uuid.uuid4()
+        self.assertRaises(exception.NotFound, db_api.schedule_meta_get,
+                          schedule_id, 'key')
+
+    def test_metadata_get_key_not_found(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.schedule_meta_create(schedule['id'], fixture)
+        self.assertRaises(exception.NotFound, db_api.schedule_meta_get,
+                          schedule['id'], 'key2')
+
     def test_worker_get_all(self):
         fixture = {'host': ''}
         worker = db_api.worker_create(fixture)
