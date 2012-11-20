@@ -12,7 +12,7 @@ class JobsController(object):
 
     def list(self, request):
         jobs = db_api.job_get_all()
-        jobs = [utils.serialize_datetimes(job) for job in jobs]
+        [utils.serialize_datetimes(job) for job in jobs]
         return {'jobs': jobs}
 
     def get(self, request, job_id):
