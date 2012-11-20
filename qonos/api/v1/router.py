@@ -21,17 +21,17 @@ class API(wsgi.Router):
                        action='create',
                        conditions=dict(method=['POST']))
 
-        mapper.connect('/schedules/{id}',
+        mapper.connect('/schedules/{schedule_id}',
                        controller=schedules_resource,
                        action='get',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/schedules/{id}',
+        mapper.connect('/schedules/{schedule_id}',
                        controller=schedules_resource,
                        action='update',
                        conditions=dict(method=['PUT']))
 
-        mapper.connect('/schedules/{id}',
+        mapper.connect('/schedules/{schedule_id}',
                        controller=schedules_resource,
                        action='delete',
                        conditions=dict(method=['DELETE']))
@@ -43,32 +43,32 @@ class API(wsgi.Router):
                        action='list',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/jobs/{id}',
+        mapper.connect('/jobs/{job_id}',
                        controller=jobs_resource,
                        action='get',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/jobs/{id}',
+        mapper.connect('/jobs/{job_id}',
                        controller=jobs_resource,
                        action='delete',
                        conditions=dict(method=['DELETE']))
 
-        mapper.connect('/jobs/{id}/heartbeat',
+        mapper.connect('/jobs/{job_id}/heartbeat',
                        controller=jobs_resource,
                        action='get_heartbeat',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/jobs/{id}/heartbeat',
+        mapper.connect('/jobs/{job_id}/heartbeat',
                        controller=jobs_resource,
                        action='update_heartbeat',
                        conditions=dict(method=['PUT']))
 
-        mapper.connect('/jobs/{id}/status',
+        mapper.connect('/jobs/{job_id}/status',
                        controller=jobs_resource,
                        action='get_status',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/jobs/{id}/status',
+        mapper.connect('/jobs/{job_id}/status',
                        controller=jobs_resource,
                        action='update_status',
                        conditions=dict(method=['PUT']))
@@ -85,17 +85,17 @@ class API(wsgi.Router):
                        action='create',
                        conditions=dict(method=['POST']))
 
-        mapper.connect('/workers/{id}',
+        mapper.connect('/workers/{worker_id}',
                        controller=workers_resource,
                        action='get',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/workers/{id}',
+        mapper.connect('/workers/{worker_id}',
                        controller=workers_resource,
                        action='delete',
                        conditions=dict(method=['DELETE']))
 
-        mapper.connect('/workers/{id}/jobs/next',
+        mapper.connect('/workers/{worker_id}/jobs/next',
                        controller=workers_resource,
                        action='get_next_job',
                        conditions=dict(method=['PUT']))
