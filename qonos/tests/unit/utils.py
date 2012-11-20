@@ -12,6 +12,7 @@ JOB_UUID1 = '54492ba0-f4df-4e4e-be62-27f4d76b29cf'
 JOB_UUID2 = '0b3b3006-cb76-4517-ae32-51397e22c754'
 
 WORKER_UUID1 = '2hss8dkl-d8jh-88yd-uhs9-879sdjsd8skd'
+WORKER_UUID2 = '92ba0dkl-8jhd-4517-hu9s-1397e22c75kd'
 
 
 def get_fake_request(path='', method='GET'):
