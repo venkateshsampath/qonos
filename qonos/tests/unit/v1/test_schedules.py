@@ -122,4 +122,3 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         schedule_id = str(uuid.uuid4())
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
                           request, schedule_id, {'minute': '5'})
-
