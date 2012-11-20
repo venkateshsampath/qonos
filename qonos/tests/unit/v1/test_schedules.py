@@ -4,6 +4,7 @@ import webob.exc
 from qonos.api.v1 import schedules
 from qonos.db.simple import api as db_api
 from qonos.common import exception
+from qonos.common import utils
 from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_test_utils
 from qonos.tests.unit.utils import SCHEDULE_UUID1
@@ -30,6 +31,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         fixture = self._create_test_fixture()
         request = unit_test_utils.get_fake_request(method='GET')
         schedule = db_api.schedule_create(fixture['schedule'])
+        utils.serialize_datetimes(schedule)
         schedules = self.controller.list(request).get('schedules')
         self.assertTrue(schedule in schedules)
 
@@ -37,6 +39,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         fixture = self._create_test_fixture()
         request = unit_test_utils.get_fake_request(method='GET')
         expected = db_api.schedule_create(fixture['schedule'])
+        utils.serialize_datetimes(expected)
         actual = self.controller.get(request, expected['id']).get('schedule')
         self.assertEqual(actual, expected)
 
