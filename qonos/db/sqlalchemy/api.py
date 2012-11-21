@@ -164,7 +164,7 @@ def wrap_db_error(f):
                     return f(*args, **kwargs)
                 except sqlalchemy.exc.OperationalError, e:
                     if (remaining_attempts == 0 or
-                        not is_db_connection_error(e.args[0])):
+                            not is_db_connection_error(e.args[0])):
                         raise
                 except sqlalchemy.exc.DBAPIError:
                     raise
@@ -212,3 +212,55 @@ def worker_delete(worker_id):
         worker = worker_get_by_id(worker_id)
         worker.delete(session=session)
 
+
+#################### Job methods
+
+
+def job_create(values):
+    session = get_session()
+    job_ref = models.Job()
+    job_ref.update(values)
+    job_ref.save(session=session)
+
+    return job_ref
+
+
+def job_get_all():
+    session = get_session()
+    query = session.query(models.Job)
+
+    return query.all()
+
+
+def job_get_by_id(job_id):
+    session = get_session()
+    try:
+        job = session.query(models.Job)\
+                     .filter_by(id=job_id)\
+                     .one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return job
+
+
+def job_updated_at_get_by_id(job_id):
+    return job_get_by_id(job_id)['updated_at']
+
+
+def job_status_get_by_id(job_id):
+    return job_get_by_id(job_id)['status']
+
+
+def job_update(job_id, values):
+    session = get_session()
+    job_ref = job_get_by_id(job_id)
+    job_ref.update(values)
+    job_ref.save(session=session)
+    return job_ref
+
+
+def job_delete(job_id):
+    session = get_session()
+    job_ref = job_get_by_id(job_id)
+    job_ref.delete(session=session)

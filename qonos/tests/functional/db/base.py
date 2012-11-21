@@ -288,8 +288,8 @@ class TestJobsDB(utils.BaseTestCase):
         }
         job = self.db_api.job_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
-        self.assertNotEqual(job.get('created_at'), None)
-        self.assertNotEqual(job.get('updated_at'), None)
+        self.assertNotEqual(job['created_at'], None)
+        self.assertNotEqual(job['updated_at'], None)
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], fixture['worker_id'])
         self.assertEqual(job['status'], fixture['status'])
@@ -312,7 +312,7 @@ class TestJobsDB(utils.BaseTestCase):
                           self.db_api.job_get_by_id, str(uuid.uuid4))
 
     def test_job_updated_at_get_by_id(self):
-        expected = self.job_1.get('updated_at')
+        expected = self.job_1['updated_at']
         actual = self.db_api.job_updated_at_get_by_id(self.job_1['id'])
         self.assertEqual(actual, expected)
 
@@ -322,7 +322,7 @@ class TestJobsDB(utils.BaseTestCase):
                           str(uuid.uuid4))
 
     def test_job_status_get_by_id(self):
-        expected = self.job_1.get('status')
+        expected = self.job_1['status']
         actual = self.db_api.job_status_get_by_id(self.job_1['id'])
         self.assertEqual(actual, expected)
 
