@@ -50,6 +50,12 @@ class ModelBase(object):
         session.add(self)
         session.flush()
 
+    def delete(self, session=None):
+        """Save this object"""
+        session = session or qonos.db.sqlalchemy.api.get_session()
+        session.delete(self)
+        session.flush()
+
     def update(self, values):
         """dict.update() behaviour."""
         for k, v in values.iteritems():

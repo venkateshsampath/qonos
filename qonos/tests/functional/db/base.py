@@ -217,8 +217,12 @@ class TestDBApi(utils.BaseTestCase):
         self.assertEqual(len(workers), 2)
 
     def test_worker_get_by_id(self):
-        worker = self.db_api.worker_create({'host': 'mydomain'})
-        self.assertEquals(self.db_api.worker_get_by_id(worker['id']), worker)
+        expected = self.db_api.worker_create({'host': 'mydomain'})
+        actual = self.db_api.worker_get_by_id(expected['id'])
+        self.assertEquals(actual['id'], expected['id'])
+        self.assertEquals(actual['created_at'], expected['created_at'])
+        self.assertEquals(actual['updated_at'], expected['updated_at'])
+        self.assertEquals(actual['host'], expected['host'])
 
     def test_worker_get_by_id_not_found(self):
         worker_id = str(uuid.uuid4())
@@ -236,9 +240,11 @@ class TestDBApi(utils.BaseTestCase):
     def test_worker_delete(self):
         fixture = {'host': ''}
         worker = self.db_api.worker_create(fixture)
-        self.assertTrue(worker in self.db_api.worker_get_all())
+        workers = self.db_api.worker_get_all()
+        self.assertEqual(len(workers), 1)
         self.db_api.worker_delete(worker['id'])
-        self.assertFalse(worker in self.db_api.worker_get_all())
+        workers = self.db_api.worker_get_all()
+        self.assertEqual(len(workers), 0)
 
     def test_worker_delete_not_found(self):
         worker_id = str(uuid.uuid4())

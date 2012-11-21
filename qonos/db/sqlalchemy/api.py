@@ -193,6 +193,26 @@ def worker_create(values):
     return worker_ref
 
 
+def worker_get_by_id(worker_id):
+    session = get_session()
+    query = session.query(models.Worker).filter_by(id=worker_id)
+
+    try:
+        worker = query.one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound
+
+    return worker
+
+
+def worker_delete(worker_id):
+    session = get_session()
+
+    with session.begin():
+        worker = worker_get_by_id(worker_id)
+        worker.delete(session=session)
+
+
 #################### Job methods
 
 
