@@ -1,6 +1,7 @@
 import uuid
 
 from qonos.common import exception
+from qonos.openstack.common import timeutils
 from qonos.openstack.common import uuidutils
 from qonos.tests import utils as utils
 from qonos.tests.unit import utils as unit_utils
@@ -40,20 +41,24 @@ class TestDBApi(utils.BaseTestCase):
         }
         schedule = self.db_api.schedule_create(fixture)
         schedule2 = self.db_api.schedule_create(fixture)
-        self.assertTrue(schedule in self.db_api.schedule_get_all())
-        self.assertTrue(schedule2 in self.db_api.schedule_get_all())
-        self.assertNotEqual(schedule, schedule2)
+        schedules = self.db_api.schedule_get_all()
+        self.assertEqual(len(schedules), 2)
 
     def test_schedule_get_by_id(self):
         fixture = {
             'tenant_id': str(uuid.uuid4()),
             'action': 'snapshot',
-            'minute': '30',
-            'hour': '2',
+            'minute': 30,
+            'hour': 2,
         }
-        schedule = self.db_api.schedule_create(fixture)
-        self.assertEquals(self.db_api.schedule_get_by_id(schedule['id']),
-                          schedule)
+        expected = self.db_api.schedule_create(fixture)
+        actual = self.db_api.schedule_get_by_id(expected['id'])
+        self.assertEqual(actual['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(actual['action'], fixture['action'])
+        self.assertEqual(actual['minute'], fixture['minute'])
+        self.assertEqual(actual['hour'], fixture['hour'])
+        self.assertNotEqual(actual['created_at'], None)
+        self.assertNotEqual(actual['updated_at'], None)
 
     def test_schedule_get_by_id_not_found(self):
         schedule_id = str(uuid.uuid4())
@@ -64,8 +69,8 @@ class TestDBApi(utils.BaseTestCase):
         fixture = {
             'tenant_id': str(uuid.uuid4()),
             'action': 'snapshot',
-            'minute': '30',
-            'hour': '2',
+            'minute': 30,
+            'hour': 2,
         }
         schedule = self.db_api.schedule_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
@@ -73,31 +78,32 @@ class TestDBApi(utils.BaseTestCase):
         self.assertEqual(schedule['action'], fixture['action'])
         self.assertEqual(schedule['minute'], fixture['minute'])
         self.assertEqual(schedule['hour'], fixture['hour'])
-        self.assertNotEqual(schedule.get('created_at'), None)
-        self.assertNotEqual(schedule.get('updated_at'), None)
+        self.assertNotEqual(schedule['created_at'], None)
+        self.assertNotEqual(schedule['updated_at'], None)
 
     def test_schedule_update(self):
         fixture = {
             'id': str(uuid.uuid4()),
-            'created_at': "2012-11-19T22:10:48Z",
-            'updated_at': "2012-11-19T22:10:48Z",
             'tenant_id': str(uuid.uuid4()),
             'action': 'snapshot',
-            'minute': '30',
-            'hour': '2',
+            'minute': 30,
+            'hour': 2,
         }
-        schedule = self.db_api._schedule_create(fixture)
-        schedule = schedule.copy()
-        fixture = {'hour': '3'}
+        schedule = self.db_api.schedule_create(fixture)
+        fixture = {'hour': 3}
+        timeutils.set_time_override()
+        timeutils.advance_time_seconds(2)
         updated_schedule = self.db_api.schedule_update(schedule['id'], fixture)
+        timeutils.clear_time_override()
+
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
         self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
         self.assertEqual(updated_schedule['hour'], fixture['hour'])
-        self.assertEqual(updated_schedule.get('created_at'),
+        self.assertEqual(updated_schedule['created_at'],
                          schedule['created_at'])
-        self.assertNotEqual(updated_schedule.get('updated_at'),
+        self.assertNotEqual(updated_schedule['updated_at'],
                             schedule['updated_at'])
 
     def test_schedule_delete(self):
@@ -108,9 +114,11 @@ class TestDBApi(utils.BaseTestCase):
             'hour': '2',
         }
         schedule = self.db_api.schedule_create(fixture)
-        self.assertTrue(schedule in self.db_api.schedule_get_all())
+        schedules = self.db_api.schedule_get_all()
+        self.assertEqual(len(schedules), 1)
         self.db_api.schedule_delete(schedule['id'])
-        self.assertFalse(schedule in self.db_api.schedule_get_all())
+        schedules = self.db_api.schedule_get_all()
+        self.assertEqual(len(schedules), 0)
 
     def test_schedule_delete_not_found(self):
         schedule_id = str(uuid.uuid4())
