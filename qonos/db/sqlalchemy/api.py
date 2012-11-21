@@ -191,3 +191,57 @@ def worker_create(values):
     worker_ref.save(session=session)
 
     return worker_ref
+
+
+#################### Job methods
+
+
+def job_create(values):
+    session = get_session()
+    job_ref = models.Job()
+    job_ref.update(values)
+    job_ref.save(session=session)
+
+    return job_ref
+
+
+def job_get_all():
+    session = get_session()
+    query = session.query(models.Job)
+
+    return query.all()
+
+
+def job_get_by_id(job_id):
+    session = get_session()
+    try:
+        query = session.query(models.Job)\
+                .filter_by(id=job_id)
+
+        job = query.one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return job
+
+
+def job_updated_at_get_by_id(job_id):
+    return job_get_by_id(job_id)['updated_at']
+
+
+def job_status_get_by_id(job_id):
+    return job_get_by_id(job_id)['status']
+
+
+def job_update(job_id, values):
+    session = get_session()
+    job_ref = job_get_by_id(job_id)
+    job_ref.update(values)
+    job_ref.save(session=session)
+    return job_ref
+
+
+def job_delete(job_id):
+    session = get_session()
+    job_ref = job_get_by_id(job_id)
+    job_ref.delete(session=session)
