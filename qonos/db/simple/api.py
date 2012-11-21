@@ -14,6 +14,10 @@ DATA = {
 }
 
 
+def configure_db():
+    pass
+
+
 def reset():
     global DATA
     for k in DATA:

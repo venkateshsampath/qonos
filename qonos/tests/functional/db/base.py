@@ -16,6 +16,10 @@ class TestDBApi(utils.BaseTestCase):
         super(TestDBApi, self).setUp()
         self.db_api = db_api
 
+    def tearDown(self):
+        super(TestDBApi, self).setUp()
+        self.db_api.reset()
+
     def test_reset(self):
         fixture = {
             'tenant_id': str(uuid.uuid4()),
@@ -209,9 +213,8 @@ class TestDBApi(utils.BaseTestCase):
         fixture = {'host': ''}
         worker = self.db_api.worker_create(fixture)
         worker2 = self.db_api.worker_create(fixture)
-        self.assertTrue(worker in self.db_api.worker_get_all())
-        self.assertTrue(worker2 in self.db_api.worker_get_all())
-        self.assertNotEqual(worker, worker2)
+        workers = self.db_api.worker_get_all()
+        self.assertEqual(len(workers), 2)
 
     def test_worker_get_by_id(self):
         worker = self.db_api.worker_create({'host': 'mydomain'})
@@ -227,8 +230,8 @@ class TestDBApi(utils.BaseTestCase):
         worker = self.db_api.worker_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(worker['id']))
         self.assertEqual(worker['host'], fixture['host'])
-        self.assertNotEqual(worker.get('created_at'), None)
-        self.assertNotEqual(worker.get('updated_at'), None)
+        self.assertNotEqual(worker['created_at'], None)
+        self.assertNotEqual(worker['updated_at'], None)
 
     def test_worker_delete(self):
         fixture = {'host': ''}
@@ -243,15 +246,15 @@ class TestDBApi(utils.BaseTestCase):
                           self.db_api.worker_delete, worker_id)
 
 
-class TestJobs(utils.BaseTestCase):
+class TestJobsDB(utils.BaseTestCase):
 
     def setUp(self):
-        super(TestJobs, self).setUp()
+        super(TestJobsDB, self).setUp()
         self.db_api = db_api
         self._create_jobs()
 
     def tearDown(self):
-        super(TestJobs, self).tearDown()
+        super(TestJobsDB, self).tearDown()
         self.db_api.reset()
 
     def _create_jobs(self):
