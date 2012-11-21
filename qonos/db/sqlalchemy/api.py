@@ -174,6 +174,51 @@ def wrap_db_error(f):
     return _wrap
 
 
+#################### Schedule methods
+
+
+def schedule_create(values):
+    session = get_session()
+    schedule_ref = models.Schedule()
+    schedule_ref.update(values)
+    schedule_ref.save(session=session)
+
+    return schedule_get_by_id(schedule_ref['id'])
+
+
+def schedule_get_all():
+    session = get_session()
+    query = session.query(models.Schedule)
+
+    return query.all()
+
+
+def schedule_get_by_id(schedule_id):
+    session = get_session()
+    try:
+        schedule = session.query(models.Schedule)\
+                          .filter_by(id=schedule_id)\
+                          .one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return schedule
+
+
+def schedule_update(schedule_id, values):
+    session = get_session()
+    schedule_ref = schedule_get_by_id(schedule_id)
+    schedule_ref.update(values)
+    schedule_ref.save(session=session)
+    return schedule_ref
+
+
+def schedule_delete(schedule_id):
+    session = get_session()
+    schedule_ref = schedule_get_by_id(schedule_id)
+    schedule_ref.delete(session=session)
+
+
 ##################### Worker methods
 
 
@@ -190,7 +235,7 @@ def worker_create(values):
     worker_ref.update(values)
     worker_ref.save(session=session)
 
-    return worker_ref
+    return worker_get_by_id(worker_ref['id'])
 
 
 def worker_get_by_id(worker_id):
@@ -222,7 +267,7 @@ def job_create(values):
     job_ref.update(values)
     job_ref.save(session=session)
 
-    return job_ref
+    return job_get_by_id(job_ref['id'])
 
 
 def job_get_all():
