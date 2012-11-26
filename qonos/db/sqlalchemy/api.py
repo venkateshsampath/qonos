@@ -1,27 +1,8 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
-# Copyright 2010 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration.
-# Copyright 2010-2011 OpenStack LLC.
-# Copyright 2012 Justin Santa Barbara
-# All Rights Reserved.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
-
 """
 Defines interface for DB access
 """
 
+import functools
 import logging
 import time
 
@@ -53,6 +34,20 @@ db_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(db_opts)
+
+
+def force_dict(func):
+    """Ensure returned object is a dict or list of dicts."""
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        output = func(*args, **kwargs)
+        if isinstance(output, list):
+            to_return = []
+            for i in output:
+                to_return.append(dict(i))
+            return to_return
+        return dict(output)
+    return wrapped
 
 
 def ping_listener(dbapi_conn, connection_rec, connection_proxy):
@@ -177,15 +172,17 @@ def wrap_db_error(f):
 #################### Schedule methods
 
 
+@force_dict
 def schedule_create(values):
     session = get_session()
     schedule_ref = models.Schedule()
     schedule_ref.update(values)
     schedule_ref.save(session=session)
 
-    return schedule_get_by_id(schedule_ref['id'])
+    return _schedule_get_by_id(schedule_ref['id'])
 
 
+@force_dict
 def schedule_get_all():
     session = get_session()
     query = session.query(models.Schedule)
@@ -193,7 +190,7 @@ def schedule_get_all():
     return query.all()
 
 
-def schedule_get_by_id(schedule_id):
+def _schedule_get_by_id(schedule_id):
     session = get_session()
     try:
         schedule = session.query(models.Schedule)\
@@ -205,9 +202,15 @@ def schedule_get_by_id(schedule_id):
     return schedule
 
 
+@force_dict
+def schedule_get_by_id(schedule_id):
+    return _schedule_get_by_id(schedule_id)
+
+
+@force_dict
 def schedule_update(schedule_id, values):
     session = get_session()
-    schedule_ref = schedule_get_by_id(schedule_id)
+    schedule_ref = _schedule_get_by_id(schedule_id)
     schedule_ref.update(values)
     schedule_ref.save(session=session)
     return schedule_ref
@@ -215,13 +218,14 @@ def schedule_update(schedule_id, values):
 
 def schedule_delete(schedule_id):
     session = get_session()
-    schedule_ref = schedule_get_by_id(schedule_id)
+    schedule_ref = _schedule_get_by_id(schedule_id)
     schedule_ref.delete(session=session)
 
 
 ##################### Worker methods
 
 
+@force_dict
 def worker_get_all():
     session = get_session()
     query = session.query(models.Worker)
@@ -229,16 +233,17 @@ def worker_get_all():
     return query.all()
 
 
+@force_dict
 def worker_create(values):
     session = get_session()
     worker_ref = models.Worker()
     worker_ref.update(values)
     worker_ref.save(session=session)
 
-    return worker_get_by_id(worker_ref['id'])
+    return _worker_get_by_id(worker_ref['id'])
 
 
-def worker_get_by_id(worker_id):
+def _worker_get_by_id(worker_id):
     session = get_session()
     query = session.query(models.Worker).filter_by(id=worker_id)
 
@@ -250,26 +255,33 @@ def worker_get_by_id(worker_id):
     return worker
 
 
+@force_dict
+def worker_get_by_id(worker_id):
+    return _worker_get_by_id(worker_id)
+
+
 def worker_delete(worker_id):
     session = get_session()
 
     with session.begin():
-        worker = worker_get_by_id(worker_id)
+        worker = _worker_get_by_id(worker_id)
         worker.delete(session=session)
 
 
 #################### Job methods
 
 
+@force_dict
 def job_create(values):
     session = get_session()
     job_ref = models.Job()
     job_ref.update(values)
     job_ref.save(session=session)
 
-    return job_get_by_id(job_ref['id'])
+    return _job_get_by_id(job_ref['id'])
 
 
+@force_dict
 def job_get_all():
     session = get_session()
     query = session.query(models.Job)
@@ -277,7 +289,7 @@ def job_get_all():
     return query.all()
 
 
-def job_get_by_id(job_id):
+def _job_get_by_id(job_id):
     session = get_session()
     try:
         job = session.query(models.Job)\
@@ -289,17 +301,23 @@ def job_get_by_id(job_id):
     return job
 
 
+@force_dict
+def job_get_by_id(job_id):
+    return _job_get_by_id(job_id)
+
+
 def job_updated_at_get_by_id(job_id):
-    return job_get_by_id(job_id)['updated_at']
+    return _job_get_by_id(job_id)['updated_at']
 
 
 def job_status_get_by_id(job_id):
-    return job_get_by_id(job_id)['status']
+    return _job_get_by_id(job_id)['status']
 
 
+@force_dict
 def job_update(job_id, values):
     session = get_session()
-    job_ref = job_get_by_id(job_id)
+    job_ref = _job_get_by_id(job_id)
     job_ref.update(values)
     job_ref.save(session=session)
     return job_ref
@@ -307,5 +325,5 @@ def job_update(job_id, values):
 
 def job_delete(job_id):
     session = get_session()
-    job_ref = job_get_by_id(job_id)
+    job_ref = _job_get_by_id(job_id)
     job_ref.delete(session=session)
