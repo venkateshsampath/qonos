@@ -59,6 +59,9 @@ class SchedulesController(object):
             raise webob.exc.HTTPBadRequest()
 
         try:
+            values = {}
+            values['next_run'] = self._schedule_to_next_run(body['schedule'])
+            body['schedule'].update(values)
             schedule = self.db_api.schedule_update(schedule_id,
                                                    body['schedule'])
             utils.serialize_datetimes(schedule)
