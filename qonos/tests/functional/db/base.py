@@ -32,15 +32,35 @@ class TestDBApi(utils.BaseTestCase):
         self.db_api.reset()
         self.assertFalse(self.db_api.schedule_get_all())
 
-    def test_schedule_get_all(self):
+
+class TestSchedulesDBApi(utils.BaseTestCase):
+
+    def setUp(self):
+        super(TestSchedulesDBApi, self).setUp()
+        self.db_api = db_api
+        self._create_schedules()
+
+    def tearDown(self):
+        super(TestSchedulesDBApi, self).setUp()
+        self.db_api.reset()
+
+    def _create_schedules(self):
         fixture = {
             'tenant_id': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
         }
-        schedule = self.db_api.schedule_create(fixture)
-        schedule2 = self.db_api.schedule_create(fixture)
+        self.schedule_1 = self.db_api.schedule_create(fixture)
+        fixture = {
+            'tenant_id': str(uuid.uuid4()),
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': 2,
+        }
+        self.schedule_2 = self.db_api.schedule_create(fixture)
+
+    def test_schedule_get_all(self):
         schedules = self.db_api.schedule_get_all()
         self.assertEqual(len(schedules), 2)
 
@@ -107,18 +127,11 @@ class TestDBApi(utils.BaseTestCase):
                             schedule['updated_at'])
 
     def test_schedule_delete(self):
-        fixture = {
-            'tenant_id': str(uuid.uuid4()),
-            'action': 'snapshot',
-            'minute': '30',
-            'hour': '2',
-        }
-        schedule = self.db_api.schedule_create(fixture)
+        schedules = self.db_api.schedule_get_all()
+        self.assertEqual(len(schedules), 2)
+        self.db_api.schedule_delete(self.schedule_1['id'])
         schedules = self.db_api.schedule_get_all()
         self.assertEqual(len(schedules), 1)
-        self.db_api.schedule_delete(schedule['id'])
-        schedules = self.db_api.schedule_get_all()
-        self.assertEqual(len(schedules), 0)
 
     def test_schedule_delete_not_found(self):
         schedule_id = str(uuid.uuid4())
@@ -211,20 +224,33 @@ class TestDBApi(utils.BaseTestCase):
         self.assertRaises(exception.NotFound, db_api.schedule_meta_get,
                           schedule['id'], 'key2')
 
-    def test_worker_get_all(self):
+
+class TestWorkersDBApi(utils.BaseTestCase):
+
+    def setUp(self):
+        super(TestWorkersDBApi, self).setUp()
+        self.db_api = db_api
+        self._create_workers()
+
+    def tearDown(self):
+        super(TestWorkersDBApi, self).tearDown()
+        self.db_api.reset()
+
+    def _create_workers(self):
         fixture = {'host': ''}
-        worker = self.db_api.worker_create(fixture)
-        worker2 = self.db_api.worker_create(fixture)
+        self.worker_1 = self.db_api.worker_create(fixture)
+        self.worker_2 = self.db_api.worker_create(fixture)
+
+    def test_worker_get_all(self):
         workers = self.db_api.worker_get_all()
         self.assertEqual(len(workers), 2)
 
     def test_worker_get_by_id(self):
-        expected = self.db_api.worker_create({'host': 'mydomain'})
-        actual = self.db_api.worker_get_by_id(expected['id'])
-        self.assertEquals(actual['id'], expected['id'])
-        self.assertEquals(actual['created_at'], expected['created_at'])
-        self.assertEquals(actual['updated_at'], expected['updated_at'])
-        self.assertEquals(actual['host'], expected['host'])
+        actual = self.db_api.worker_get_by_id(self.worker_1['id'])
+        self.assertEquals(actual['id'], self.worker_1['id'])
+        self.assertEquals(actual['created_at'], self.worker_1['created_at'])
+        self.assertEquals(actual['updated_at'], self.worker_1['updated_at'])
+        self.assertEquals(actual['host'], self.worker_1['host'])
 
     def test_worker_get_by_id_not_found(self):
         worker_id = str(uuid.uuid4())
@@ -240,13 +266,11 @@ class TestDBApi(utils.BaseTestCase):
         self.assertNotEqual(worker['updated_at'], None)
 
     def test_worker_delete(self):
-        fixture = {'host': ''}
-        worker = self.db_api.worker_create(fixture)
+        workers = self.db_api.worker_get_all()
+        self.assertEqual(len(workers), 2)
+        self.db_api.worker_delete(self.worker_1['id'])
         workers = self.db_api.worker_get_all()
         self.assertEqual(len(workers), 1)
-        self.db_api.worker_delete(worker['id'])
-        workers = self.db_api.worker_get_all()
-        self.assertEqual(len(workers), 0)
 
     def test_worker_delete_not_found(self):
         worker_id = str(uuid.uuid4())
@@ -254,15 +278,15 @@ class TestDBApi(utils.BaseTestCase):
                           self.db_api.worker_delete, worker_id)
 
 
-class TestJobsDB(utils.BaseTestCase):
+class TestJobsDBApi(utils.BaseTestCase):
 
     def setUp(self):
-        super(TestJobsDB, self).setUp()
+        super(TestJobsDBApi, self).setUp()
         self.db_api = db_api
         self._create_jobs()
 
     def tearDown(self):
-        super(TestJobsDB, self).tearDown()
+        super(TestJobsDBApi, self).tearDown()
         self.db_api.reset()
 
     def _create_jobs(self):
