@@ -1,3 +1,4 @@
+import functools
 import uuid
 
 from qonos.common import exception
