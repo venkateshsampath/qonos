@@ -17,6 +17,7 @@ httplib2
 kombu
 pycrypto>=2.1.0alpha1
 iso8601>=0.1.4
+croniter
 
 
 # For Swift storage backend.

@@ -29,6 +29,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
+            'next_run': '2012-11-27T02:30:00Z'
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
@@ -36,6 +37,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
+            'next_run': '2012-11-27T02:30:00Z'
         }
         self.schedule_2 = db_api.schedule_create(fixture)
 
@@ -75,6 +77,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertIsNotNone(actual.get('id'))
         self.assertIsNotNone(actual.get('created_at'))
         self.assertIsNotNone(actual.get('updated_at'))
+        self.assertIsNotNone(actual.get('next_run'))
         self.assertEqual(expected['tenant_id'], actual['tenant_id'])
         self.assertEqual(expected['action'], actual['action'])
         self.assertEqual(expected['minute'], actual['minute'])
@@ -119,6 +122,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(self.schedule_1['minute'], updated['minute'])
         self.assertEqual(update_fixture['schedule']['hour'],
                          updated['hour'])
+        self.assertNotEqual(updated['next_run'], self.schedule_1['next_run'])
 
     def test_update_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')

@@ -1,6 +1,7 @@
 import datetime
 
 from qonos.common import utils
+from qonos.openstack.common import timeutils
 from qonos.tests import utils as test_utils
 
 
@@ -18,3 +19,20 @@ class TestUtils(test_utils.BaseTestCase):
         expected = {'foo': date_1_str, 'bar': date_2_str}
         utils.serialize_datetimes(data)
         self.assertEqual(data, expected)
+
+    def test_cron_string_to_datetime(self):
+        minute = timeutils.utcnow().minute
+        if minute == 0:
+            minute = 59
+        else:
+            minute -= 1
+
+        hour = timeutils.utcnow().hour
+        if hour == 0:
+            hour = 23
+        else:
+            hour -= 1
+        next_run = utils.cron_string_to_next_datetime(minute=minute,
+                                                      hour=hour)
+
+        self.assertTrue(next_run > timeutils.utcnow())
