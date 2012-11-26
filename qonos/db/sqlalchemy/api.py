@@ -226,6 +226,7 @@ def schedule_delete(schedule_id):
 #################### Schedule Metadata methods
 
 
+@force_dict
 def schedule_meta_create(schedule_id, values):
     schedule_get_by_id(schedule_id)
     session = get_session()
@@ -237,6 +238,7 @@ def schedule_meta_create(schedule_id, values):
     return schedule_meta_get(schedule_id, values['key'])
 
 
+@force_dict
 def schedule_meta_get_all(schedule_id):
     schedule_get_by_id(schedule_id)
     session = get_session()
@@ -246,7 +248,7 @@ def schedule_meta_get_all(schedule_id):
     return query.all()
 
 
-def schedule_meta_get(schedule_id, key):
+def _schedule_meta_get(schedule_id, key):
     try:
         schedule_get_by_id(schedule_id)
     except exception.NotFound:
@@ -264,10 +266,16 @@ def schedule_meta_get(schedule_id, key):
     return meta
 
 
+@force_dict
+def schedule_meta_get(schedule_id, key):
+    return _schedule_meta_get(schedule_id, key)
+
+
+@force_dict
 def schedule_meta_update(schedule_id, key, values):
     schedule_get_by_id(schedule_id)
     session = get_session()
-    meta_ref = schedule_meta_get(schedule_id, key)
+    meta_ref = _schedule_meta_get(schedule_id, key)
     meta_ref.update(values)
     meta_ref.save(session=session)
     return meta_ref
@@ -276,7 +284,7 @@ def schedule_meta_update(schedule_id, key, values):
 def schedule_meta_delete(schedule_id, key):
     schedule_get_by_id(schedule_id)
     session = get_session()
-    meta_ref = schedule_meta_get(schedule_id, key)
+    meta_ref = _schedule_meta_get(schedule_id, key)
     meta_ref.delete(session=session)
 
 
