@@ -1,5 +1,8 @@
+import sys
+
 import qonos.db.simple.api
 from qonos.tests.functional.db import base
+from qonos.tests import utils
 
 
 def setUpModule():
@@ -13,4 +16,5 @@ def tearDownModule():
 
 
 #NOTE(ameade): Pull in cross driver db tests
-from qonos.tests.functional.db.base import *
+thismodule = sys.modules[__name__]
+utils.import_test_cases(thismodule, base, suffix="_Simple_DB")
