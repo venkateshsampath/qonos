@@ -5,6 +5,7 @@ Defines interface for DB access
 import functools
 import logging
 import time
+from qonos.openstack.common.gettextutils import _
 
 import sqlalchemy
 import sqlalchemy.orm as sa_orm
@@ -29,7 +30,7 @@ db_opts = [
     cfg.IntOpt('sql_idle_timeout', default=3600),
     cfg.IntOpt('sql_max_retries', default=60),
     cfg.IntOpt('sql_retry_interval', default=1),
-    cfg.BoolOpt('db_auto_create', default=False),
+    cfg.BoolOpt('db_auto_create', default=True),
 ]
 
 CONF = cfg.CONF
@@ -220,6 +221,71 @@ def schedule_delete(schedule_id):
     session = get_session()
     schedule_ref = _schedule_get_by_id(schedule_id)
     schedule_ref.delete(session=session)
+
+
+#################### Schedule Metadata methods
+
+
+@force_dict
+def schedule_meta_create(schedule_id, values):
+    schedule_get_by_id(schedule_id)
+    session = get_session()
+    meta_ref = models.ScheduleMetadata()
+    values['schedule_id'] = schedule_id
+    meta_ref.update(values)
+    meta_ref.save(session=session)
+
+    return schedule_meta_get(schedule_id, values['key'])
+
+
+@force_dict
+def schedule_meta_get_all(schedule_id):
+    schedule_get_by_id(schedule_id)
+    session = get_session()
+    query = session.query(models.ScheduleMetadata)\
+                   .filter_by(schedule_id=schedule_id)
+
+    return query.all()
+
+
+def _schedule_meta_get(schedule_id, key):
+    try:
+        schedule_get_by_id(schedule_id)
+    except exception.NotFound:
+        msg = _('Schedule %s could not be found') % schedule_id
+        raise exception.NotFound(message=msg)
+    session = get_session()
+    try:
+        meta = session.query(models.ScheduleMetadata)\
+                      .filter_by(schedule_id=schedule_id)\
+                      .filter_by(key=key)\
+                      .one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return meta
+
+
+@force_dict
+def schedule_meta_get(schedule_id, key):
+    return _schedule_meta_get(schedule_id, key)
+
+
+@force_dict
+def schedule_meta_update(schedule_id, key, values):
+    schedule_get_by_id(schedule_id)
+    session = get_session()
+    meta_ref = _schedule_meta_get(schedule_id, key)
+    meta_ref.update(values)
+    meta_ref.save(session=session)
+    return meta_ref
+
+
+def schedule_meta_delete(schedule_id, key):
+    schedule_get_by_id(schedule_id)
+    session = get_session()
+    meta_ref = _schedule_meta_get(schedule_id, key)
+    meta_ref.delete(session=session)
 
 
 ##################### Worker methods
