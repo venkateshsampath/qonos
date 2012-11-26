@@ -14,4 +14,6 @@ CONF.register_opt(sql_connection_opt)
 
 
 def get_api():
-    return importutils.import_module(CONF.db_api)
+    db_api = importutils.import_module(CONF.db_api)
+    db_api.configure_db()
+    return db_api
