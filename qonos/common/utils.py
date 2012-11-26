@@ -1,5 +1,7 @@
 import datetime
 
+from croniter.croniter import croniter
+
 from qonos.openstack.common import timeutils
 
 
@@ -8,3 +10,11 @@ def serialize_datetimes(data):
     for (k, v) in data.iteritems():
         if isinstance(v, datetime.datetime):
             data[k] = timeutils.isotime(v)
+
+
+def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
+                                 month="*", day_of_week="*"):
+    cron_string = ("%s %s %s %s %s" %
+                  (minute, hour, day_of_month, month, day_of_week))
+    iter = croniter(cron_string, timeutils.utcnow())
+    return iter.get_next(datetime.datetime)

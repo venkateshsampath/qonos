@@ -75,6 +75,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertIsNotNone(actual.get('id'))
         self.assertIsNotNone(actual.get('created_at'))
         self.assertIsNotNone(actual.get('updated_at'))
+        self.assertIsNotNone(actual.get('next_run'))
         self.assertEqual(expected['tenant_id'], actual['tenant_id'])
         self.assertEqual(expected['action'], actual['action'])
         self.assertEqual(expected['minute'], actual['minute'])
