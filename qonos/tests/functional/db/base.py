@@ -144,15 +144,33 @@ class TestDBApi(utils.BaseTestCase):
         self.assertIsNotNone(meta['created_at'])
         self.assertIsNotNone(meta['updated_at'])
         self.assertIsNotNone(meta['id'])
-        self.assertEquals(fixture['key'], meta['key'])
-        self.assertEquals(fixture['value'], meta['value'])
+        self.assertEquals(meta['key'], fixture['key'])
+        self.assertEquals(meta['value'], fixture['value'])
+
+    def assertMetadataInList(self, metadata, meta):
+        found = False
+        for element in metadata:
+            if element['key'] == meta['key']:
+                found = True
+                self.assertEqual(element['value'], meta['value'])
+        self.assertTrue(found)
 
     def test_metadata_get_all(self):
         schedule = db_api.schedule_create({})
-        fixture = {'key': 'key1', 'value': 'value1'}
-        meta = db_api.schedule_meta_create(schedule['id'], fixture)
+        fixture1 = {'key': 'key1', 'value': 'value1'}
+        db_api.schedule_meta_create(schedule['id'], fixture1)
+        fixture2 = {'key': 'key2', 'value': 'value2'}
+        db_api.schedule_meta_create(schedule['id'], fixture2)
         metadata = db_api.schedule_meta_get_all(schedule['id'])
-        self.assertEqual(1, len(metadata))
+        self.assertEqual(len(metadata), 2)
+        for element in metadata:
+            self.assertIsNotNone(element['id'])
+            self.assertEqual(element['schedule_id'], schedule['id'])
+            self.assertIsNotNone(element['created_at'])
+            self.assertIsNotNone(element['updated_at'])
+            self.assertEqual(element['schedule_id'], schedule['id'])
+        self.assertMetadataInList(metadata, fixture1)
+        self.assertMetadataInList(metadata, fixture2)
 
     def test_metadata_delete(self):
         schedule = db_api.schedule_create({})
