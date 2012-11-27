@@ -3,7 +3,8 @@ import sys
 from random import randint
 
 from qonos.common import config
-from qonos.openstack.common import cfg
+import qonos.db
+from qonos.openstack.common import cfg, timeutils
 from qonos.openstack.common import wsgi
 from qonos.tests import utils as utils
 from qonos.qonosclient import client
@@ -28,6 +29,19 @@ class TestApi(utils.BaseTestCase):
 
     def tearDown(self):
         super(TestApi, self).tearDown()
+
+        jobs = self.client.list_jobs()['jobs']
+        for job in jobs:
+            self.client.delete_job(job['id'])
+
+        schedules = self.client.list_schedules()['schedules']
+        for schedule in schedules:
+            self.client.delete_schedule(schedule['id'])
+
+        workers = self.client.list_workers()['workers']
+        for worker in workers:
+            self.client.delete_worker(worker['id'])
+
         self.service.stop()
 
     def test_workers_workflow(self):
@@ -157,5 +171,77 @@ class TestApi(utils.BaseTestCase):
         self.assertRaises(client_exc.NotFound, self.client.get_schedule_meta,
                           schedule['id'], 'key1')
 
-        # (tear down) delete schedule
-        self.client.delete_schedule(schedule['id'])
+    def test_job_workflow(self):
+
+        db_api = qonos.db.get_api()
+
+        # (setup) create schedule
+        request = {
+            'schedule':
+            {
+                'tenant_id': TENANT1,
+                'action': 'snapshot',
+                'minute': '30',
+                'hour': '12'
+            }
+        }
+        schedule = self.client.create_schedule(request)['schedule']
+
+        # (setup) create worker
+        worker = self.client.create_worker('hostname')['worker']
+
+        fixture = {
+            'schedule_id': schedule['id'],
+            'worker_id': worker['id'],
+            'status': 'error',
+            'retry_count': 0
+        }
+
+        # (setup) create job
+        db_job = db_api.job_create(fixture)
+
+        # list jobs
+        jobs = self.client.list_jobs()['jobs']
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], db_job['id'])
+        self.assertEqual(jobs[0]['schedule_id'], fixture['schedule_id'])
+        self.assertEqual(jobs[0]['worker_id'], fixture['worker_id'])
+        self.assertEqual(jobs[0]['status'], fixture['status'])
+        self.assertEqual(jobs[0]['retry_count'], fixture['retry_count'])
+
+        # get job
+        job = self.client.get_job(db_job['id'])['job']
+        self.assertEqual(job['id'], db_job['id'])
+        self.assertEqual(job['schedule_id'], fixture['schedule_id'])
+        self.assertEqual(job['worker_id'], fixture['worker_id'])
+        self.assertEqual(job['status'], fixture['status'])
+        self.assertEqual(job['retry_count'], fixture['retry_count'])
+
+        # get heartbeat
+        heartbeat = self.client.get_job_heartbeat(job['id'])['heartbeat']
+        self.assertIsNotNone(heartbeat)
+
+        # heartbeat
+        timeutils.set_time_override()
+        timeutils.advance_time_seconds(30)
+        self.client.job_heartbeat(job['id'])
+        new_heartbeat = self.client.get_job_heartbeat(job['id'])['heartbeat']
+        self.assertNotEqual(new_heartbeat, heartbeat)
+        timeutils.clear_time_override()
+
+        # get status
+        status = self.client.get_job_status(job['id'])['status']
+        self.assertEqual(status, fixture['status'])
+
+        # update status
+        self.client.update_job_status(job['id'], 'done')
+        status = self.client.get_job_status(job['id'])['status']
+        self.assertNotEqual(status, fixture['status'])
+        self.assertEqual(status, 'done')
+
+        # delete job
+        self.client.delete_job(job['id'])
+
+        # make sure job no longer exists
+        self.assertRaises(client_exc.NotFound, self.client.get_job,
+                          job['id'])

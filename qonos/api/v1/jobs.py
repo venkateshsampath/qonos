@@ -19,7 +19,10 @@ class JobsController(object):
         return {'jobs': jobs}
 
     def get(self, request, job_id):
-        job = self.db_api.job_get_by_id(job_id)
+        try:
+            job = self.db_api.job_get_by_id(job_id)
+        except exception.NotFound:
+            raise webob.exc.HTTPNotFound
         utils.serialize_datetimes(job)
         return {'job': job}
 

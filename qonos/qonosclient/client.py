@@ -1,4 +1,7 @@
 import httplib
+
+from qonos.openstack.common import timeutils
+
 try:
     import json
 except ImportError:
@@ -24,8 +27,8 @@ class Client(object):
 
         if method != 'DELETE':
             body = response.read()
-
-            return json.loads(body)
+            if body != '':
+                return json.loads(body)
 
     # workers
 
@@ -81,4 +84,35 @@ class Client(object):
 
     def delete_schedule_meta(self, schedule_id, key):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('DELETE', path,)
+        return self._do_request('DELETE', path)
+
+    # jobs
+
+    def list_jobs(self):
+        return self._do_request('GET', '/v1/jobs')
+
+    def get_job(self, job_id):
+        path = '/v1/jobs/%s' % job_id
+        return self._do_request('GET', path)
+
+    def get_job_heartbeat(self, job_id):
+        path = '/v1/jobs/%s/heartbeat' % job_id
+        return self._do_request('GET', path)
+
+    def job_heartbeat(self, job_id):
+        body = {'heartbeat': timeutils.isotime()}
+        path = '/v1/jobs/%s/heartbeat' % job_id
+        return self._do_request('PUT', path, body)
+
+    def get_job_status(self, job_id):
+        path = '/v1/jobs/%s/status' % job_id
+        return self._do_request('GET', path)
+
+    def update_job_status(self, job_id, status):
+        body = {'status': status}
+        path = '/v1/jobs/%s/status' % job_id
+        return self._do_request('PUT', path, body)
+
+    def delete_job(self, job_id):
+        path = '/v1/jobs/%s' % job_id
+        return self._do_request('DELETE', path)
