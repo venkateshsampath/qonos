@@ -30,7 +30,7 @@ class Client(object):
             if body != '':
                 return json.loads(body)
 
-    # workers
+    ######## workers
 
     def list_workers(self):
         return self._do_request('GET', '/v1/workers')
@@ -45,7 +45,7 @@ class Client(object):
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
 
-    # schedules
+    ######## schedules
 
     def list_schedules(self):
         return self._do_request('GET', '/v1/schedules')
@@ -63,7 +63,7 @@ class Client(object):
     def delete_schedule(self, schedule_id):
         self._do_request('DELETE', '/v1/schedules/%s' % schedule_id)
 
-    # schedule metadata
+    ######## schedule metadata
 
     def list_schedule_meta(self, schedule_id):
         return self._do_request('GET', '/v1/schedules/%s/meta' % schedule_id)
@@ -86,7 +86,7 @@ class Client(object):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
         return self._do_request('DELETE', path)
 
-    # jobs
+    ######## jobs
 
     def list_jobs(self):
         return self._do_request('GET', '/v1/jobs')
