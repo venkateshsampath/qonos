@@ -85,9 +85,7 @@ class ModelBase(object):
         return self.__dict__.items()
 
     def to_dict(self):
-        my_dict = self.__dict__.copy()
-        del my_dict['_sa_instance_state']
-        return my_dict
+        return self.__dict__.copy()
 
 
 class Schedule(BASE, ModelBase):
