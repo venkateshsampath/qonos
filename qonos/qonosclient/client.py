@@ -1,4 +1,7 @@
 import httplib
+
+from qonos.openstack.common import timeutils
+
 try:
     import json
 except ImportError:
@@ -24,8 +27,10 @@ class Client(object):
 
         if method != 'DELETE':
             body = response.read()
+            if body != '':
+                return json.loads(body)
 
-            return json.loads(body)
+    # workers
 
     def list_workers(self):
         return self._do_request('GET', '/v1/workers')
@@ -39,3 +44,75 @@ class Client(object):
 
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
+
+    # schedules
+
+    def list_schedules(self):
+        return self._do_request('GET', '/v1/schedules')
+
+    def create_schedule(self, schedule):
+        return self._do_request('POST', '/v1/schedules', schedule)
+
+    def get_schedule(self, schedule_id):
+        return self._do_request('GET', '/v1/schedules/%s' % schedule_id)
+
+    def update_schedule(self, schedule_id, schedule):
+        path = '/v1/schedules/%s' % schedule_id
+        return self._do_request('PUT', path, schedule)
+
+    def delete_schedule(self, schedule_id):
+        self._do_request('DELETE', '/v1/schedules/%s' % schedule_id)
+
+    # schedule metadata
+
+    def list_schedule_meta(self, schedule_id):
+        return self._do_request('GET', '/v1/schedules/%s/meta' % schedule_id)
+
+    def create_schedule_meta(self, schedule_id, key, value):
+        meta = {'meta': {key: value}}
+        path = '/v1/schedules/%s/meta' % schedule_id
+        return self._do_request('POST', path, meta)
+
+    def get_schedule_meta(self, schedule_id, key):
+        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
+        return self._do_request('GET', path)['meta'][key]
+
+    def update_schedule_meta(self, schedule_id, key, value):
+        meta = {'meta': {key: value}}
+        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
+        return self._do_request('PUT', path, meta)['meta'][key]
+
+    def delete_schedule_meta(self, schedule_id, key):
+        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
+        return self._do_request('DELETE', path)
+
+    # jobs
+
+    def list_jobs(self):
+        return self._do_request('GET', '/v1/jobs')
+
+    def get_job(self, job_id):
+        path = '/v1/jobs/%s' % job_id
+        return self._do_request('GET', path)
+
+    def get_job_heartbeat(self, job_id):
+        path = '/v1/jobs/%s/heartbeat' % job_id
+        return self._do_request('GET', path)
+
+    def job_heartbeat(self, job_id):
+        body = {'heartbeat': timeutils.isotime()}
+        path = '/v1/jobs/%s/heartbeat' % job_id
+        return self._do_request('PUT', path, body)
+
+    def get_job_status(self, job_id):
+        path = '/v1/jobs/%s/status' % job_id
+        return self._do_request('GET', path)
+
+    def update_job_status(self, job_id, status):
+        body = {'status': status}
+        path = '/v1/jobs/%s/status' % job_id
+        return self._do_request('PUT', path, body)
+
+    def delete_job(self, job_id):
+        path = '/v1/jobs/%s' % job_id
+        return self._do_request('DELETE', path)

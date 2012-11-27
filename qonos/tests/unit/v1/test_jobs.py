@@ -58,6 +58,11 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertNotEqual(job['updated_at'], None)
         self.assertNotEqual(job['created_at'], None)
 
+    def test_get_not_found(self):
+        request = unit_test_utils.get_fake_request(method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
+                          request, uuid.uuid4())
+
     def test_delete(self):
         request = unit_test_utils.get_fake_request(method='DELETE')
         self.controller.delete(request, self.job_1['id'])
