@@ -46,8 +46,12 @@ def force_dict(func):
             to_return = []
             for i in output:
                 to_return.append(dict(i))
-            return to_return
-        return dict(output)
+        else:
+            to_return = dict(output)
+
+        if '_sa_instance_state' in to_return:
+            del to_return['_sa_instance_state']
+        return to_return
     return wrapped
 
 

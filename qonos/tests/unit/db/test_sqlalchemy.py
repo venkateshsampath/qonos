@@ -7,10 +7,11 @@ class TestSqlalchemySpecificApi(utils.BaseTestCase):
     def test_force_dict(self):
         @db_api.force_dict
         def return_object():
-            return (('foo', 'bar'), ('1', '2'))
+            return (('foo', 'bar'), ('_sa_instance_state', 'blah'))
 
         value = return_object()
         self.assertTrue(isinstance(value, dict))
+        self.assertFalse('_sa_instance_state' in value)
 
     def test_force_dict_bad_data(self):
         @db_api.force_dict
