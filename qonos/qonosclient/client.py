@@ -39,3 +39,19 @@ class Client(object):
 
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
+
+    def list_schedules(self):
+        return self._do_request('GET', '/v1/schedules')
+
+    def create_schedule(self, schedule):
+        return self._do_request('POST', '/v1/schedules', schedule)
+
+    def get_schedule(self, schedule_id):
+        return self._do_request('GET', '/v1/schedules/%s' % schedule_id)
+
+    def update_schedule(self, schedule_id, schedule):
+        path = '/v1/schedules/%s' % schedule_id
+        return self._do_request('PUT', path, schedule)
+
+    def delete_schedule(self, schedule_id):
+        self._do_request('DELETE', '/v1/schedules/%s' % schedule_id)
