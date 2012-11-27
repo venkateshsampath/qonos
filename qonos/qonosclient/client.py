@@ -27,6 +27,8 @@ class Client(object):
 
             return json.loads(body)
 
+    # workers
+
     def list_workers(self):
         return self._do_request('GET', '/v1/workers')
 
@@ -39,6 +41,8 @@ class Client(object):
 
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
+
+    # schedules
 
     def list_schedules(self):
         return self._do_request('GET', '/v1/schedules')
@@ -55,3 +59,26 @@ class Client(object):
 
     def delete_schedule(self, schedule_id):
         self._do_request('DELETE', '/v1/schedules/%s' % schedule_id)
+
+    # schedule metadata
+
+    def list_schedule_meta(self, schedule_id):
+        return self._do_request('GET', '/v1/schedules/%s/meta' % schedule_id)
+
+    def create_schedule_meta(self, schedule_id, key, value):
+        meta = {'meta': {key: value}}
+        path = '/v1/schedules/%s/meta' % schedule_id
+        return self._do_request('POST', path, meta)
+
+    def get_schedule_meta(self, schedule_id, key):
+        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
+        return self._do_request('GET', path)['meta'][key]
+
+    def update_schedule_meta(self, schedule_id, key, value):
+        meta = {'meta': {key: value}}
+        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
+        return self._do_request('PUT', path, meta)['meta'][key]
+
+    def delete_schedule_meta(self, schedule_id, key):
+        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
+        return self._do_request('DELETE', path,)

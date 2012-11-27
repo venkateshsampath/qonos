@@ -22,12 +22,13 @@ class TestApi(utils.BaseTestCase):
         super(TestApi, self).setUp()
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
         self.port = randint(20000, 60000)
-        service = wsgi.Service()
-        service.start(config.load_paste_app('qonos-api'), self.port)
+        self.service = wsgi.Service()
+        self.service.start(config.load_paste_app('qonos-api'), self.port)
         self.client = client.Client("localhost", self.port)
 
     def tearDown(self):
-        super(TestApi, self).setUp()
+        super(TestApi, self).tearDown()
+        self.service.stop()
 
     def test_workers_workflow(self):
         workers = self.client.list_workers()['workers']
@@ -108,3 +109,53 @@ class TestApi(utils.BaseTestCase):
         # make sure schedule no longer exists
         self.assertRaises(client_exc.NotFound, self.client.get_schedule,
                           schedule['id'])
+
+    def test_schedule_meta_workflow(self):
+
+        # (setup) create schedule
+        request = {
+            'schedule':
+            {
+                'tenant_id': TENANT1,
+                'action': 'snapshot',
+                'minute': '30',
+                'hour': '12'
+            }
+        }
+        schedule = self.client.create_schedule(request)['schedule']
+
+        # create meta
+        meta = self.client.create_schedule_meta(schedule['id'], 'key1',
+                                                'value1')
+        meta = meta['meta']
+        self.assertEqual(meta['key1'], 'value1')
+
+        # list meta
+        metadata = self.client.list_schedule_meta(schedule['id'])['metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key1'], 'value1')
+
+        # get meta
+        value = self.client.get_schedule_meta(schedule['id'], 'key1')
+        self.assertEqual(value, 'value1')
+
+        #update schedule
+        updated_value = self.client.update_schedule_meta(schedule['id'],
+                                                         'key1', 'value2')
+        self.assertEqual(updated_value, 'value2')
+
+        # get meta after update
+        old_value = value
+        value = self.client.get_schedule_meta(schedule['id'], 'key1')
+        self.assertNotEqual(value, old_value)
+        self.assertEqual(value, 'value2')
+
+        # delete meta
+        self.client.delete_schedule_meta(schedule['id'], 'key1')
+
+        # make sure metadata no longer exists
+        self.assertRaises(client_exc.NotFound, self.client.get_schedule_meta,
+                          schedule['id'], 'key1')
+
+        # (tear down) delete schedule
+        self.client.delete_schedule(schedule['id'])
