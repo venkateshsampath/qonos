@@ -3,6 +3,7 @@ import webob.exc
 
 from qonos.openstack.common import log as logging
 from qonos.openstack.common import wsgi as wsgi
+from qonos.openstack.common.gettextutils import _
 
 
 LOG = logging.getLogger(__name__)
