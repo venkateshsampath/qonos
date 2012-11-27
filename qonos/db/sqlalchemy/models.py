@@ -125,8 +125,10 @@ class Job(BASE, ModelBase):
     __tablename__ = 'jobs'
 
     schedule_id = Column(String(36))
+    tenant_id = Column(String(36))
     worker_id = Column(String(36))
     status = Column(String(255))
+    action = Column(String(255))
     retry_count = Column(Integer, nullable=False, default=0)
 
 

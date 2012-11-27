@@ -235,7 +235,7 @@ def schedule_delete(schedule_id):
 
 @force_dict
 def schedule_meta_create(schedule_id, values):
-    schedule_get_by_id(schedule_id)
+    _schedule_get_by_id(schedule_id)
     session = get_session()
     meta_ref = models.ScheduleMetadata()
     values['schedule_id'] = schedule_id
