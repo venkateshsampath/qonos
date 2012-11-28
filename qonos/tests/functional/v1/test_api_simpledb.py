@@ -8,7 +8,7 @@ CONF = cfg.CONF
 
 
 def setUpModule():
-    CONF.db_api = 'qonos.db.sqlalchemy.api'
+    CONF.db_api = 'qonos.db.simple.api'
 
 
 def tearDownModule():
@@ -16,4 +16,4 @@ def tearDownModule():
 
 
 module = sys.modules[__name__]
-utils.import_test_cases(module, base, suffix="_Sqlalchemy_DB")
+utils.import_test_cases(module, base, suffix="_Simple_DB")
