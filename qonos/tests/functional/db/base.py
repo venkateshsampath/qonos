@@ -458,3 +458,105 @@ class TestJobsDBApi(utils.BaseTestCase):
     def test_job_delete_not_found(self):
         self.assertRaises(exception.NotFound,
                           self.db_api.job_delete, str(uuid.uuid4))
+
+    def test_metadata_create(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        self.assertEqual(meta['job_id'], job['id'])
+        self.assertEqual(meta['key'], fixture['key'])
+        self.assertEqual(meta['value'], fixture['value'])
+        self.assertIsNotNone(meta['created_at'])
+        self.assertIsNotNone(meta['updated_at'])
+        self.assertIsNotNone(meta['id'])
+
+    def test_metadata_create(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        fixture = {'key': 'key1', 'value': 'value1'}
+
+        self.assertRaises(exception.Duplicate, db_api.job_meta_create,
+                          job['id'], fixture)
+
+    def test_metadata_get_all_by_job_id(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        fixture = {'key': 'key2', 'value': 'value2'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        meta_list = db_api.job_meta_get_all_by_job_id(job['id'])
+        self.assertEqual(len(meta_list), 2)
+
+    def test_metadata_get_all_by_job_id_no_meta(self):
+        job = db_api.job_create({})
+        meta_list = db_api.job_meta_get_all_by_job_id(job['id'])
+        self.assertEqual(len(meta_list), 0)
+
+    def test_metadata_get(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        meta = db_api.job_meta_get(job['id'], 'key1')
+        self.assertIsNotNone(meta['created_at'])
+        self.assertIsNotNone(meta['updated_at'])
+        self.assertIsNotNone(meta['id'])
+        self.assertEquals(meta['key'], fixture['key'])
+        self.assertEquals(meta['value'], fixture['value'])
+
+    def test_metadata_get_not_found(self):
+        job = db_api.job_create({})
+        self.assertRaises(exception.NotFound, db_api.job_meta_get,
+                          job['id'], 'key1')
+
+    def test_metadata_delete(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        db_api.job_meta_delete(job['id'], fixture['key'])
+        metadata = db_api.job_meta_get_all_by_job_id(job['id'])
+        self.assertEqual(0, len(metadata))
+        self.assertFalse(meta in metadata)
+
+    def test_metadata_delete_not_found(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.job_meta_create(job['id'], fixture)
+        db_api.job_meta_delete(job['id'], fixture['key'])
+        self.assertRaises(exception.NotFound, db_api.job_meta_get,
+                          job['id'], fixture['key'])
+
+    def test_metadata_update(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.job_meta_create(job['id'], fixture)
+        update_fixture = {'key': 'key1', 'value': 'value2'}
+        updated_meta = db_api.job_meta_update(job['id'],
+                                              fixture['key'],
+                                              update_fixture)
+        self.assertEquals(meta['key'], updated_meta['key'])
+        self.assertNotEquals(meta['value'], updated_meta['value'])
+
+    def test_metadata_update_job_not_found(self):
+        job_id = str(uuid.uuid4())
+        self.assertRaises(exception.NotFound, db_api.job_meta_update,
+                          job_id, 'key2', {})
+
+    def test_metadata_update_key_not_found(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.job_meta_create(job['id'], fixture)
+        self.assertRaises(exception.NotFound, db_api.job_meta_update,
+                          job['id'], 'key2', {})
+
+    def test_metadata_get_job_not_found(self):
+        job_id = str(uuid.uuid4())
+        self.assertRaises(exception.NotFound, db_api.job_meta_get,
+                          job_id, 'key')
+
+    def test_metadata_get_key_not_found(self):
+        job = db_api.job_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        db_api.job_meta_create(job['id'], fixture)
+        self.assertRaises(exception.NotFound, db_api.job_meta_get,
+                          job['id'], 'key2')

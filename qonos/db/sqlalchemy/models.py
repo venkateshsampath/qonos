@@ -134,6 +134,16 @@ class Job(BASE, ModelBase):
     retry_count = Column(Integer, nullable=False, default=0)
 
 
+class JobMetadata(BASE, ModelBase):
+    """Represents job metadata in the datastore"""
+    __tablename__ = 'job_metadata'
+    __table_args__ = (UniqueConstraint('job_id', 'key'), {})
+
+    job_id = Column(String(36), ForeignKey('jobs.id'), nullable=False)
+    key = Column(String(255), nullable=False)
+    value = Column(Text, nullable=False)
+
+
 class JobFault(BASE, ModelBase):
     """Represents a job fault in the datastore"""
     __tablename__ = 'job_faults'

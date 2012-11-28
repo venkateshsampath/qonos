@@ -10,6 +10,7 @@ DATA = {
     'schedules': {},
     'schedule_metadata': {},
     'jobs': {},
+    'job_metadata': {},
     'workers': {},
     'job_faults': {},
 }
@@ -216,3 +217,73 @@ def job_delete(job_id):
     if job_id not in DATA['jobs']:
         raise exception.NotFound()
     del DATA['jobs'][job_id]
+
+
+def job_meta_create(job_id, values):
+    global DATA
+    values['job_id'] = job_id
+    _check_job_exists(job_id)
+
+    if DATA['job_metadata'].get(job_id) is None:
+        DATA['job_metadata'][job_id] = {}
+
+    try:
+        _check_job_meta_exists(job_id, values['key'])
+    except exception.NotFound:
+        pass
+    else:
+        raise exception.Duplicate()
+
+    meta = {}
+    meta.update(values)
+    meta.update(_gen_base_attributes())
+    DATA['job_metadata'][job_id][values['key']] = meta
+    return meta.copy()
+
+
+def _check_job_exists(job_id):
+    if not job_id in DATA['jobs']:
+        msg = _('Job %s could not be found') % job_id
+        raise exception.NotFound(message=msg)
+
+
+def _check_job_meta_exists(job_id, key):
+
+    if (DATA['job_metadata'].get(job_id) is None or
+            DATA['job_metadata'][job_id].get(key) is None):
+        msg = _('Meta %s could not be found for Job %s ')
+        msg = msg % (key, job_id)
+        raise exception.NotFound(message=msg)
+
+
+def job_meta_get_all_by_job_id(job_id):
+    _check_job_exists(job_id)
+
+    if job_id not in DATA['job_metadata']:
+        DATA['job_metadata'][job_id] = {}
+
+    return DATA['job_metadata'][job_id].values()
+
+
+def job_meta_get(job_id, key):
+    _check_job_exists(job_id)
+    _check_job_meta_exists(job_id, key)
+    return DATA['job_metadata'][job_id][key]
+
+
+def job_meta_update(job_id, key, values):
+    global DATA
+    _check_job_meta_exists(job_id, key)
+
+    meta = DATA['job_metadata'][job_id][key]
+    meta.update(values)
+    meta['updated_at'] = timeutils.utcnow()
+    DATA['job_metadata'][job_id][key] = meta
+
+    return meta.copy()
+
+
+def job_meta_delete(job_id, key):
+    _check_job_meta_exists(job_id, key)
+
+    del DATA['job_metadata'][job_id][key]
