@@ -4,7 +4,8 @@ from random import randint
 
 from qonos.common import config
 import qonos.db
-from qonos.openstack.common import cfg, timeutils
+from qonos.openstack.common import cfg
+from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 from qonos.tests import utils as utils
 from qonos.qonosclient import client
@@ -21,9 +22,7 @@ class TestApi(utils.BaseTestCase):
 
     def setUp(self):
         super(TestApi, self).setUp()
-        CONF.db_api = 'qonos.db.simple.api'
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
-        CONF.db_api = 'qonos.db.sqlalchemy.api'
         self.port = randint(20000, 60000)
         self.service = wsgi.Service()
         self.service.start(config.load_paste_app('qonos-api'), self.port)
@@ -114,6 +113,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
+        self.assertEqual(updated_schedule['hour'], request['schedule']['hour'])
         self.assertNotEqual(updated_schedule['hour'], schedule['hour'])
 
         # delete schedule
