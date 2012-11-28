@@ -38,23 +38,50 @@ CONF.register_opts(db_opts)
 
 
 def force_dict(func):
-    """Ensure returned object is a dict or list of dicts."""
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        output = func(*args, **kwargs)
-        if isinstance(output, list):
-            to_return = []
-            for i in output:
-                to_add = dict(i)
-                if '_sa_instance_state' in to_add:
-                    del to_add['_sa_instance_state']
-                to_return.append(to_add)
+
+    def convert_list(a_list):
+        to_return = []
+        for object in a_list:
+            if isinstance(object, list):
+                to_return.append(convert_list(object))
+            else:
+                to_return.append(convert_object(object))
+        return to_return
+
+    def convert_object(object):
+        if (isinstance(object, models.ModelBase) or
+                isinstance(object, tuple)):
+            to_return = dict(object)
         else:
-            to_return = dict(output)
+            print object
+            raise ValueError
+
+        if 'parent' in to_return:
+            del to_return['parent']
 
         if '_sa_instance_state' in to_return:
             del to_return['_sa_instance_state']
+
+        for key in to_return:
+            if isinstance(to_return[key], list):
+                to_return[key] = convert_list(to_return[key])
+            elif isinstance(to_return[key], models.ModelBase):
+                to_return[key] = convert_object(to_return[key])
+
         return to_return
+
+    def convert_output(output):
+        if isinstance(output, list):
+            to_return = convert_list(output)
+        else:
+            to_return = convert_object(output)
+        return to_return
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        """Ensure returned object is a dict or list of dicts."""
+        output = func(*args, **kwargs)
+        return convert_output(output)
     return wrapped
 
 
@@ -204,7 +231,7 @@ def schedule_create(schedule_values):
 def schedule_get_all():
     session = get_session()
     query = session.query(models.Schedule)\
-                   .options(sa_orm.subqueryload('schedule_metadata'))
+                   .options(sa_orm.joinedload('schedule_metadata'))
 
     return query.all()
 
@@ -272,12 +299,12 @@ def schedule_meta_create(schedule_id, values):
     meta_ref.update(values)
     meta_ref.save(session=session)
 
-    return schedule_meta_get(schedule_id, values['key'])
+    return _schedule_meta_get(schedule_id, values['key'])
 
 
 @force_dict
 def schedule_meta_get_all(schedule_id):
-    schedule_get_by_id(schedule_id)
+    _schedule_get_by_id(schedule_id)
     session = get_session()
     query = session.query(models.ScheduleMetadata)\
                    .filter_by(schedule_id=schedule_id)
@@ -287,7 +314,7 @@ def schedule_meta_get_all(schedule_id):
 
 def _schedule_meta_get(schedule_id, key):
     try:
-        schedule_get_by_id(schedule_id)
+        _schedule_get_by_id(schedule_id)
     except exception.NotFound:
         msg = _('Schedule %s could not be found') % schedule_id
         raise exception.NotFound(message=msg)
@@ -310,7 +337,7 @@ def schedule_meta_get(schedule_id, key):
 
 @force_dict
 def schedule_meta_update(schedule_id, key, values):
-    schedule_get_by_id(schedule_id)
+    _schedule_get_by_id(schedule_id)
     session = get_session()
     meta_ref = _schedule_meta_get(schedule_id, key)
     meta_ref.update(values)
@@ -319,7 +346,7 @@ def schedule_meta_update(schedule_id, key, values):
 
 
 def schedule_meta_delete(schedule_id, key):
-    schedule_get_by_id(schedule_id)
+    _schedule_get_by_id(schedule_id)
     session = get_session()
     meta_ref = _schedule_meta_get(schedule_id, key)
     meta_ref.delete(session=session)
