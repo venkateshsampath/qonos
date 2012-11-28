@@ -309,6 +309,8 @@ class TestJobsDBApi(utils.BaseTestCase):
 
     def _create_jobs(self):
         fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID1,
             'worker_id': unit_utils.WORKER_UUID1,
             'status': 'queued',
@@ -316,6 +318,8 @@ class TestJobsDBApi(utils.BaseTestCase):
         }
         self.job_1 = self.db_api.job_create(fixture)
         fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'error',
@@ -325,6 +329,8 @@ class TestJobsDBApi(utils.BaseTestCase):
 
     def test_job_create(self):
         fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'queued',
@@ -349,6 +355,8 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(actual['worker_id'], expected['worker_id'])
         self.assertEqual(actual['status'], expected['status'])
         self.assertEqual(actual['retry_count'], expected['retry_count'])
+        self.assertEqual(actual['action'], expected['action'])
+        self.assertEqual(actual['tenant_id'], expected['tenant_id'])
 
     def test_job_get_by_id_not_found(self):
         self.assertRaises(exception.NotFound,
