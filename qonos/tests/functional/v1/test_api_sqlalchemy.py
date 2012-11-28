@@ -1,3 +1,5 @@
+import sys
+
 from qonos.openstack.common import cfg
 from qonos.tests import utils as utils
 from qonos.tests.functional.v1 import base
@@ -5,11 +7,13 @@ from qonos.tests.functional.v1 import base
 CONF = cfg.CONF
 
 
-class TestApi_Sqlalchemy_DB(base.TestApi):
+def setUpModule():
+    CONF.db_api = 'qonos.db.sqlalchemy.api'
 
-    def setUp(self):
-        CONF.db_api = 'qonos.db.sqlalchemy.api'
-        super(TestApi_Sqlalchemy_DB, self).setUp()
 
-    def tearDown(self):
-        super(TestApi_Sqlalchemy_DB, self).tearDown()
+def tearDownModule():
+    CONF.db_api = None
+
+
+module = sys.modules[__name__]
+utils.import_test_cases(module, base, suffix="_Sqlalchemy_DB")
