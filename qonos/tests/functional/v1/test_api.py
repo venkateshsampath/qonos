@@ -21,7 +21,9 @@ class TestApi(utils.BaseTestCase):
 
     def setUp(self):
         super(TestApi, self).setUp()
+        CONF.db_api = 'qonos.db.simple.api'
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
+        CONF.db_api = 'qonos.db.sqlalchemy.api'
         self.port = randint(20000, 60000)
         self.service = wsgi.Service()
         self.service.start(config.load_paste_app('qonos-api'), self.port)
@@ -80,24 +82,24 @@ class TestApi(utils.BaseTestCase):
             {
                 'tenant_id': TENANT1,
                 'action': 'snapshot',
-                'minute': '30',
-                'hour': '12'
+                'minute': 30,
+                'hour': 12,
             }
         }
         schedule = self.client.create_schedule(request)['schedule']
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant_id'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
-        self.assertEqual(schedule['minute'], '30')
-        self.assertEqual(schedule['hour'], '12')
+        self.assertEqual(schedule['minute'], 30)
+        self.assertEqual(schedule['hour'], 12)
 
         # get schedule
         schedule = self.client.get_schedule(schedule['id'])['schedule']
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant_id'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
-        self.assertEqual(schedule['minute'], '30')
-        self.assertEqual(schedule['hour'], '12')
+        self.assertEqual(schedule['minute'], 30)
+        self.assertEqual(schedule['hour'], 12)
 
         #list schedules
         schedules = self.client.list_schedules()['schedules']
@@ -105,17 +107,14 @@ class TestApi(utils.BaseTestCase):
         self.assertDictEqual(schedules[0], schedule)
 
         #update schedule
-        old_hour = schedule['hour']
-        schedule['hour'] = '14'
-        request = {'schedule': schedule}
+        request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
         updated_schedule = updated_schedule['schedule']
         self.assertEqual(updated_schedule['id'], schedule['id'])
         self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
-        self.assertNotEqual(updated_schedule['hour'], old_hour)
-        self.assertEqual(updated_schedule['hour'], schedule['hour'])
+        self.assertNotEqual(updated_schedule['hour'], schedule['hour'])
 
         # delete schedule
         self.client.delete_schedule(schedule['id'])
@@ -190,32 +189,36 @@ class TestApi(utils.BaseTestCase):
         # (setup) create worker
         worker = self.client.create_worker('hostname')['worker']
 
-        fixture = {
-            'schedule_id': schedule['id'],
-            'worker_id': worker['id'],
-            'status': 'error',
-            'retry_count': 0
+        # create job
+
+        request = {
+            'job':
+            {
+                'schedule_id': schedule['id'],
+            }
         }
 
-        # (setup) create job
-        db_job = db_api.job_create(fixture)
+        new_job = self.client.create_job(request)['job']
+        self.assertIsNotNone(new_job.get('id'))
+        self.assertEqual(new_job['schedule_id'], schedule['id'])
+        self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(new_job['action'], schedule['action'])
+        self.assertEqual(new_job['status'], 'queued')
 
         # list jobs
         jobs = self.client.list_jobs()['jobs']
         self.assertEqual(len(jobs), 1)
-        self.assertEqual(jobs[0]['id'], db_job['id'])
-        self.assertEqual(jobs[0]['schedule_id'], fixture['schedule_id'])
-        self.assertEqual(jobs[0]['worker_id'], fixture['worker_id'])
-        self.assertEqual(jobs[0]['status'], fixture['status'])
-        self.assertEqual(jobs[0]['retry_count'], fixture['retry_count'])
+        self.assertEqual(jobs[0]['id'], new_job['id'])
+        self.assertEqual(jobs[0]['schedule_id'], new_job['schedule_id'])
+        self.assertEqual(jobs[0]['status'], new_job['status'])
+        self.assertEqual(jobs[0]['retry_count'], new_job['retry_count'])
 
         # get job
-        job = self.client.get_job(db_job['id'])['job']
-        self.assertEqual(job['id'], db_job['id'])
-        self.assertEqual(job['schedule_id'], fixture['schedule_id'])
-        self.assertEqual(job['worker_id'], fixture['worker_id'])
-        self.assertEqual(job['status'], fixture['status'])
-        self.assertEqual(job['retry_count'], fixture['retry_count'])
+        job = self.client.get_job(new_job['id'])['job']
+        self.assertEqual(job['id'], new_job['id'])
+        self.assertEqual(job['schedule_id'], new_job['schedule_id'])
+        self.assertEqual(job['status'], new_job['status'])
+        self.assertEqual(job['retry_count'], new_job['retry_count'])
 
         # get heartbeat
         heartbeat = self.client.get_job_heartbeat(job['id'])['heartbeat']
@@ -231,12 +234,12 @@ class TestApi(utils.BaseTestCase):
 
         # get status
         status = self.client.get_job_status(job['id'])['status']
-        self.assertEqual(status, fixture['status'])
+        self.assertEqual(status, new_job['status'])
 
         # update status
         self.client.update_job_status(job['id'], 'done')
         status = self.client.get_job_status(job['id'])['status']
-        self.assertNotEqual(status, fixture['status'])
+        self.assertNotEqual(status, new_job['status'])
         self.assertEqual(status, 'done')
 
         # delete job

@@ -18,6 +18,28 @@ class JobsController(object):
         [utils.serialize_datetimes(job) for job in jobs]
         return {'jobs': jobs}
 
+    def create(self, request, body):
+        if (body is None or body.get('job') is None or
+                body['job'].get('schedule_id') is None):
+            raise webob.exc.HTTPBadRequest()
+        job = body['job']
+
+        try:
+            schedule = self.db_api.schedule_get_by_id(job['schedule_id'])
+        except exception.NotFound:
+            raise webob.exc.HTTPNotFound()
+
+        values = {}
+        values.update(job)
+        values['tenant_id'] = schedule['tenant_id']
+        values['action'] = schedule['action']
+        values['status'] = 'queued'
+
+        job = self.db_api.job_create(values)
+        utils.serialize_datetimes(job)
+
+        return {'job': job}
+
     def get(self, request, job_id):
         try:
             job = self.db_api.job_get_by_id(job_id)
@@ -54,6 +76,8 @@ class JobsController(object):
         except ValueError:
             msg = _('Must supply a timestamp in valid format.')
             raise webob.exc.HTTPBadRequest(explanation=msg)
+
+        updated_at = timeutils.normalize_time(updated_at)
 
         try:
             self.db_api.job_update(job_id, {'updated_at': updated_at})

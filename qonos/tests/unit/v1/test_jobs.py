@@ -26,17 +26,37 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def _create_jobs(self):
         fixture = {
-            'schedule_id': unit_utils.SCHEDULE_UUID1,
+            'tenant_id': unit_utils.TENANT1,
+            'action': 'snapshot',
+            'minute': '30',
+            'hour': '2',
+            'next_run': '2012-11-27T02:30:00Z'
+        }
+        self.schedule_1 = db_api.schedule_create(fixture)
+        fixture = {
+            'tenant_id': unit_utils.TENANT2,
+            'action': 'snapshot',
+            'minute': '30',
+            'hour': '2',
+            'next_run': '2012-11-27T02:30:00Z'
+        }
+        self.schedule_2 = db_api.schedule_create(fixture)
+        fixture = {
+            'schedule_id': self.schedule_1['id'],
+            'tenant_id': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
+            'action': 'snapshot',
             'status': 'queued',
             'retry_count': 0,
         }
         self.job_1 = db_api.job_create(fixture)
         fixture = {
-            'schedule_id': unit_utils.SCHEDULE_UUID2,
+            'schedule_id': self.schedule_2['id'],
+            'tenant_id': unit_utils.TENANT2,
             'worker_id': unit_utils.WORKER_UUID2,
+            'action': 'snapshot',
             'status': 'error',
-            'retry_count': 0,
+            'retry_count': 1,
         }
         self.job_2 = db_api.job_create(fixture)
 
@@ -48,11 +68,22 @@ class TestJobsApi(test_utils.BaseTestCase):
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_1[k], self.job_2[k]]))
 
+    def test_create(self):
+        request = unit_test_utils.get_fake_request(method='POST')
+        fixture = {'job': {'schedule_id': self.schedule_1['id']}}
+        job = self.controller.create(request, fixture).get('job')
+        self.assertIsNotNone(job)
+        self.assertIsNotNone(job.get('id'))
+        self.assertEqual(job['schedule_id'], self.schedule_1['id'])
+        self.assertEqual(job['tenant_id'], self.schedule_1['tenant_id'])
+        self.assertEqual(job['action'], self.schedule_1['action'])
+        self.assertEqual(job['status'], 'queued')
+
     def test_get(self):
         request = unit_test_utils.get_fake_request(method='GET')
         job = self.controller.get(request, self.job_1['id']).get('job')
         self.assertEqual(job['status'], 'queued')
-        self.assertEqual(job['schedule_id'], unit_utils.SCHEDULE_UUID1)
+        self.assertEqual(job['schedule_id'], self.schedule_1['id'])
         self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
         self.assertEqual(job['retry_count'], 0)
         self.assertNotEqual(job['updated_at'], None)
@@ -92,7 +123,8 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_test_utils.get_fake_request(method='PUT')
         body = {'heartbeat': '2012-11-16T18:41:43Z'}
         self.controller.update_heartbeat(request, self.job_1['id'], body)
-        expected = timeutils.parse_isotime(body['heartbeat'])
+        expected = timeutils.normalize_time(
+            timeutils.parse_isotime(body['heartbeat']))
         actual = db_api.job_get_by_id(self.job_1['id'])['updated_at']
         self.assertEqual(actual, expected)
 

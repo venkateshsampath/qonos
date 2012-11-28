@@ -361,6 +361,8 @@ class TestJobsDBApi(utils.BaseTestCase):
 
     def _create_jobs(self):
         fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID1,
             'worker_id': unit_utils.WORKER_UUID1,
             'status': 'queued',
@@ -368,6 +370,8 @@ class TestJobsDBApi(utils.BaseTestCase):
         }
         self.job_1 = self.db_api.job_create(fixture)
         fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'error',
@@ -377,10 +381,11 @@ class TestJobsDBApi(utils.BaseTestCase):
 
     def test_job_create(self):
         fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'queued',
-            'retry_count': 0,
         }
         job = self.db_api.job_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
@@ -389,7 +394,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], fixture['worker_id'])
         self.assertEqual(job['status'], fixture['status'])
-        self.assertEqual(job['retry_count'], fixture['retry_count'])
+        self.assertEqual(job['retry_count'], 0)
 
     def test_job_get_all(self):
         workers = self.db_api.job_get_all()
@@ -402,6 +407,8 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(actual['worker_id'], expected['worker_id'])
         self.assertEqual(actual['status'], expected['status'])
         self.assertEqual(actual['retry_count'], expected['retry_count'])
+        self.assertEqual(actual['action'], expected['action'])
+        self.assertEqual(actual['tenant_id'], expected['tenant_id'])
 
     def test_job_get_by_id_not_found(self):
         self.assertRaises(exception.NotFound,
