@@ -92,7 +92,8 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_test_utils.get_fake_request(method='PUT')
         body = {'heartbeat': '2012-11-16T18:41:43Z'}
         self.controller.update_heartbeat(request, self.job_1['id'], body)
-        expected = timeutils.parse_isotime(body['heartbeat'])
+        expected = timeutils.normalize_time(
+            timeutils.parse_isotime(body['heartbeat']))
         actual = db_api.job_get_by_id(self.job_1['id'])['updated_at']
         self.assertEqual(actual, expected)
 

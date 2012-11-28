@@ -61,9 +61,9 @@ class SchedulesController(object):
         try:
             values = {}
             values['next_run'] = self._schedule_to_next_run(body['schedule'])
-            body['schedule'].update(values)
+            values.update(body['schedule'])
             schedule = self.db_api.schedule_update(schedule_id,
-                                                   body['schedule'])
+                                                   values)
             utils.serialize_datetimes(schedule)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
