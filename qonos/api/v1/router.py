@@ -71,6 +71,11 @@ class API(wsgi.Router):
                        action='list',
                        conditions=dict(method=['GET']))
 
+        mapper.connect('/jobs',
+                       controller=jobs_resource,
+                       action='create',
+                       conditions=dict(method=['POST']))
+
         mapper.connect('/jobs/{job_id}',
                        controller=jobs_resource,
                        action='get',
