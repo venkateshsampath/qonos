@@ -54,8 +54,7 @@ def force_dict(func):
                 isinstance(object, tuple)):
             to_return = dict(object)
         else:
-            print object
-            raise ValueError
+            raise ValueError()
 
         if 'parent' in to_return:
             del to_return['parent']
@@ -231,7 +230,7 @@ def schedule_create(schedule_values):
 def schedule_get_all():
     session = get_session()
     query = session.query(models.Schedule)\
-                   .options(sa_orm.joinedload('schedule_metadata'))
+                   .options(sa_orm.subqueryload('schedule_metadata'))
 
     return query.all()
 
