@@ -77,6 +77,8 @@ class JobsController(object):
             msg = _('Must supply a timestamp in valid format.')
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
+        updated_at = timeutils.normalize_time(updated_at)
+
         try:
             self.db_api.job_update(job_id, {'updated_at': updated_at})
         except exception.NotFound:

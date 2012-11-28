@@ -23,6 +23,7 @@ class TestApi(utils.BaseTestCase):
         super(TestApi, self).setUp()
         CONF.db_api = 'qonos.db.simple.api'
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
+        CONF.db_api = 'qonos.db.sqlalchemy.api'
         self.port = randint(20000, 60000)
         self.service = wsgi.Service()
         self.service.start(config.load_paste_app('qonos-api'), self.port)
@@ -81,24 +82,24 @@ class TestApi(utils.BaseTestCase):
             {
                 'tenant_id': TENANT1,
                 'action': 'snapshot',
-                'minute': '30',
-                'hour': '12'
+                'minute': 30,
+                'hour': 12,
             }
         }
         schedule = self.client.create_schedule(request)['schedule']
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant_id'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
-        self.assertEqual(schedule['minute'], '30')
-        self.assertEqual(schedule['hour'], '12')
+        self.assertEqual(schedule['minute'], 30)
+        self.assertEqual(schedule['hour'], 12)
 
         # get schedule
         schedule = self.client.get_schedule(schedule['id'])['schedule']
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant_id'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
-        self.assertEqual(schedule['minute'], '30')
-        self.assertEqual(schedule['hour'], '12')
+        self.assertEqual(schedule['minute'], 30)
+        self.assertEqual(schedule['hour'], 12)
 
         #list schedules
         schedules = self.client.list_schedules()['schedules']
@@ -106,17 +107,14 @@ class TestApi(utils.BaseTestCase):
         self.assertDictEqual(schedules[0], schedule)
 
         #update schedule
-        old_hour = schedule['hour']
-        schedule['hour'] = '14'
-        request = {'schedule': schedule}
+        request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
         updated_schedule = updated_schedule['schedule']
         self.assertEqual(updated_schedule['id'], schedule['id'])
         self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
-        self.assertNotEqual(updated_schedule['hour'], old_hour)
-        self.assertEqual(updated_schedule['hour'], schedule['hour'])
+        self.assertNotEqual(updated_schedule['hour'], schedule['hour'])
 
         # delete schedule
         self.client.delete_schedule(schedule['id'])

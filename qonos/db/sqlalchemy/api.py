@@ -45,7 +45,10 @@ def force_dict(func):
         if isinstance(output, list):
             to_return = []
             for i in output:
-                to_return.append(dict(i))
+                to_add = dict(i)
+                if '_sa_instance_state' in to_add:
+                    del to_add['_sa_instance_state']
+                to_return.append(to_add)
         else:
             to_return = dict(output)
 

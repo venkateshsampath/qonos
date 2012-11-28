@@ -30,11 +30,10 @@ class TestSqlalchemySpecificApi(utils.BaseTestCase):
     def test_force_dict_list(self):
         @db_api.force_dict
         def return_object():
-            return [(('foo', 'bar'),), (('1', '2'),)]
+            return [(('foo', 'bar'),), (('_sa_instance_state', 'blah'),)]
 
         value = return_object()
         self.assertFalse(isinstance(value, dict))
         self.assertTrue(isinstance(value[0], dict))
         self.assertEqual(value[0].get('foo'), 'bar')
-        self.assertTrue(isinstance(value[1], dict))
-        self.assertEqual(value[1].get('1'), '2')
+        self.assertFalse('_sa_instance_state' in value[1])
