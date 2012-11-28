@@ -62,7 +62,11 @@ def schedule_update(schedule_id, values):
         raise exception.NotFound()
     schedule = DATA['schedules'][schedule_id]
     schedule.update(values)
-    schedule['updated_at'] = timeutils.utcnow()
+    # Only updating metadata isn't changing the schedule parent
+    # this mimics what happens with sqlalchemy
+    if not ('schedule_metadata' in values
+            and len(values) == 1):
+        schedule['updated_at'] = timeutils.utcnow()
     DATA['schedules'][schedule_id] = schedule
     return schedule
 
