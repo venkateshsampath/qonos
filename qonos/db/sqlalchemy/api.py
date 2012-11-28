@@ -38,6 +38,7 @@ CONF.register_opts(db_opts)
 
 
 def force_dict(func):
+    """Ensure returned object is a dict or list of dicts."""
 
     def convert_list(a_list):
         to_return = []
@@ -79,7 +80,6 @@ def force_dict(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        """Ensure returned object is a dict or list of dicts."""
         output = func(*args, **kwargs)
         return convert_output(output)
     return wrapped
