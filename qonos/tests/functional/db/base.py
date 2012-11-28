@@ -70,6 +70,12 @@ class TestSchedulesDBApi(utils.BaseTestCase):
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
+            'schedule_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
         }
         expected = self.db_api.schedule_create(fixture)
         actual = self.db_api.schedule_get_by_id(expected['id'])
@@ -77,6 +83,12 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertEqual(actual['action'], fixture['action'])
         self.assertEqual(actual['minute'], fixture['minute'])
         self.assertEqual(actual['hour'], fixture['hour'])
+        metadata = actual['schedule_metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['schedule_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['schedule_metadata'][0]['value'])
         self.assertNotEqual(actual['created_at'], None)
         self.assertNotEqual(actual['updated_at'], None)
 
@@ -125,6 +137,46 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                          schedule['created_at'])
         self.assertNotEqual(updated_schedule['updated_at'],
                             schedule['updated_at'])
+
+    def test_schedule_update_metadata(self):
+        fixture = {
+            'id': str(uuid.uuid4()),
+            'tenant_id': str(uuid.uuid4()),
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': 2,
+        }
+        schedule = self.db_api.schedule_create(fixture)
+        fixture = {
+            'schedule_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
+        }
+
+        timeutils.set_time_override()
+        timeutils.advance_time_seconds(2)
+        updated_schedule = self.db_api.schedule_update(schedule['id'], fixture)
+        timeutils.clear_time_override()
+
+        self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
+        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['action'], schedule['action'])
+        self.assertEqual(updated_schedule['minute'], schedule['minute'])
+        self.assertEqual(updated_schedule['hour'], schedule['hour'])
+        metadata = updated_schedule['schedule_metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['schedule_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['schedule_metadata'][0]['value'])
+        self.assertEqual(updated_schedule['created_at'],
+                         schedule['created_at'])
+        # updated child metadata collection doesn't update the parent schedule
+        self.assertEqual(updated_schedule['updated_at'],
+                         schedule['updated_at'])
 
     def test_schedule_delete(self):
         schedules = self.db_api.schedule_get_all()

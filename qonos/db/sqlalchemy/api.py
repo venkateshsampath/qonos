@@ -178,9 +178,19 @@ def wrap_db_error(f):
 
 
 @force_dict
-def schedule_create(values):
+def schedule_create(schedule_values):
+    # make a copy so we can remove 'schedule_metadata'
+    # without affecting the caller
+    values = schedule_values.copy()
+    metadata = None
     session = get_session()
     schedule_ref = models.Schedule()
+
+    if 'schedule_metadata' in values:
+        metadata = values['schedule_metadata']
+        _set_schedule_metadata(schedule_ref, metadata)
+        del values['schedule_metadata']
+
     schedule_ref.update(values)
     schedule_ref.save(session=session)
 
@@ -190,7 +200,8 @@ def schedule_create(values):
 @force_dict
 def schedule_get_all():
     session = get_session()
-    query = session.query(models.Schedule)
+    query = session.query(models.Schedule)\
+                   .options(sa_orm.subqueryload('schedule_metadata'))
 
     return query.all()
 
@@ -199,6 +210,7 @@ def _schedule_get_by_id(schedule_id):
     session = get_session()
     try:
         schedule = session.query(models.Schedule)\
+                          .options(sa_orm.subqueryload('schedule_metadata'))\
                           .filter_by(id=schedule_id)\
                           .one()
     except sa_orm.exc.NoResultFound:
@@ -213,9 +225,21 @@ def schedule_get_by_id(schedule_id):
 
 
 @force_dict
-def schedule_update(schedule_id, values):
+def schedule_update(schedule_id, schedule_values):
+    # make a copy so we can remove 'schedule_metadata'
+    # without affecting the caller
+    values = schedule_values.copy()
     session = get_session()
     schedule_ref = _schedule_get_by_id(schedule_id)
+
+    if 'schedule_metadata' in values:
+        for metadata_ref in schedule_ref.schedule_metadata:
+            schedule_ref.schedule_metadata.remove(metadata_ref)
+
+        metadata = values['schedule_metadata']
+        _set_schedule_metadata(schedule_ref, metadata)
+        del values['schedule_metadata']
+
     schedule_ref.update(values)
     schedule_ref.save(session=session)
     return schedule_ref
@@ -226,6 +250,12 @@ def schedule_delete(schedule_id):
     schedule_ref = _schedule_get_by_id(schedule_id)
     schedule_ref.delete(session=session)
 
+
+def _set_schedule_metadata(schedule_ref, metadata):
+    for metadatum in metadata:
+        metadata_ref = models.ScheduleMetadata()
+        metadata_ref.update(metadatum)
+        schedule_ref.schedule_metadata.append(metadata_ref)
 
 #################### Schedule Metadata methods
 

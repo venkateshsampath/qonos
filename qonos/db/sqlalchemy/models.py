@@ -51,7 +51,7 @@ class ModelBase(object):
         session.flush()
 
     def delete(self, session=None):
-        """Save this object"""
+        """Delete this object"""
         session = session or qonos.db.sqlalchemy.api.get_session()
         session.delete(self)
         session.flush()
@@ -111,6 +111,8 @@ class ScheduleMetadata(BASE, ModelBase):
                          ForeignKey('schedules.id'), nullable=False)
     key = Column(String(255), nullable=False)
     value = Column(Text, nullable=False)
+    parent = relationship(Schedule, backref=backref("schedule_metadata",
+                                                    cascade="all,delete"))
 
 
 class Worker(BASE, ModelBase):
