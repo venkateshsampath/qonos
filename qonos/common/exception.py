@@ -17,3 +17,7 @@ class QonosException(Exception):
 
 class NotFound(QonosException):
     message = _('An object with the specified identifier could not be found.')
+
+
+class Duplicate(QonosException):
+    message = _('An object with the specified identifier already exists.')

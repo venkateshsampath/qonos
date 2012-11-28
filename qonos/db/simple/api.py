@@ -223,6 +223,13 @@ def job_meta_create(job_id, values):
     if DATA['job_metadata'].get(job_id) is None:
         DATA['job_metadata'][job_id] = {}
 
+    try:
+        _check_job_meta_exists(job_id, values['key'])
+    except exception.NotFound:
+        pass
+    else:
+        raise exception.Duplicate()
+
     meta = {}
     meta.update(values)
     meta.update(_gen_base_attributes())

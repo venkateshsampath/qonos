@@ -135,6 +135,7 @@ class Job(BASE, ModelBase):
 class JobMetadata(BASE, ModelBase):
     """Represents job metadata in the datastore"""
     __tablename__ = 'job_metadata'
+    __table_args__ = (UniqueConstraint('job_id', 'key'), {})
 
     job_id = Column(String(36), ForeignKey('jobs.id'), nullable=False)
     key = Column(String(255), nullable=False)

@@ -404,12 +404,15 @@ def job_delete(job_id):
 
 @force_dict
 def job_meta_create(job_id, values):
-    # if it doesn't exist already
     values['job_id'] = job_id
     session = get_session()
     meta_ref = models.JobMetadata()
     meta_ref.update(values)
-    meta_ref.save(session=session)
+
+    try:
+        meta_ref.save(session=session)
+    except sqlalchemy.exc.IntegrityError:
+        raise exception.Duplicate()
 
     return _job_meta_get_by_id(meta_ref['id'])
 
