@@ -172,8 +172,6 @@ class TestApi(utils.BaseTestCase):
 
     def test_job_workflow(self):
 
-        db_api = qonos.db.get_api()
-
         # (setup) create schedule
         request = {
             'schedule':
@@ -185,9 +183,6 @@ class TestApi(utils.BaseTestCase):
             }
         }
         schedule = self.client.create_schedule(request)['schedule']
-
-        # (setup) create worker
-        worker = self.client.create_worker('hostname')['worker']
 
         # create job
 
