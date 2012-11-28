@@ -91,6 +91,9 @@ class Client(object):
     def list_jobs(self):
         return self._do_request('GET', '/v1/jobs')
 
+    def create_job(self, job):
+        return self._do_request('POST', 'v1/jobs', job)
+
     def get_job(self, job_id):
         path = '/v1/jobs/%s' % job_id
         return self._do_request('GET', path)

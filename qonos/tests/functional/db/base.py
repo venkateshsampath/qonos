@@ -328,7 +328,6 @@ class TestJobsDBApi(utils.BaseTestCase):
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'queued',
-            'retry_count': 0,
         }
         job = self.db_api.job_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
@@ -337,7 +336,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], fixture['worker_id'])
         self.assertEqual(job['status'], fixture['status'])
-        self.assertEqual(job['retry_count'], fixture['retry_count'])
+        self.assertEqual(job['retry_count'], 0)
 
     def test_job_get_all(self):
         workers = self.db_api.job_get_all()
