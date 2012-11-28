@@ -400,3 +400,79 @@ def job_delete(job_id):
     session = get_session()
     job_ref = _job_get_by_id(job_id)
     job_ref.delete(session=session)
+
+
+@force_dict
+def job_meta_create(job_id, values):
+    # if it doesn't exist already
+    values['job_id'] = job_id
+    session = get_session()
+    meta_ref = models.JobMetadata()
+    meta_ref.update(values)
+    meta_ref.save(session=session)
+
+    return _job_meta_get_by_id(meta_ref['id'])
+
+
+def _job_meta_get_by_id(meta_id):
+    session = get_session()
+    try:
+        meta = session.query(models.JobMetadata)\
+                      .filter_by(id=meta_id)\
+                      .one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return meta
+
+
+def _job_meta_get_all_by_job_id(job_id):
+    session = get_session()
+    try:
+        meta = session.query(models.JobMetadata)\
+                      .filter_by(job_id=job_id)\
+                      .all()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return meta
+
+
+def _job_meta_get(job_id, key):
+    session = get_session()
+    try:
+        meta = session.query(models.JobMetadata)\
+                      .filter_by(job_id=job_id)\
+                      .filter_by(key=key)\
+                      .one()
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return meta
+
+
+@force_dict
+def job_meta_get_all_by_job_id(job_id):
+    return _job_meta_get_all_by_job_id(job_id)
+
+
+@force_dict
+def job_meta_get(job_id, key):
+    return _job_meta_get(job_id, key)
+
+
+@force_dict
+def job_meta_update(job_id, key, values):
+    _job_get_by_id(job_id)
+    session = get_session()
+    meta_ref = _job_meta_get(job_id, key)
+    meta_ref.update(values)
+    meta_ref.save(session=session)
+    return meta_ref
+
+
+def job_meta_delete(job_id, key):
+    job_get_by_id(job_id)
+    session = get_session()
+    meta_ref = _job_meta_get(job_id, key)
+    meta_ref.delete(session=session)
