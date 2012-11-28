@@ -165,6 +165,7 @@ def worker_delete(worker_id):
 def job_create(values):
     global DATA
     job = {}
+    job['retry_count'] = 0
     job.update(values)
     job.update(_gen_base_attributes())
     DATA['jobs'][job['id']] = job
