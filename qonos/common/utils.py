@@ -10,6 +10,11 @@ def serialize_datetimes(data):
     for (k, v) in data.iteritems():
         if isinstance(v, datetime.datetime):
             data[k] = timeutils.isotime(v)
+        elif isinstance(v, list):
+            for item in v:
+                serialize_datetimes(item)
+        elif isinstance(v, dict):
+            serialize_datetimes(v)
 
 
 def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
