@@ -11,6 +11,9 @@ class Scheduler(object):
     def run(self):
         LOG.debug(_('Starting qonos scheduler service'))
 
+        while True:
+            pass
+
     def get_schedules(self):
         pass
 
