@@ -296,7 +296,11 @@ def schedule_meta_create(schedule_id, values):
     meta_ref = models.ScheduleMetadata()
     values['schedule_id'] = schedule_id
     meta_ref.update(values)
-    meta_ref.save(session=session)
+
+    try:
+        meta_ref.save(session=session)
+    except sqlalchemy.exc.IntegrityError:
+        raise exception.Duplicate()
 
     return _schedule_meta_get(schedule_id, values['key'])
 

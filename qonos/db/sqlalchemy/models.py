@@ -106,6 +106,7 @@ class Schedule(BASE, ModelBase):
 class ScheduleMetadata(BASE, ModelBase):
     """Represents metadata of a schedule in the datastore"""
     __tablename__ = 'schedule_metadata'
+    __table_args__ = (UniqueConstraint('schedule_id', 'key'), {})
 
     schedule_id = Column(String(36),
                          ForeignKey('schedules.id'), nullable=False)

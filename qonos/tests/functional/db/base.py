@@ -201,6 +201,15 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertIsNotNone(meta['updated_at'])
         self.assertIsNotNone(meta['id'])
 
+    def test_metadata_create_duplicate(self):
+        schedule = db_api.schedule_create({})
+        fixture = {'key': 'key1', 'value': 'value1'}
+        meta = db_api.schedule_meta_create(schedule['id'], fixture)
+        fixture = {'key': 'key1', 'value': 'value1'}
+
+        self.assertRaises(exception.Duplicate, db_api.schedule_meta_create,
+                          schedule['id'], fixture)
+
     def test_metadata_get(self):
         schedule = db_api.schedule_create({})
         fixture = {'key': 'key1', 'value': 'value1'}
@@ -470,7 +479,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertIsNotNone(meta['updated_at'])
         self.assertIsNotNone(meta['id'])
 
-    def test_metadata_create(self):
+    def test_metadata_create_duplicate(self):
         job = db_api.job_create({})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
