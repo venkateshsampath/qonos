@@ -1,7 +1,12 @@
 import inspect
+import stubout
 import unittest
 
 from qonos.common import config
+from qonos.openstack.common import cfg
+
+
+CONF = cfg.CONF
 
 
 class BaseTestCase(unittest.TestCase):
@@ -10,9 +15,29 @@ class BaseTestCase(unittest.TestCase):
         super(BaseTestCase, self).setUp()
         #NOTE(ameade): we need config options to be registered
         config.parse_args(args=[])
+        self.stubs = stubout.StubOutForTesting()
 
     def tearDown(self):
         super(BaseTestCase, self).tearDown()
+        CONF.reset()
+        self.stubs.UnsetAll()
+
+    def config(self, **kw):
+        """
+        Override some configuration values.
+
+        The keyword arguments are the names of configuration options to
+        override and their values.
+
+        If a group argument is supplied, the overrides are applied to
+        the specified configuration option group.
+
+        All overrides are automatically cleared at the end of the current
+        test by the tearDown() method.
+        """
+        group = kw.pop('group', None)
+        for k, v in kw.iteritems():
+            CONF.set_override(k, v, group)
 
     def assertMetadataInList(self, metadata, meta):
         found = False

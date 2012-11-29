@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+import os
+import sys
+
+"""
+QonoS Scheduler
+"""
+
+#TODO(ameade): find better way to add to sys.path
+# If ../qonos/__init__.py exists, add ../../ to Python search path, so that
+# it will override what happens to be installed in /usr/(local/)lib/python...
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+                                   os.pardir,
+                                   os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'qonos', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from qonos.common import config
+from qonos.scheduler import scheduler
+
+def fail(returncode, e):
+    sys.stderr.write("ERROR: %s\n" % e)
+    sys.exit(returncode)
+
+if __name__ == '__main__':
+    try:
+        config.parse_args()
+        config.setup_logging()
+        app = scheduler.Scheduler()
+        app.run()
+    except RuntimeError, e:
+        fail(1, e)
