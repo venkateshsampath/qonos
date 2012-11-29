@@ -21,7 +21,7 @@ class Scheduler(object):
     def __init__(self):
         pass
 
-    def run(self):
+    def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
         next_run = None
 
@@ -38,6 +38,9 @@ class Scheduler(object):
             else:
                 LOG.warn(_('Scheduling of jobs took longer than expected.'))
 
+            if run_once:
+                break
+
     # TODO
     def enqueue_jobs(self):
         LOG.debug(_('Creating new jobs'))
@@ -46,4 +49,3 @@ class Scheduler(object):
     # TODO
     def get_schedules(self):
         pass
-
