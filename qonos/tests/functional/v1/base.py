@@ -158,6 +158,13 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(meta['key'], 'key1')
         self.assertEqual(meta['value'], 'value1')
 
+        # make sure duplicate metadata can't be created
+        self.assertRaises(client_exc.Duplicate,
+                          self.client.create_schedule_meta,
+                          schedule['id'],
+                          'key1',
+                          'value1')
+
         # list meta
         metadata = self.client.list_schedule_meta(schedule['id'])['metadata']
         self.assertEqual(len(metadata), 1)
