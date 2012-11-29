@@ -88,6 +88,13 @@ def schedule_meta_create(schedule_id, values):
     if DATA['schedule_metadata'].get(schedule_id) is None:
         DATA['schedule_metadata'][schedule_id] = {}
 
+    try:
+        _check_meta_exists(schedule_id, values['key'])
+    except exception.NotFound:
+        pass
+    else:
+        raise exception.Duplicate()
+
     meta = {}
     values['schedule_id'] = schedule_id
     meta.update(values)
