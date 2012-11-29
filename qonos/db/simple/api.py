@@ -32,14 +32,14 @@ def _gen_base_attributes():
     values['id'] = str(uuid.uuid4())
     values['created_at'] = timeutils.utcnow()
     values['updated_at'] = timeutils.utcnow()
-    return values.copy()
+    return copy.deepcopy(values)
 
 
 def _schedule_create(values):
     global DATA
     DATA['schedules'][values['id']] = values
     _schedule_meta_init(values['id'])
-    return values.copy()
+    return copy.deepcopy(values)
 
 
 def schedule_get_all():
@@ -53,14 +53,14 @@ def schedule_get_all():
 def schedule_get_by_id(schedule_id):
     if schedule_id not in DATA['schedules']:
         raise exception.NotFound()
-    schedule = DATA['schedules'][schedule_id].copy()
+    schedule = copy.deepcopy(DATA['schedules'][schedule_id])
     schedule['schedule_metadata'] = \
         copy.deepcopy(schedule_meta_get_all(schedule_id))
     return schedule
 
 
 def schedule_create(schedule_values):
-    values = schedule_values.copy()
+    values = copy.deepcopy(schedule_values)
     schedule = {}
 
     metadata = []
@@ -118,7 +118,7 @@ def schedule_meta_create(schedule_id, values):
     meta.update(values)
     meta.update(_gen_base_attributes())
     DATA['schedule_metadata'][schedule_id][values['key']] = meta
-    return meta.copy()
+    return copy.deepcopy(meta)
 
 
 def _check_schedule_exists(schedule_id):
@@ -160,7 +160,7 @@ def schedule_meta_update(schedule_id, key, values):
     meta['updated_at'] = timeutils.utcnow()
     DATA['schedule_metadata'][schedule_id][key] = meta
 
-    return meta.copy()
+    return copy.deepcopy(meta)
 
 
 def schedule_meta_delete(schedule_id, key):
@@ -176,7 +176,7 @@ def worker_get_all():
 def worker_get_by_id(worker_id):
     if worker_id not in DATA['workers']:
         raise exception.NotFound()
-    return DATA['workers'][worker_id].copy()
+    return copy.deepcopy(DATA['workers'][worker_id])
 
 
 def worker_create(values):
@@ -185,7 +185,7 @@ def worker_create(values):
     worker.update(values)
     worker.update(_gen_base_attributes())
     DATA['workers'][worker['id']] = worker
-    return worker.copy()
+    return copy.deepcopy(worker)
 
 
 def worker_delete(worker_id):
@@ -202,7 +202,7 @@ def job_create(values):
     job.update(values)
     job.update(_gen_base_attributes())
     DATA['jobs'][job['id']] = job
-    return job.copy()
+    return copy.deepcopy(job)
 
 
 def job_get_all():
@@ -212,7 +212,7 @@ def job_get_all():
 def job_get_by_id(job_id):
     if job_id not in DATA['jobs']:
         raise exception.NotFound()
-    return DATA['jobs'][job_id].copy()
+    return copy.deepcopy(DATA['jobs'][job_id])
 
 
 def job_updated_at_get_by_id(job_id):
@@ -266,7 +266,7 @@ def job_meta_create(job_id, values):
     meta.update(values)
     meta.update(_gen_base_attributes())
     DATA['job_metadata'][job_id][values['key']] = meta
-    return meta.copy()
+    return copy.deepcopy(meta)
 
 
 def _check_job_exists(job_id):
@@ -308,7 +308,7 @@ def job_meta_update(job_id, key, values):
     meta['updated_at'] = timeutils.utcnow()
     DATA['job_metadata'][job_id][key] = meta
 
-    return meta.copy()
+    return copy.deepcopy(meta)
 
 
 def job_meta_delete(job_id, key):
