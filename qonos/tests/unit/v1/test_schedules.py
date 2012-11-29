@@ -4,6 +4,7 @@ import webob.exc
 from qonos.api.v1 import schedules
 from qonos.db.simple import api as db_api
 from qonos.common import exception
+from qonos.common import utils as qonos_utils
 from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
 
@@ -29,15 +30,15 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': '2012-11-27T02:30:00Z'
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 2)
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
             'tenant_id': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
-            'hour': '2',
-            'next_run': '2012-11-27T02:30:00Z'
+            'hour': '3',
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 3)
         }
         self.schedule_2 = db_api.schedule_create(fixture)
 
@@ -48,6 +49,14 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         for k in SCHEDULE_ATTRS:
             self.assertEqual(set([s[k] for s in schedules]),
                              set([self.schedule_1[k], self.schedule_2[k]]))
+
+    def test_list_next_run_filtered(self):
+        next_run = self.schedule_1['next_run']
+        path = '?next_run_after=%s&next_run_before=%s'
+        path = path % (next_run, next_run)
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 1)
 
     def test_get(self):
         request = unit_utils.get_fake_request(method='GET')
