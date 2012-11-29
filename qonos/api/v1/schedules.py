@@ -13,7 +13,7 @@ class SchedulesController(object):
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
 
-    def list(self, request):
+    def _get_list_filter_args(self, request):
         filter_args = {}
         if request.params.get('next_run_after') is not None:
             next_run_after = request.params['next_run_after']
@@ -25,7 +25,10 @@ class SchedulesController(object):
             next_run_before = timeutils.parse_isotime(next_run_before)
             next_run_before = timeutils.normalize_time(next_run_before)
             filter_args['next_run_before'] = next_run_before
+        return filter_args
 
+    def list(self, request):
+        filter_args = self._get_list_filter_args(request)
         schedules = self.db_api.schedule_get_all(filter_args=filter_args)
         [utils.serialize_datetimes(sched) for sched in schedules]
         return {'schedules': schedules}
