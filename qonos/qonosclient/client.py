@@ -25,6 +25,9 @@ class Client(object):
         if response.status == 404:
             raise exception.NotFound('Resource Not Found')
 
+        if response.status == 409:
+            raise exception.Duplicate('Resource Exists')
+
         if method != 'DELETE':
             body = response.read()
             if body != '':

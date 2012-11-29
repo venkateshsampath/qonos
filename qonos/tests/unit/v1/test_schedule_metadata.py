@@ -43,6 +43,15 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
         self.assertEqual(meta['meta']['key'], fixture['meta']['key'])
         self.assertEqual(meta['meta']['value'], fixture['meta']['value'])
 
+    def test_create_meta_duplicate(self):
+        request = unit_utils.get_fake_request(method='POST')
+        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        meta = self.controller.create(request, self.schedule_1['id'], fixture)
+        # Same schedule ID and key conflict
+        fixture = {'meta': {'key': 'key1', 'value': 'value2'}}
+        self.assertRaises(webob.exc.HTTPConflict, self.controller.create,
+                          request, self.schedule_1['id'], fixture)
+
     def test_list_meta(self):
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
@@ -85,13 +94,13 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
                           request, self.schedule_1['id'], 'key1')
 
-    def test_get_meta_schedule_not_found(self):
+    def test_delete_meta_schedule_not_found(self):
         request = unit_utils.get_fake_request(method='DELETE')
         schedule_id = uuid.uuid4()
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.delete,
                           request, schedule_id, 'key1')
 
-    def test_get_meta_key_not_found(self):
+    def test_delete_meta_key_not_found(self):
         request = unit_utils.get_fake_request(method='DELETE')
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.delete,
                           request, self.schedule_1['id'], 'key1')
