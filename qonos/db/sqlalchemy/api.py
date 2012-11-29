@@ -277,7 +277,7 @@ def schedule_update(schedule_id, schedule_values):
 
     schedule_ref.update(values)
     schedule_ref.save(session=session)
-    return schedule_ref
+    return _schedule_get_by_id(schedule_id)
 
 
 def schedule_delete(schedule_id):
@@ -411,9 +411,16 @@ def worker_delete(worker_id):
 
 
 @force_dict
-def job_create(values):
+def job_create(job_values):
+    values = job_values.copy()
     session = get_session()
     job_ref = models.Job()
+
+    if 'job_metadata' in values:
+        metadata = values['job_metadata']
+        _set_job_metadata(job_ref, metadata)
+        del values['job_metadata']
+
     job_ref.update(values)
     job_ref.save(session=session)
 
@@ -423,7 +430,8 @@ def job_create(values):
 @force_dict
 def job_get_all():
     session = get_session()
-    query = session.query(models.Job)
+    query = session.query(models.Job)\
+                   .options(sa_orm.subqueryload('job_metadata'))
 
     return query.all()
 
@@ -432,6 +440,7 @@ def _job_get_by_id(job_id):
     session = get_session()
     try:
         job = session.query(models.Job)\
+                     .options(sa_orm.subqueryload('job_metadata'))\
                      .filter_by(id=job_id)\
                      .one()
     except sa_orm.exc.NoResultFound:
@@ -454,18 +463,37 @@ def job_status_get_by_id(job_id):
 
 
 @force_dict
-def job_update(job_id, values):
+def job_update(job_id, job_values):
+    # make a copy so we can remove 'job_metadata'
+    # without affecting the caller
+    values = job_values.copy()
     session = get_session()
     job_ref = _job_get_by_id(job_id)
+
+    if 'job_metadata' in values:
+        for metadata_ref in job_ref.job_metadata:
+            job_ref.job_metadata.remove(metadata_ref)
+
+        metadata = values['job_metadata']
+        _set_job_metadata(job_ref, metadata)
+        del values['job_metadata']
+
     job_ref.update(values)
     job_ref.save(session=session)
-    return job_ref
+    return _job_get_by_id(job_id)
 
 
 def job_delete(job_id):
     session = get_session()
     job_ref = _job_get_by_id(job_id)
     job_ref.delete(session=session)
+
+
+def _set_job_metadata(job_ref, metadata):
+    for metadatum in metadata:
+        metadata_ref = models.JobMetadata()
+        metadata_ref.update(metadatum)
+        job_ref.job_metadata.append(metadata_ref)
 
 
 @force_dict

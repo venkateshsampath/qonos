@@ -92,19 +92,29 @@ def schedule_create(schedule_values):
     return schedule_get_by_id(schedule['id'])
 
 
-def schedule_update(schedule_id, values):
+def schedule_update(schedule_id, schedule_values):
     global DATA
+    values = schedule_values.copy()
+
     if schedule_id not in DATA['schedules']:
         raise exception.NotFound()
-    schedule = DATA['schedules'][schedule_id]
-    schedule.update(values)
-    # Only updating metadata isn't changing the schedule parent
-    # this mimics what happens with sqlalchemy
-    if not ('schedule_metadata' in values
-            and len(values) == 1):
+
+    metadata = []
+    if 'schedule_metadata' in values:
+        metadata = values['schedule_metadata']
+        del values['schedule_metadata']
+
+    if len(values) > 0:
+        schedule = DATA['schedules'][schedule_id]
         schedule['updated_at'] = timeutils.utcnow()
-    DATA['schedules'][schedule_id] = schedule
-    return schedule
+        schedule.update(values)
+
+    if len(metadata) > 0:
+        DATA['schedule_metadata'][schedule_id] = {}
+        for metadatum in metadata:
+            schedule_meta_create(schedule_id, metadatum)
+
+    return schedule_get_by_id(schedule_id)
 
 
 def schedule_delete(schedule_id):
@@ -226,38 +236,61 @@ def job_create(values):
 
 
 def job_get_all():
-    return DATA['jobs'].values()
+    jobs = copy.deepcopy(DATA['jobs'].values())
+
+    for job in jobs:
+        job['job_metadata'] =\
+            job_meta_get_all_by_job_id(job['id'])
+
+    return jobs
 
 
 def job_get_by_id(job_id):
     if job_id not in DATA['jobs']:
         raise exception.NotFound()
-    return copy.deepcopy(DATA['jobs'][job_id])
+
+    job = copy.deepcopy(DATA['jobs'][job_id])
+
+    job['job_metadata'] = \
+        job_meta_get_all_by_job_id(job_id)
+
+    return job
 
 
 def job_updated_at_get_by_id(job_id):
-    if job_id not in DATA['jobs']:
-        raise exception.NotFound()
-    return DATA['jobs'][job_id]['updated_at']
+    job = job_get_by_id(job_id)
+    return job['updated_at']
 
 
 def job_status_get_by_id(job_id):
-    if job_id not in DATA['jobs']:
-        raise exception.NotFound()
-    return DATA['jobs'][job_id]['status']
+    job = job_get_by_id(job_id)
+    return job['status']
 
 
-def job_update(job_id, values):
+def job_update(job_id, job_values):
     global DATA
+    values = job_values.copy()
     if job_id not in DATA['jobs']:
         raise exception.NotFound()
 
-    job = DATA['jobs'][job_id]
-    #NOTE(ameade): This must come before update specified values since
-    # we may be trying to manually set updated_at
-    job['updated_at'] = timeutils.utcnow()
-    job.update(values)
-    return job
+    metadata = []
+    if 'job_metadata' in values:
+        metadata = values['job_metadata']
+        del values['job_metadata']
+
+    if len(values) > 0:
+        job = DATA['jobs'][job_id]
+        #NOTE(ameade): This must come before update specified values since
+        # we may be trying to manually set updated_at
+        job['updated_at'] = timeutils.utcnow()
+        job.update(values)
+
+    if len(metadata) > 0:
+        DATA['job_metadata'][job_id] = {}
+        for metadatum in metadata:
+            job_meta_create(job_id, metadatum)
+
+    return job_get_by_id(job_id)
 
 
 def job_delete(job_id):
@@ -310,7 +343,7 @@ def job_meta_get_all_by_job_id(job_id):
     if job_id not in DATA['job_metadata']:
         DATA['job_metadata'][job_id] = {}
 
-    return DATA['job_metadata'][job_id].values()
+    return copy.deepcopy(DATA['job_metadata'][job_id].values())
 
 
 def job_meta_get(job_id, key):

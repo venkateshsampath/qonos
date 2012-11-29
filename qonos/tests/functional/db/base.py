@@ -436,6 +436,12 @@ class TestJobsDBApi(utils.BaseTestCase):
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'queued',
+            'job_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
         }
         job = self.db_api.job_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
@@ -445,6 +451,12 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(job['worker_id'], fixture['worker_id'])
         self.assertEqual(job['status'], fixture['status'])
         self.assertEqual(job['retry_count'], 0)
+        metadata = job['job_metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['job_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['job_metadata'][0]['value'])
 
     def test_job_get_all(self):
         workers = self.db_api.job_get_all()
@@ -499,6 +511,32 @@ class TestJobsDBApi(utils.BaseTestCase):
 
         self.assertEqual(updated['status'], 'error')
         self.assertEqual(updated['retry_count'], 2)
+
+    def test_job_update_metadata(self):
+        fixture = {
+            'job_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
+        }
+        old = self.db_api.job_get_by_id(self.job_1['id'])
+        self.db_api.job_update(self.job_1['id'], fixture)
+        updated = self.db_api.job_get_by_id(self.job_1['id'])
+
+        self.assertEqual(old['schedule_id'], updated['schedule_id'])
+        self.assertEqual(old['worker_id'], updated['worker_id'])
+        self.assertEqual(old['status'], updated['status'])
+        self.assertEqual(old['retry_count'], updated['retry_count'])
+
+        metadata = updated['job_metadata']
+        self.assertEqual(len(old['job_metadata']), 0)
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['job_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['job_metadata'][0]['value'])
 
     def test_job_delete(self):
         self.assertEqual(len(self.db_api.job_get_all()), 2)

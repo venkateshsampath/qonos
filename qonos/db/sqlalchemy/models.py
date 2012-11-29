@@ -112,8 +112,8 @@ class ScheduleMetadata(BASE, ModelBase):
                          ForeignKey('schedules.id'), nullable=False)
     key = Column(String(255), nullable=False)
     value = Column(Text, nullable=False)
-    parent = relationship(Schedule, backref=backref("schedule_metadata",
-                                                    cascade="all,delete"))
+    parent = relationship(Schedule, backref=backref('schedule_metadata',
+                                                    cascade='all,delete'))
 
 
 class Worker(BASE, ModelBase):
@@ -143,6 +143,8 @@ class JobMetadata(BASE, ModelBase):
     job_id = Column(String(36), ForeignKey('jobs.id'), nullable=False)
     key = Column(String(255), nullable=False)
     value = Column(Text, nullable=False)
+    parent = relationship(Job, backref=backref('job_metadata',
+                                               cascade='all,delete'))
 
 
 class JobFault(BASE, ModelBase):
