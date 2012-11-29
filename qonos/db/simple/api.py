@@ -139,8 +139,7 @@ def _check_meta_exists(schedule_id, key):
 
 def schedule_meta_get_all(schedule_id):
     _check_schedule_exists(schedule_id)
-    if not schedule_id in DATA['schedule_metadata']:
-        DATA['schedule_metadata'][schedule_id] = {}
+    _schedule_meta_init(schedule_id)
 
     return DATA['schedule_metadata'][schedule_id].values()
 
