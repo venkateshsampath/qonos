@@ -1,8 +1,9 @@
 import routes
 
+from qonos.api.v1 import job_metadata
 from qonos.api.v1 import jobs
-from qonos.api.v1 import schedules
 from qonos.api.v1 import schedule_metadata
+from qonos.api.v1 import schedules
 from qonos.api.v1 import workers
 from qonos.openstack.common import wsgi
 
@@ -105,6 +106,18 @@ class API(wsgi.Router):
                        controller=jobs_resource,
                        action='update_status',
                        conditions=dict(method=['PUT']))
+
+        job_meta_resource = job_metadata.create_resource()
+
+        mapper.connect('/jobs/{job_id}/meta',
+                       controller=job_meta_resource,
+                       action='list',
+                       conditions=dict(method=['GET']))
+
+        mapper.connect('/jobs/{job_id}/meta/{key}',
+                       controller=job_meta_resource,
+                       action='get',
+                       conditions=dict(method=['GET']))
 
         workers_resource = workers.create_resource()
 
