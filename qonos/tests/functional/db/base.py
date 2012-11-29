@@ -212,14 +212,6 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertEquals(meta['key'], fixture['key'])
         self.assertEquals(meta['value'], fixture['value'])
 
-    def assertMetadataInList(self, metadata, meta):
-        found = False
-        for element in metadata:
-            if element['key'] == meta['key']:
-                found = True
-                self.assertEqual(element['value'], meta['value'])
-        self.assertTrue(found)
-
     def test_metadata_get_all(self):
         schedule = db_api.schedule_create({})
         fixture1 = {'key': 'key1', 'value': 'value1'}

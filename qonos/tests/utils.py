@@ -14,6 +14,14 @@ class BaseTestCase(unittest.TestCase):
     def tearDown(self):
         super(BaseTestCase, self).tearDown()
 
+    def assertMetadataInList(self, metadata, meta):
+        found = False
+        for element in metadata:
+            if element['key'] == meta['key']:
+                found = True
+                self.assertEqual(element['value'], meta['value'])
+        self.assertTrue(found)
+
 
 def import_test_cases(target_module, test_module, suffix=""):
     """Adds test cases to target module.
