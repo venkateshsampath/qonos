@@ -141,12 +141,14 @@ class TestApi(utils.BaseTestCase):
         meta = self.client.create_schedule_meta(schedule['id'], 'key1',
                                                 'value1')
         meta = meta['meta']
-        self.assertEqual(meta['key1'], 'value1')
+        self.assertEqual(meta['key'], 'key1')
+        self.assertEqual(meta['value'], 'value1')
 
         # list meta
         metadata = self.client.list_schedule_meta(schedule['id'])['metadata']
         self.assertEqual(len(metadata), 1)
-        self.assertEqual(metadata[0]['key1'], 'value1')
+        self.assertEqual(metadata[0]['key'], 'key1')
+        self.assertEqual(metadata[0]['value'], 'value1')
 
         # get meta
         value = self.client.get_schedule_meta(schedule['id'], 'key1')

@@ -69,18 +69,18 @@ class Client(object):
         return self._do_request('GET', '/v1/schedules/%s/meta' % schedule_id)
 
     def create_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {key: value}}
+        meta = {'meta': {'key': key, 'value': value}}
         path = '/v1/schedules/%s/meta' % schedule_id
         return self._do_request('POST', path, meta)
 
     def get_schedule_meta(self, schedule_id, key):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('GET', path)['meta'][key]
+        return self._do_request('GET', path)['meta']['value']
 
     def update_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {key: value}}
+        meta = {'meta': {'key': key, 'value': value}}
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('PUT', path, meta)['meta'][key]
+        return self._do_request('PUT', path, meta)['meta']['value']
 
     def delete_schedule_meta(self, schedule_id, key):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
