@@ -3,6 +3,7 @@ import webob.exc
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
+from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 from qonos.openstack.common.gettextutils import _
 

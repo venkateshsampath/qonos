@@ -40,8 +40,20 @@ def _schedule_create(values):
     return values.copy()
 
 
-def schedule_get_all():
-    return DATA['schedules'].values()
+def schedule_get_all(filter_args={}):
+    to_return = []
+    schedules = DATA['schedules'].values()
+
+    if not filter_args:
+        to_return = schedules
+
+    if (filter_args.get('next_run_after') is not None and
+            filter_args.get('next_run_before') is not None):
+        for schedule in schedules:
+            if (schedule['next_run'] <= filter_args['next_run_before'] and
+                    schedule['next_run'] >= filter_args['next_run_after']):
+                to_return.append(schedule)
+    return to_return
 
 
 def schedule_get_by_id(schedule_id):

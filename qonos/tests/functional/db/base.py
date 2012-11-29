@@ -1,6 +1,7 @@
 import uuid
 
 from qonos.common import exception
+from qonos.common import utils as qonos_utils
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import uuidutils
 from qonos.tests import utils as utils
@@ -48,21 +49,30 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         fixture = {
             'tenant_id': str(uuid.uuid4()),
             'action': 'snapshot',
-            'minute': '30',
-            'hour': '2',
+            'minute': 30,
+            'hour': 2,
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 2)
         }
         self.schedule_1 = self.db_api.schedule_create(fixture)
         fixture = {
             'tenant_id': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
-            'hour': 2,
+            'hour': 3,
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 3)
         }
         self.schedule_2 = self.db_api.schedule_create(fixture)
 
     def test_schedule_get_all(self):
         schedules = self.db_api.schedule_get_all()
         self.assertEqual(len(schedules), 2)
+
+    def test_schedule_get_all_filter(self):
+        filters = {}
+        filters['next_run_after'] = self.schedule_1['next_run']
+        filters['next_run_before'] = self.schedule_1['next_run']
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
 
     def test_schedule_get_by_id(self):
         fixture = {

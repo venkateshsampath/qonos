@@ -227,10 +227,16 @@ def schedule_create(schedule_values):
 
 
 @force_dict
-def schedule_get_all():
+def schedule_get_all(filter_args={}):
     session = get_session()
     query = session.query(models.Schedule)\
                    .options(sa_orm.subqueryload('schedule_metadata'))
+
+    if (filter_args.get('next_run_after') is not None and
+            filter_args.get('next_run_before') is not None):
+        query = query.filter(
+            models.Schedule.next_run.between(filter_args['next_run_after'],
+                                             filter_args['next_run_before']))
 
     return query.all()
 
