@@ -18,7 +18,10 @@ class ScheduleMetadataController(object):
 
     def create(self, request, schedule_id, body):
         meta = body['meta']
-        meta = self.db_api.schedule_meta_create(schedule_id, meta)
+        try:
+            meta = self.db_api.schedule_meta_create(schedule_id, meta)
+        except exception.Duplicate, e:
+            raise webob.exc.HTTPConflict(explanation=e)
         return {'meta': meta}
 
     def get(self, request, schedule_id, key):
