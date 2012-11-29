@@ -14,7 +14,19 @@ class SchedulesController(object):
         self.db_api = db_api or qonos.db.get_api()
 
     def list(self, request):
-        schedules = self.db_api.schedule_get_all()
+        filter_args = {}
+        if request.params.get('next_run_after') is not None:
+            next_run_after = request.params['next_run_after']
+            next_run_after = timeutils.parse_isotime(next_run_after)
+            next_run_after = timeutils.normalize_time(next_run_after)
+            filter_args['next_run_after'] = next_run_after
+        if request.params.get('next_run_before') is not None:
+            next_run_before = request.params['next_run_before']
+            next_run_before = timeutils.parse_isotime(next_run_before)
+            next_run_before = timeutils.normalize_time(next_run_before)
+            filter_args['next_run_before'] = next_run_before
+
+        schedules = self.db_api.schedule_get_all(filter_args=filter_args)
         [utils.serialize_datetimes(sched) for sched in schedules]
         return {'schedules': schedules}
 
@@ -32,9 +44,9 @@ class SchedulesController(object):
             raise webob.exc.HTTPBadRequest()
 
         values = {}
+        values.update(body['schedule'])
         values['next_run'] = self._schedule_to_next_run(body['schedule'])
-        body['schedule'].update(values)
-        schedule = self.db_api.schedule_create(body['schedule'])
+        schedule = self.db_api.schedule_create(values)
 
         utils.serialize_datetimes(schedule)
         return {'schedule': schedule}
@@ -61,8 +73,8 @@ class SchedulesController(object):
 
         try:
             values = {}
-            values['next_run'] = self._schedule_to_next_run(body['schedule'])
             values.update(body['schedule'])
+            values['next_run'] = self._schedule_to_next_run(body['schedule'])
             schedule = self.db_api.schedule_update(schedule_id,
                                                    values)
             utils.serialize_datetimes(schedule)

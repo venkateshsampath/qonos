@@ -45,14 +45,16 @@ def schedule_get_all(filter_args={}):
     schedules = DATA['schedules'].values()
 
     if not filter_args:
-        to_return = schedules
+        for sched in schedules:
+            to_return.append(sched.copy())
 
     if (filter_args.get('next_run_after') is not None and
             filter_args.get('next_run_before') is not None):
         for schedule in schedules:
-            if (schedule['next_run'] <= filter_args['next_run_before'] and
-                    schedule['next_run'] >= filter_args['next_run_after']):
-                to_return.append(schedule)
+            if ((schedule['next_run'] > filter_args['next_run_after'] and
+                    schedule['next_run'] < filter_args['next_run_before']) or
+                    schedule['next_run'] == filter_args['next_run_after']):
+                to_return.append(schedule.copy())
     return to_return
 
 

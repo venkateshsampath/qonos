@@ -47,8 +47,13 @@ class Client(object):
 
     ######## schedules
 
-    def list_schedules(self):
-        return self._do_request('GET', '/v1/schedules')
+    def list_schedules(self, filter_args={}):
+        path = '/v1/schedules%s'
+        query = '?'
+        for key in filter_args:
+            query += ('%s=%s&' % (key, filter_args[key]))
+        print path % query
+        return self._do_request('GET', path % query)
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)

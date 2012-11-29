@@ -105,6 +105,18 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
 
+        #list schedules, next_run filter
+        filter = {}
+        filter['next_run_after'] = schedule['next_run']
+        filter['next_run_before'] = schedule['next_run']
+        schedules = self.client.list_schedules(filter_args=filter)['schedules']
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+        filter['next_run_after'] = '2010-11-30T15:23:00Z'
+        filter['next_run_before'] = '2011-11-30T15:23:00Z'
+        schedules = self.client.list_schedules(filter_args=filter)['schedules']
+        self.assertEqual(len(schedules), 0)
+
         #update schedule
         request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
