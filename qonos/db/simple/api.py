@@ -1,5 +1,6 @@
 import functools
 import uuid
+import copy
 
 from qonos.common import exception
 from qonos.openstack.common import timeutils
@@ -37,24 +38,44 @@ def _gen_base_attributes():
 def _schedule_create(values):
     global DATA
     DATA['schedules'][values['id']] = values
+    _schedule_meta_init(values['id'])
     return values.copy()
 
 
 def schedule_get_all():
-    return DATA['schedules'].values()
+    schedules = copy.deepcopy(DATA['schedules'].values())
+    for schedule in schedules:
+        schedule['schedule_metadata'] = \
+            copy.deepcopy(schedule_meta_get_all(schedule['id']))
+    return schedules
 
 
 def schedule_get_by_id(schedule_id):
     if schedule_id not in DATA['schedules']:
         raise exception.NotFound()
-    return DATA['schedules'][schedule_id].copy()
+    schedule = DATA['schedules'][schedule_id].copy()
+    schedule['schedule_metadata'] = \
+        copy.deepcopy(schedule_meta_get_all(schedule_id))
+    return schedule
 
 
-def schedule_create(values):
+def schedule_create(schedule_values):
+    values = schedule_values.copy()
     schedule = {}
+
+    metadata = []
+    if 'schedule_metadata' in values:
+        metadata = values['schedule_metadata']
+        del values['schedule_metadata']
+
     schedule.update(values)
     schedule.update(_gen_base_attributes())
-    return _schedule_create(schedule)
+    schedule = _schedule_create(schedule)
+
+    for metadatum in metadata:
+        schedule_meta_create(schedule['id'], metadatum)
+
+    return schedule_get_by_id(schedule['id'])
 
 
 def schedule_update(schedule_id, values):
@@ -79,14 +100,18 @@ def schedule_delete(schedule_id):
     del DATA['schedules'][schedule_id]
 
 
+def _schedule_meta_init(schedule_id):
+    if DATA['schedule_metadata'].get(schedule_id) is None:
+        DATA['schedule_metadata'][schedule_id] = {}
+
+
 def schedule_meta_create(schedule_id, values):
     global DATA
     if DATA['schedules'].get(schedule_id) is None:
         msg = _('Schedule %s could not be found') % schedule_id
         raise exception.NotFound(message=msg)
 
-    if DATA['schedule_metadata'].get(schedule_id) is None:
-        DATA['schedule_metadata'][schedule_id] = {}
+    _schedule_meta_init(schedule_id)
 
     meta = {}
     values['schedule_id'] = schedule_id
@@ -114,6 +139,9 @@ def _check_meta_exists(schedule_id, key):
 
 def schedule_meta_get_all(schedule_id):
     _check_schedule_exists(schedule_id)
+    if not schedule_id in DATA['schedule_metadata']:
+        DATA['schedule_metadata'][schedule_id] = {}
+
     return DATA['schedule_metadata'][schedule_id].values()
 
 
