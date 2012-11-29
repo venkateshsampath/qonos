@@ -34,6 +34,7 @@ class JobsController(object):
         values['tenant_id'] = schedule['tenant_id']
         values['action'] = schedule['action']
         values['status'] = 'queued'
+        values['job_metadata'] = schedule['schedule_metadata']
 
         job = self.db_api.job_create(values)
         utils.serialize_datetimes(job)

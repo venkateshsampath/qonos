@@ -225,14 +225,26 @@ def worker_delete(worker_id):
     del DATA['workers'][worker_id]
 
 
-def job_create(values):
+def job_create(job_values):
     global DATA
+    values = job_values.copy()
     job = {}
+
+    metadata = []
+    if 'job_metadata' in values:
+        metadata = values['job_metadata']
+        del values['job_metadata']
+
     job['retry_count'] = 0
     job.update(values)
     job.update(_gen_base_attributes())
+
     DATA['jobs'][job['id']] = job
-    return copy.deepcopy(job)
+
+    for metadatum in metadata:
+        job_meta_create(job['id'], metadatum)
+
+    return job_get_by_id(job['id'])
 
 
 def job_get_all():
