@@ -103,6 +103,12 @@ class TestSchedulesDBApi(utils.BaseTestCase):
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
+            'schedule_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
         }
         schedule = self.db_api.schedule_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
@@ -110,6 +116,12 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertEqual(schedule['action'], fixture['action'])
         self.assertEqual(schedule['minute'], fixture['minute'])
         self.assertEqual(schedule['hour'], fixture['hour'])
+        metadata = schedule['schedule_metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['schedule_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['schedule_metadata'][0]['value'])
         self.assertNotEqual(schedule['created_at'], None)
         self.assertNotEqual(schedule['updated_at'], None)
 
@@ -190,6 +202,27 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertRaises(exception.NotFound, self.db_api.schedule_delete,
                           schedule_id)
 
+    def test_medadata_created_with_schedule(self):
+        fixture = {
+            'tenant_id': str(uuid.uuid4()),
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': 2,
+            'schedule_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
+        }
+        schedule = self.db_api.schedule_create(fixture)
+        metadata = self.db_api.schedule_meta_get_all(schedule['id'])
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['schedule_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['schedule_metadata'][0]['value'])
+
     def test_metadata_create(self):
         schedule = db_api.schedule_create({})
         fixture = {'key': 'key1', 'value': 'value1'}
@@ -237,6 +270,11 @@ class TestSchedulesDBApi(utils.BaseTestCase):
             self.assertEqual(element['schedule_id'], schedule['id'])
         self.assertMetadataInList(metadata, fixture1)
         self.assertMetadataInList(metadata, fixture2)
+
+    def test_metadata_get_all_no_meta_create(self):
+        schedule = db_api.schedule_create({})
+        metadata = db_api.schedule_meta_get_all(schedule['id'])
+        self.assertEqual(len(metadata), 0)
 
     def test_metadata_delete(self):
         schedule = db_api.schedule_create({})
