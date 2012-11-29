@@ -52,7 +52,6 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        print path % query
         return self._do_request('GET', path % query)
 
     def create_schedule(self, schedule):

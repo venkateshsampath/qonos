@@ -103,6 +103,8 @@ class TestApi(utils.BaseTestCase):
         #list schedules
         schedules = self.client.list_schedules()['schedules']
         self.assertEqual(len(schedules), 1)
+        print schedules[0]
+        print schedule
         self.assertDictEqual(schedules[0], schedule)
 
         #list schedules, next_run filter
