@@ -126,3 +126,11 @@ class Client(object):
     def delete_job(self, job_id):
         path = '/v1/jobs/%s' % job_id
         return self._do_request('DELETE', path)
+
+    def list_job_metadata(self, job_id):
+        path = '/v1/jobs/%s/meta' % job_id
+        return self._do_request('GET', path)
+
+    def get_job_metadata(self, job_id, key):
+        path = '/v1/jobs/%s/meta/%s' % (job_id, key)
+        return self._do_request('GET', path)['meta']['value']
