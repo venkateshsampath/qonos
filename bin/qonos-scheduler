@@ -27,7 +27,7 @@ if __name__ == '__main__':
     try:
         config.parse_args()
         config.setup_logging()
-        app = scheduler.Scheduler(client.Client('localhost', 8080))
+        app = scheduler.Scheduler(client.create_client)
         app.run()
     except RuntimeError, e:
         fail(1, e)

@@ -14,7 +14,11 @@ class TestScheduler(test_utils.BaseTestCase):
         super(TestScheduler, self).setUp()
         self.mox = mox.Mox()
         self.client = self.mox.CreateMockAnything()
-        self.scheduler = scheduler.Scheduler(self.client)
+
+        def client_factory(*args, **kwargs):
+            return self.client
+
+        self.scheduler = scheduler.Scheduler(client_factory)
 
     def tearDown(self):
         super(TestScheduler, self).tearDown()

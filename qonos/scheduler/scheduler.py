@@ -11,6 +11,8 @@ LOG = logging.getLogger(__name__)
 scheduler_opts = [
     cfg.IntOpt('job_schedule_interval', default=5,
                help=_('Interval to poll api for ready jobs in seconds')),
+    cfg.StrOpt('api_endpoint', default='localhost'),
+    cfg.IntOpt('api_port', default=8080),
 ]
 
 CONF = cfg.CONF
@@ -18,8 +20,8 @@ CONF.register_opts(scheduler_opts)
 
 
 class Scheduler(object):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, client_factory):
+        self.client = client_factory(CONF.api_endpoint, CONF.api_port)
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))

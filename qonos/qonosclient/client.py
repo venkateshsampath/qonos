@@ -135,3 +135,7 @@ class Client(object):
     def get_job_metadata(self, job_id, key):
         path = '/v1/jobs/%s/meta/%s' % (job_id, key)
         return self._do_request('GET', path)['meta']['value']
+
+
+def create_client(endpoint, port):
+    return Client(endpoint, port)
