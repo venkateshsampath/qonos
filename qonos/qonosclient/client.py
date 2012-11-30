@@ -55,7 +55,7 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        return self._do_request('GET', path % query)
+        return self._do_request('GET', path % query)['schedules']
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)
@@ -98,7 +98,8 @@ class Client(object):
     def list_jobs(self):
         return self._do_request('GET', '/v1/jobs')
 
-    def create_job(self, job):
+    def create_job(self, schedule_id):
+        job = {'job': {'schedule_id': schedule_id}}
         return self._do_request('POST', 'v1/jobs', job)
 
     def get_job(self, job_id):
@@ -134,3 +135,7 @@ class Client(object):
     def get_job_metadata(self, job_id, key):
         path = '/v1/jobs/%s/meta/%s' % (job_id, key)
         return self._do_request('GET', path)['meta']['value']
+
+
+def create_client(endpoint, port):
+    return Client(endpoint, port)

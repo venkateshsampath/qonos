@@ -35,7 +35,7 @@ class TestApi(utils.BaseTestCase):
         for job in jobs:
             self.client.delete_job(job['id'])
 
-        schedules = self.client.list_schedules()['schedules']
+        schedules = self.client.list_schedules()
         for schedule in schedules:
             self.client.delete_schedule(schedule['id'])
 
@@ -72,7 +72,7 @@ class TestApi(utils.BaseTestCase):
                           worker['id'])
 
     def test_schedule_workflow(self):
-        schedules = self.client.list_schedules()['schedules']
+        schedules = self.client.list_schedules()
         self.assertEqual(len(schedules), 0)
 
         # create schedule
@@ -101,7 +101,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(schedule['hour'], 12)
 
         #list schedules
-        schedules = self.client.list_schedules()['schedules']
+        schedules = self.client.list_schedules()
         self.assertEqual(len(schedules), 1)
         print schedules[0]
         print schedule
@@ -111,12 +111,12 @@ class TestApi(utils.BaseTestCase):
         filter = {}
         filter['next_run_after'] = schedule['next_run']
         filter['next_run_before'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)['schedules']
+        schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
         filter['next_run_after'] = '2010-11-30T15:23:00Z'
         filter['next_run_before'] = '2011-11-30T15:23:00Z'
-        schedules = self.client.list_schedules(filter_args=filter)['schedules']
+        schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 0)
 
         #update schedule
@@ -215,14 +215,7 @@ class TestApi(utils.BaseTestCase):
 
         # create job
 
-        request = {
-            'job':
-            {
-                'schedule_id': schedule['id'],
-            }
-        }
-
-        new_job = self.client.create_job(request)['job']
+        new_job = self.client.create_job(schedule['id'])['job']
         self.assertIsNotNone(new_job.get('id'))
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
