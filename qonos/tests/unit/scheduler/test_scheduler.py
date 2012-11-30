@@ -24,7 +24,7 @@ class TestScheduler(test_utils.BaseTestCase):
         super(TestScheduler, self).tearDown()
 
     def test_run_loop(self):
-        self.config(job_schedule_interval=5)
+        self.config(job_schedule_interval=5, group='scheduler')
         called = {'enqueue_jobs': False}
 
         def fake(*args, **kwargs):
@@ -38,7 +38,7 @@ class TestScheduler(test_utils.BaseTestCase):
         self.assertTrue(called['enqueue_jobs'])
 
     def test_run_loop_take_too_long(self):
-        self.config(job_schedule_interval=-1)
+        self.config(job_schedule_interval=-1, group='scheduler')
         called = {'enqueue_jobs': False,
                   'log_warn': False}
 
