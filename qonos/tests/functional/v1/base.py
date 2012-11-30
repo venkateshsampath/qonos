@@ -196,13 +196,19 @@ class TestApi(utils.BaseTestCase):
     def test_job_workflow(self):
 
         # (setup) create schedule
+        meta1 = {'key': 'key1', 'value': 'value1'}
+        meta2 = {'key': 'key2', 'value': 'value2'}
         request = {
             'schedule':
             {
                 'tenant_id': TENANT1,
                 'action': 'snapshot',
                 'minute': '30',
-                'hour': '12'
+                'hour': '12',
+                'schedule_metadata': [
+                    meta1,
+                    meta2,
+                ]
             }
         }
         schedule = self.client.create_schedule(request)['schedule']
@@ -222,6 +228,8 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(new_job['action'], schedule['action'])
         self.assertEqual(new_job['status'], 'queued')
+        self.assertMetadataInList(new_job['job_metadata'], meta1)
+        self.assertMetadataInList(new_job['job_metadata'], meta2)
 
         # list jobs
         jobs = self.client.list_jobs()['jobs']
@@ -237,6 +245,15 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(job['schedule_id'], new_job['schedule_id'])
         self.assertEqual(job['status'], new_job['status'])
         self.assertEqual(job['retry_count'], new_job['retry_count'])
+
+        # list job metadata
+        metadata = self.client.list_job_metadata(new_job['id'])['metadata']
+        self.assertMetadataInList(metadata, meta1)
+        self.assertMetadataInList(metadata, meta2)
+
+        # get job metadata
+        meta_value = self.client.get_job_metadata(new_job['id'], meta1['key'])
+        self.assertEqual(meta_value, meta1['value'])
 
         # get heartbeat
         heartbeat = self.client.get_job_heartbeat(job['id'])['heartbeat']
