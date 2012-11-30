@@ -215,14 +215,7 @@ class TestApi(utils.BaseTestCase):
 
         # create job
 
-        request = {
-            'job':
-            {
-                'schedule_id': schedule['id'],
-            }
-        }
-
-        new_job = self.client.create_job(request)['job']
+        new_job = self.client.create_job(schedule['id'])['job']
         self.assertIsNotNone(new_job.get('id'))
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])

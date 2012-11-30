@@ -98,7 +98,8 @@ class Client(object):
     def list_jobs(self):
         return self._do_request('GET', '/v1/jobs')
 
-    def create_job(self, job):
+    def create_job(self, schedule_id):
+        job = {'job': {'schedule_id': schedule_id}}
         return self._do_request('POST', 'v1/jobs', job)
 
     def get_job(self, job_id):
