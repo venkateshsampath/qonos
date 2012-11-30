@@ -55,7 +55,7 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        return self._do_request('GET', path % query)
+        return self._do_request('GET', path % query)['schedules']
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)
