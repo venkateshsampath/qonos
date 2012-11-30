@@ -31,7 +31,7 @@ class TestApi(utils.BaseTestCase):
     def tearDown(self):
         super(TestApi, self).tearDown()
 
-        jobs = self.client.list_jobs()['jobs']
+        jobs = self.client.list_jobs()
         for job in jobs:
             self.client.delete_job(job['id'])
 
@@ -39,28 +39,28 @@ class TestApi(utils.BaseTestCase):
         for schedule in schedules:
             self.client.delete_schedule(schedule['id'])
 
-        workers = self.client.list_workers()['workers']
+        workers = self.client.list_workers()
         for worker in workers:
             self.client.delete_worker(worker['id'])
 
         self.service.stop()
 
     def test_workers_workflow(self):
-        workers = self.client.list_workers()['workers']
+        workers = self.client.list_workers()
         self.assertEqual(len(workers), 0)
 
         # create worker
-        worker = self.client.create_worker('hostname')['worker']
+        worker = self.client.create_worker('hostname')
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
 
         # get worker
-        worker = self.client.get_worker(worker['id'])['worker']
+        worker = self.client.get_worker(worker['id'])
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
 
         # list workers
-        workers = self.client.list_workers()['workers']
+        workers = self.client.list_workers()
         self.assertEqual(len(workers), 1)
         self.assertDictEqual(workers[0], worker)
 
@@ -85,7 +85,7 @@ class TestApi(utils.BaseTestCase):
                 'hour': 12,
             }
         }
-        schedule = self.client.create_schedule(request)['schedule']
+        schedule = self.client.create_schedule(request)
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant_id'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
@@ -93,7 +93,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(schedule['hour'], 12)
 
         # get schedule
-        schedule = self.client.get_schedule(schedule['id'])['schedule']
+        schedule = self.client.get_schedule(schedule['id'])
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant_id'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
@@ -122,7 +122,6 @@ class TestApi(utils.BaseTestCase):
         #update schedule
         request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
-        updated_schedule = updated_schedule['schedule']
         self.assertEqual(updated_schedule['id'], schedule['id'])
         self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
@@ -149,12 +148,11 @@ class TestApi(utils.BaseTestCase):
                 'hour': '12'
             }
         }
-        schedule = self.client.create_schedule(request)['schedule']
+        schedule = self.client.create_schedule(request)
 
         # create meta
         meta = self.client.create_schedule_meta(schedule['id'], 'key1',
                                                 'value1')
-        meta = meta['meta']
         self.assertEqual(meta['key'], 'key1')
         self.assertEqual(meta['value'], 'value1')
 
@@ -166,7 +164,7 @@ class TestApi(utils.BaseTestCase):
                           'value1')
 
         # list meta
-        metadata = self.client.list_schedule_meta(schedule['id'])['metadata']
+        metadata = self.client.list_schedule_meta(schedule['id'])
         self.assertEqual(len(metadata), 1)
         self.assertEqual(metadata[0]['key'], 'key1')
         self.assertEqual(metadata[0]['value'], 'value1')
@@ -211,11 +209,11 @@ class TestApi(utils.BaseTestCase):
                 ]
             }
         }
-        schedule = self.client.create_schedule(request)['schedule']
+        schedule = self.client.create_schedule(request)
 
         # create job
 
-        new_job = self.client.create_job(schedule['id'])['job']
+        new_job = self.client.create_job(schedule['id'])
         self.assertIsNotNone(new_job.get('id'))
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
@@ -225,7 +223,7 @@ class TestApi(utils.BaseTestCase):
         self.assertMetadataInList(new_job['job_metadata'], meta2)
 
         # list jobs
-        jobs = self.client.list_jobs()['jobs']
+        jobs = self.client.list_jobs()
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0]['id'], new_job['id'])
         self.assertEqual(jobs[0]['schedule_id'], new_job['schedule_id'])
@@ -233,14 +231,14 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(jobs[0]['retry_count'], new_job['retry_count'])
 
         # get job
-        job = self.client.get_job(new_job['id'])['job']
+        job = self.client.get_job(new_job['id'])
         self.assertEqual(job['id'], new_job['id'])
         self.assertEqual(job['schedule_id'], new_job['schedule_id'])
         self.assertEqual(job['status'], new_job['status'])
         self.assertEqual(job['retry_count'], new_job['retry_count'])
 
         # list job metadata
-        metadata = self.client.list_job_metadata(new_job['id'])['metadata']
+        metadata = self.client.list_job_metadata(new_job['id'])
         self.assertMetadataInList(metadata, meta1)
         self.assertMetadataInList(metadata, meta2)
 
