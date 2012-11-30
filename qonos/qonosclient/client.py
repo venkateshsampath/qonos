@@ -36,14 +36,14 @@ class Client(object):
     ######## workers
 
     def list_workers(self):
-        return self._do_request('GET', '/v1/workers')
+        return self._do_request('GET', '/v1/workers')['workers']
 
     def create_worker(self, host):
         body = {'worker': {'host': host}}
-        return self._do_request('POST', '/v1/workers', body)
+        return self._do_request('POST', '/v1/workers', body)['worker']
 
     def get_worker(self, worker_id):
-        return self._do_request('GET', '/v1/workers/%s' % worker_id)
+        return self._do_request('GET', '/v1/workers/%s' % worker_id)['worker']
 
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
@@ -58,14 +58,15 @@ class Client(object):
         return self._do_request('GET', path % query)['schedules']
 
     def create_schedule(self, schedule):
-        return self._do_request('POST', '/v1/schedules', schedule)
+        return self._do_request('POST', '/v1/schedules', schedule)['schedule']
 
     def get_schedule(self, schedule_id):
-        return self._do_request('GET', '/v1/schedules/%s' % schedule_id)
+        path = '/v1/schedules/%s' % schedule_id
+        return self._do_request('GET', path)['schedule']
 
     def update_schedule(self, schedule_id, schedule):
         path = '/v1/schedules/%s' % schedule_id
-        return self._do_request('PUT', path, schedule)
+        return self._do_request('PUT', path, schedule)['schedule']
 
     def delete_schedule(self, schedule_id):
         self._do_request('DELETE', '/v1/schedules/%s' % schedule_id)
@@ -73,12 +74,13 @@ class Client(object):
     ######## schedule metadata
 
     def list_schedule_meta(self, schedule_id):
-        return self._do_request('GET', '/v1/schedules/%s/meta' % schedule_id)
+        path = '/v1/schedules/%s/meta' % schedule_id
+        return self._do_request('GET', path)['metadata']
 
     def create_schedule_meta(self, schedule_id, key, value):
         meta = {'meta': {'key': key, 'value': value}}
         path = '/v1/schedules/%s/meta' % schedule_id
-        return self._do_request('POST', path, meta)
+        return self._do_request('POST', path, meta)['meta']
 
     def get_schedule_meta(self, schedule_id, key):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
@@ -96,15 +98,15 @@ class Client(object):
     ######## jobs
 
     def list_jobs(self):
-        return self._do_request('GET', '/v1/jobs')
+        return self._do_request('GET', '/v1/jobs')['jobs']
 
     def create_job(self, schedule_id):
         job = {'job': {'schedule_id': schedule_id}}
-        return self._do_request('POST', 'v1/jobs', job)
+        return self._do_request('POST', 'v1/jobs', job)['job']
 
     def get_job(self, job_id):
         path = '/v1/jobs/%s' % job_id
-        return self._do_request('GET', path)
+        return self._do_request('GET', path)['job']
 
     def get_job_heartbeat(self, job_id):
         path = '/v1/jobs/%s/heartbeat' % job_id
@@ -130,7 +132,7 @@ class Client(object):
 
     def list_job_metadata(self, job_id):
         path = '/v1/jobs/%s/meta' % job_id
-        return self._do_request('GET', path)
+        return self._do_request('GET', path)['metadata']
 
     def get_job_metadata(self, job_id, key):
         path = '/v1/jobs/%s/meta/%s' % (job_id, key)
