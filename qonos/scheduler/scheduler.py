@@ -16,12 +16,13 @@ scheduler_opts = [
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(scheduler_opts)
+CONF.register_opts(scheduler_opts, group='scheduler')
 
 
 class Scheduler(object):
     def __init__(self, client_factory):
-        self.client = client_factory(CONF.api_endpoint, CONF.api_port)
+        self.client = client_factory(CONF.scheduler.api_endpoint,
+                                     CONF.scheduler.api_port)
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
@@ -31,7 +32,7 @@ class Scheduler(object):
         while True:
             prev_run = current_run
             current_run = timeutils.isotime()
-            next_run = time.time() + CONF.job_schedule_interval
+            next_run = time.time() + CONF.scheduler.job_schedule_interval
 
             # do work
             self.enqueue_jobs(prev_run, current_run)
