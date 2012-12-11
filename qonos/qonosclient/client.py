@@ -48,6 +48,9 @@ class Client(object):
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
 
+    def get_next_job(self, worker_id):
+        return self._do_request('PUT', '/v1/workers/%s/jobs/next' % worker_id)
+
     ######## schedules
 
     def list_schedules(self, filter_args={}):
