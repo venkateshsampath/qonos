@@ -70,8 +70,8 @@ class TestWorkersApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPNotFound,
                           self.controller.delete, request, worker_id)
 
-    def test_get_next_job(self):
+    def test_get_next_job_none_for_action(self):
         request = unit_test_utils.get_fake_request(method='PUT')
-        fixture = {}
-        job = self.controller.get_next_job(request, WORKER_UUID1, fixture)
-        self.assertEquals(job['job']['id'], 1)
+        fixture = {'action': 'dummy'}
+        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get_next_job,
+                          request, WORKER_UUID1, fixture)

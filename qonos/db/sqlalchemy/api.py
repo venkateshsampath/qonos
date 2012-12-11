@@ -463,6 +463,31 @@ def job_status_get_by_id(job_id):
 
 
 @force_dict
+def job_get_and_assign_next_by_action(action, worker_id):
+    """Get the next available job for the given action and assign it
+    to the worker for worker_id.
+    This must be an atomic action!"""
+    session = get_session()
+    job_id = None
+    try:
+        job_ref = session.query(models.Job)\
+            .options(sa_orm.subqueryload('job_metadata'))\
+            .filter_by(action=action, worker_id=None)\
+            .with_lockmode('update')\
+            .first()
+        if job_ref is None:
+            raise exception.NotFound()
+
+        job_ref.update({'worker_id': worker_id})
+        job_id = job_ref['id']
+        job_ref.save(session)
+    except sa_orm.exc.NoResultFound:
+        raise exception.NotFound()
+
+    return _job_get_by_id(job_id)
+
+
+@force_dict
 def job_update(job_id, job_values):
     # make a copy so we can remove 'job_metadata'
     # without affecting the caller

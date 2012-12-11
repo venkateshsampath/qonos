@@ -64,11 +64,9 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(workers), 1)
         self.assertDictEqual(workers[0], worker)
 
-        # get job for worker
-        job = self.client.get_next_job(worker['id'])
-        print "Job: %s\n" % job
-
-        self.assertEqual(job['job']['id'], 1)
+        # get job for worker no jobs for action
+        self.assertRaises(client_exc.NotFound, self.client.get_next_job,
+                          worker['id'], 'snapshot')
 
         # delete worker
         self.client.delete_worker(worker['id'])
