@@ -1,4 +1,5 @@
 import datetime
+import logging as pylog
 import time
 
 from qonos.openstack.common import cfg
@@ -13,6 +14,7 @@ scheduler_opts = [
                help=_('Interval to poll api for ready jobs in seconds')),
     cfg.StrOpt('api_endpoint', default='localhost'),
     cfg.IntOpt('api_port', default=8080),
+    cfg.BoolOpt('daemonized', default=False),
 ]
 
 CONF = cfg.CONF
@@ -26,6 +28,21 @@ class Scheduler(object):
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
+
+        if CONF.daemonized:
+            import daemon
+            #NOTE(ameade): We need to preserve all open files for logging
+            open_files = []
+            for handler in pylog.getLogger().handlers:
+                if (hasattr(handler, 'stream') and
+                        hasattr(handler.stream, 'fileno')):
+                    open_files.append(handler.stream)
+            with daemon.DaemonContext(files_preserve=open_files):
+                self._run_loop(run_once)
+        else:
+            self._run_loop(run_once)
+
+    def _run_loop(self, run_once=False):
         next_run = None
         current_run = None
 
