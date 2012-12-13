@@ -29,7 +29,7 @@ class Scheduler(object):
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
 
-        if CONF.daemonized:
+        if CONF.scheduler.daemonized:
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = []
