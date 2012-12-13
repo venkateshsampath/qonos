@@ -100,6 +100,18 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
 
+    def test_schedule_get_next_run_before_filter(self):
+        filters = {}
+        filters['next_run_before'] = self.schedule_1['next_run']
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 0)
+
+    def test_schedule_get_next_run_after_filter(self):
+        filters = {}
+        filters['next_run_after'] = self.schedule_1['next_run']
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 2)
+
     def test_schedule_get_by_id(self):
         fixture = {
             'tenant_id': str(uuid.uuid4()),
