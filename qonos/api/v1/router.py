@@ -141,10 +141,10 @@ class API(wsgi.Router):
                        action='delete',
                        conditions=dict(method=['DELETE']))
 
-        mapper.connect('/workers/{worker_id}/jobs/next',
+        mapper.connect('/workers/{worker_id}/jobs',
                        controller=workers_resource,
                        action='get_next_job',
-                       conditions=dict(method=['PUT']))
+                       conditions=dict(method=['POST']))
 
         super(API, self).__init__(mapper)
 

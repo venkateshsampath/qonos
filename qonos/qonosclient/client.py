@@ -50,7 +50,7 @@ class Client(object):
 
     def get_next_job(self, worker_id, action):
         body = {'action': action}
-        return self._do_request('PUT', '/v1/workers/%s/jobs/next' % worker_id,
+        return self._do_request('POST', '/v1/workers/%s/jobs' % worker_id,
                                 body)
 
     ######## schedules
