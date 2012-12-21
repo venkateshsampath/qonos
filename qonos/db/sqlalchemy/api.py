@@ -487,7 +487,6 @@ def job_get_and_assign_next_by_action(action, worker_id):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
-    _jobs_cleanup_hard_timed_out()
     now = timeutils.utcnow()
     session = get_session()
     job_id = None
@@ -520,6 +519,7 @@ def _job_get_next_by_action(session, now, action):
     job_ref = session.query(models.Job)\
         .options(sa_orm.subqueryload('job_metadata'))\
         .filter_by(action=action)\
+        .filter(models.Job.hard_timeout > now)\
         .filter(sa_sql.or_(models.Job.worker_id == None,
                            models.Job.timeout <= now))\
         .with_lockmode('update')\

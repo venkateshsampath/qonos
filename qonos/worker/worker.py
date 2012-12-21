@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-=======
 import logging as pylog
 import time
 
->>>>>>> 53ebcb5b558800d83501979dd7a1000ba5a83cef
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging

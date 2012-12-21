@@ -306,13 +306,13 @@ def job_get_and_assign_next_by_action(action, worker_id):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
-    _jobs_cleanup_hard_timed_out()
     job_ref = None
     now = timeutils.utcnow()
     while job_ref is None:
         jobs = _jobs_get_sorted()
         for job in jobs:
             if job['action'] == action and \
+                    job['hard_timeout'] > now and \
                     (job['worker_id'] is None or job['timeout'] <= now):
                 job_ref = job
                 break
