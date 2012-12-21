@@ -253,8 +253,12 @@ def job_create(job_values):
         metadata = values['job_metadata']
         del values['job_metadata']
 
-    job['retry_count'] = 0
+    if not 'retry_count' in values:
+        values['retry_count'] = 0
+
     now = timeutils.utcnow()
+    if not 'action' in values:
+        values['action'] = None
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
@@ -364,7 +368,6 @@ def _jobs_cleanup_hard_timed_out():
         if (now - job['hard_timeout']) > timedelta(microseconds=0):
             del_ids.append(job_id)
 
-    print del_ids
     for job_id in del_ids:
         job_delete(job_id)
     return len(del_ids)

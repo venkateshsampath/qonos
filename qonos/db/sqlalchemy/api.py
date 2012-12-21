@@ -437,6 +437,8 @@ def job_create(job_values):
         del values['job_metadata']
 
     now = timeutils.utcnow()
+    if not 'action' in values:
+        values['action'] = None
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
@@ -522,10 +524,14 @@ def _job_get_next_by_action(session, now, action):
 
 
 def _job_get_max_retry(action):
+    if not action in JOB_TYPES:
+        action = 'default'
     return JOB_TYPES[action]['max_retry']
 
 
 def _job_get_timeout(action):
+    if not action in JOB_TYPES:
+        action = 'default'
     return JOB_TYPES[action]['timeout_seconds']
 
 
