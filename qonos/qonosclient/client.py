@@ -48,6 +48,11 @@ class Client(object):
     def delete_worker(self, worker_id):
         self._do_request('DELETE', '/v1/workers/%s' % worker_id)
 
+    def get_next_job(self, worker_id, action):
+        body = {'action': action}
+        return self._do_request('POST', '/v1/workers/%s/jobs' % worker_id,
+                                body)
+
     ######## schedules
 
     def list_schedules(self, filter_args={}):

@@ -133,6 +133,8 @@ class Job(BASE, ModelBase):
     status = Column(String(255))
     action = Column(String(255))
     retry_count = Column(Integer, nullable=False, default=0)
+    timeout = Column(DateTime, nullable=False)
+    hard_timeout = Column(DateTime, nullable=False)
 
 
 class JobMetadata(BASE, ModelBase):

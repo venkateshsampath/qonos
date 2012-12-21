@@ -38,8 +38,14 @@ class WorkersController(object):
             msg = _('Worker %s could not be found.') % worker_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-    def get_next_job(self, request, worker_id):
-        raise webob.exc.HTTPNotImplemented
+    def get_next_job(self, request, worker_id, body):
+        action = body.get('action')
+        try:
+            return self.db_api.job_get_and_assign_next_by_action(action,
+                                                                 worker_id)
+        except exception.NotFound as e:
+            msg = _('No available jobs found for action %s') % action
+            raise webob.exc.HTTPNotFound(explanation=msg)
 
 
 def create_resource():
