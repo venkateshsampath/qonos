@@ -57,4 +57,3 @@ class Worker(object):
 
             if run_once:
                 break
-
