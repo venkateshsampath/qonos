@@ -308,23 +308,18 @@ def job_get_and_assign_next_by_action(action, worker_id):
     This must be an atomic action!"""
     job_ref = None
     now = timeutils.utcnow()
-    while job_ref is None:
-        jobs = _jobs_get_sorted()
-        for job in jobs:
-            if job['action'] == action and \
-                    job['hard_timeout'] > now and \
-                    (job['worker_id'] is None or job['timeout'] <= now):
-                job_ref = job
-                break
+    jobs = _jobs_get_sorted()
+    max_retry = _job_get_max_retry(action)
+    for job in jobs:
+        if job['action'] == action and \
+                job['retry_count'] < max_retry and \
+                job['hard_timeout'] > now and \
+                (job['worker_id'] is None or job['timeout'] <= now):
+            job_ref = job
+            break
 
-        if job_ref is None:
-            raise exception.NotFound("No jobs found for action: %s" % action)
-
-        retry_count = job_ref['retry_count']
-        max_retry = _job_get_max_retry(action)
-        if retry_count >= max_retry:
-            job_delete(job_ref['id'])
-            job_ref = None
+    if job_ref is None:
+        raise exception.NotFound("No jobs found for action: %s" % action)
 
     job_id = job_ref['id']
     DATA['jobs'][job_id]['worker_id'] = worker_id
@@ -346,10 +341,14 @@ def _jobs_get_sorted():
 
 
 def _job_get_max_retry(action):
+    if not action in JOB_TYPES:
+        action = 'default'
     return JOB_TYPES[action]['max_retry']
 
 
 def _job_get_timeout(action):
+    if not action in JOB_TYPES:
+        action = 'default'
     return JOB_TYPES[action]['timeout_seconds']
 
 

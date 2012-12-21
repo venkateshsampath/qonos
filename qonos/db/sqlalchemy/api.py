@@ -491,19 +491,10 @@ def job_get_and_assign_next_by_action(action, worker_id):
     session = get_session()
     job_id = None
     try:
-        job_ref = None
-        while job_ref is None:
-            job_ref = _job_get_next_by_action(session, now, action)
+        job_ref = _job_get_next_by_action(session, now, action)
 
-            if job_ref is None:
-                raise exception.NotFound()
-
-            retry_count = job_ref['retry_count']
-            max_retry = _job_get_max_retry(action)
-            if retry_count >= max_retry:
-                session.delete(job_ref)
-                session.flush()
-                job_ref = None
+        if job_ref is None:
+            raise exception.NotFound()
 
         job_ref.update({'worker_id': worker_id,
                         'retry_count': job_ref['retry_count'] + 1})
@@ -516,9 +507,11 @@ def job_get_and_assign_next_by_action(action, worker_id):
 
 
 def _job_get_next_by_action(session, now, action):
+    max_retry = _job_get_max_retry(action)
     job_ref = session.query(models.Job)\
         .options(sa_orm.subqueryload('job_metadata'))\
         .filter_by(action=action)\
+        .filter(models.Job.retry_count < max_retry)\
         .filter(models.Job.hard_timeout > now)\
         .filter(sa_sql.or_(models.Job.worker_id == None,
                            models.Job.timeout <= now))\

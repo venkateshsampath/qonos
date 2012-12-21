@@ -755,6 +755,3 @@ class TestJobsDBGetNextJobApi(utils.BaseTestCase):
         self.assertEqual(job['timeout'], timeout)
         self.assertEqual(job['hard_timeout'], hard_timeout)
         self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
-        jobs = db_api.job_get_all()
-        # Jobs exceeding retry_count should be deleted
-        self.assertEqual(len(jobs), 1)
