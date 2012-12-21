@@ -20,6 +20,7 @@ gettext.install('qonos', unicode=1)
 
 from qonos.api import api
 from qonos.common import config
+from qonos.openstack.common import log
 
 def fail(returncode, e):
     sys.stderr.write("ERROR: %s\n" % e)
@@ -28,8 +29,7 @@ def fail(returncode, e):
 if __name__ == '__main__':
     try:
         config.parse_args()
-        config.setup_logging()
-
+        log.setup("qonos")
         app = api.API(config.load_paste_app())
         app.run()
     except RuntimeError, e:

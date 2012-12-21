@@ -20,6 +20,7 @@ gettext.install('qonos', unicode=1)
 
 from qonos.common import config
 from qonos.scheduler import scheduler
+from qonos.openstack.common import log
 from qonos.qonosclient import client
 
 def fail(returncode, e):
@@ -29,7 +30,7 @@ def fail(returncode, e):
 if __name__ == '__main__':
     try:
         config.parse_args()
-        config.setup_logging()
+        log.setup("qonos")
         app = scheduler.Scheduler(client.create_client)
         app.run()
     except RuntimeError, e:
