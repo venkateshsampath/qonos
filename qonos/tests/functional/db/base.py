@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 from qonos.common import exception
 from qonos.common import utils as qonos_utils
@@ -419,6 +420,7 @@ class TestJobsDBApi(utils.BaseTestCase):
             'retry_count': 0,
         }
         self.job_1 = self.db_api.job_create(fixture)
+
         fixture = {
             'action': 'snapshot',
             'tenant_id': unit_utils.TENANT1,
@@ -443,10 +445,17 @@ class TestJobsDBApi(utils.BaseTestCase):
                 },
             ],
         }
+
+        timeutils.set_time_override()
+        now = timeutils.utcnow()
         job = self.db_api.job_create(fixture)
+        timeutils.clear_time_override()
+
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
         self.assertNotEqual(job['created_at'], None)
         self.assertNotEqual(job['updated_at'], None)
+        self.assertEqual(job['timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['hard_timeout'], now + timedelta(seconds=30))
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], fixture['worker_id'])
         self.assertEqual(job['status'], fixture['status'])
@@ -457,6 +466,16 @@ class TestJobsDBApi(utils.BaseTestCase):
                          fixture['job_metadata'][0]['key'])
         self.assertEqual(metadata[0]['value'],
                          fixture['job_metadata'][0]['value'])
+
+    def test_jobs_cleanup_hard_timed_out(self):
+        workers = self.db_api.job_get_all()
+        self.assertEqual(len(workers), 2)
+        timeutils.set_time_override()
+        timeutils.advance_time_seconds(61)
+        self.db_api._jobs_cleanup_hard_timed_out()
+        timeutils.clear_time_override()
+        workers = self.db_api.job_get_all()
+        self.assertEqual(len(workers), 0)
 
     def test_job_get_all(self):
         workers = self.db_api.job_get_all()
@@ -471,6 +490,8 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(actual['retry_count'], expected['retry_count'])
         self.assertEqual(actual['action'], expected['action'])
         self.assertEqual(actual['tenant_id'], expected['tenant_id'])
+        self.assertEqual(actual['timeout'], expected['timeout'])
+        self.assertEqual(actual['hard_timeout'], expected['hard_timeout'])
 
     def test_job_get_by_id_not_found(self):
         self.assertRaises(exception.NotFound,
@@ -548,7 +569,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           self.db_api.job_delete, str(uuid.uuid4))
 
     def test_metadata_create(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         self.assertEqual(meta['job_id'], job['id'])
@@ -559,7 +580,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertIsNotNone(meta['id'])
 
     def test_metadata_create_duplicate(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         fixture = {'key': 'key1', 'value': 'value1'}
@@ -568,7 +589,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job['id'], fixture)
 
     def test_metadata_get_all_by_job_id(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         fixture = {'key': 'key2', 'value': 'value2'}
@@ -577,12 +598,12 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(len(meta_list), 2)
 
     def test_metadata_get_all_by_job_id_no_meta(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         meta_list = db_api.job_meta_get_all_by_job_id(job['id'])
         self.assertEqual(len(meta_list), 0)
 
     def test_metadata_get(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         meta = db_api.job_meta_get(job['id'], 'key1')
@@ -593,12 +614,12 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEquals(meta['value'], fixture['value'])
 
     def test_metadata_get_not_found(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         self.assertRaises(exception.NotFound, db_api.job_meta_get,
                           job['id'], 'key1')
 
     def test_metadata_delete(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         db_api.job_meta_delete(job['id'], fixture['key'])
@@ -607,7 +628,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertFalse(meta in metadata)
 
     def test_metadata_delete_not_found(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.job_meta_create(job['id'], fixture)
         db_api.job_meta_delete(job['id'], fixture['key'])
@@ -615,7 +636,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job['id'], fixture['key'])
 
     def test_metadata_update(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         update_fixture = {'key': 'key1', 'value': 'value2'}
@@ -631,7 +652,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job_id, 'key2', {})
 
     def test_metadata_update_key_not_found(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.job_meta_create(job['id'], fixture)
         self.assertRaises(exception.NotFound, db_api.job_meta_update,
@@ -643,8 +664,97 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job_id, 'key')
 
     def test_metadata_get_key_not_found(self):
-        job = db_api.job_create({})
+        job = db_api.job_create({'action': 'snapshot'})
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.job_meta_create(job['id'], fixture)
         self.assertRaises(exception.NotFound, db_api.job_meta_get,
                           job['id'], 'key2')
+
+
+class TestJobsDBGetNextJobApi(utils.BaseTestCase):
+
+    def setUp(self):
+        super(TestJobsDBGetNextJobApi, self).setUp()
+        self.db_api = db_api
+        self._create_job_fixtures()
+
+    def tearDown(self):
+        super(TestJobsDBGetNextJobApi, self).tearDown()
+        self.db_api.reset()
+
+    def _create_job_fixtures(self):
+        self.job_fixture_1 = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
+            'schedule_id': unit_utils.SCHEDULE_UUID1,
+            'worker_id': None,
+            'status': None,
+            'retry_count': 0,
+        }
+
+        self.job_fixture_2 = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
+            'schedule_id': unit_utils.SCHEDULE_UUID2,
+            'worker_id': unit_utils.WORKER_UUID2,
+            'status': 'queued',
+            'retry_count': 0,
+        }
+
+    def _create_jobs(self, gap, *fixtures):
+        now = timeutils.utcnow()
+        self.jobs = []
+        for fixture in fixtures:
+            self.jobs.append(self.db_api.job_create(fixture))
+            timeutils.advance_time_seconds(gap)
+        return now
+
+    def test_get_next_job_unassigned(self):
+        timeutils.set_time_override()
+        self._create_jobs(10, self.job_fixture_1, self.job_fixture_2)
+        job = db_api.job_get_and_assign_next_by_action('snapshot',
+                                                       unit_utils.WORKER_UUID1)
+        expected = self.jobs[0]
+        self.assertEqual(job['id'], expected['id'])
+        self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
+        timeout = expected['created_at'] + timedelta(seconds=30)
+        hard_timeout = expected['created_at'] + timedelta(seconds=30)
+        self.assertEqual(job['timeout'], timeout)
+        self.assertEqual(job['hard_timeout'], hard_timeout)
+        self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
+
+    def test_get_next_job_timed_out(self):
+        timeutils.set_time_override()
+        now = timeutils.utcnow()
+        self.job_fixture_2['timeout'] = now + timedelta(seconds=5)
+        self._create_jobs(10, self.job_fixture_2, self.job_fixture_1)
+        job = db_api.job_get_and_assign_next_by_action('snapshot',
+                                                       unit_utils.WORKER_UUID1)
+        expected = self.jobs[0]
+        self.assertEqual(job['id'], expected['id'])
+        self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
+        timeout = expected['created_at'] + timedelta(seconds=5)
+        hard_timeout = expected['created_at'] + timedelta(seconds=30)
+        self.assertEqual(job['timeout'], timeout)
+        self.assertEqual(job['hard_timeout'], hard_timeout)
+        self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
+
+    def test_get_next_job_too_many_retries(self):
+        timeutils.set_time_override()
+        now = timeutils.utcnow()
+        self.job_fixture_2['retry_count'] = 3
+        self.job_fixture_2['timeout'] = now + timedelta(seconds=5)
+        self._create_jobs(10, self.job_fixture_2, self.job_fixture_1)
+        job = db_api.job_get_and_assign_next_by_action('snapshot',
+                                                       unit_utils.WORKER_UUID1)
+        expected = self.jobs[1]
+        self.assertEqual(job['id'], expected['id'])
+        self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
+        timeout = expected['created_at'] + timedelta(seconds=30)
+        hard_timeout = expected['created_at'] + timedelta(seconds=30)
+        self.assertEqual(job['timeout'], timeout)
+        self.assertEqual(job['hard_timeout'], hard_timeout)
+        self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
+        jobs = db_api.job_get_all()
+        # Jobs exceeding retry_count should be deleted
+        self.assertEqual(len(jobs), 1)

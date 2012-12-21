@@ -1,6 +1,9 @@
 import functools
 import uuid
 import copy
+from datetime import timedelta
+from operator import itemgetter
+from operator import methodcaller
 
 from qonos.common import exception
 from qonos.openstack.common import timeutils
@@ -14,6 +17,21 @@ DATA = {
     'job_metadata': {},
     'workers': {},
     'job_faults': {},
+}
+
+
+# TODO: Move to config
+JOB_TYPES = {
+    'default':
+    {
+        'max_retry': 3,
+        'timeout_seconds': 60,
+    },
+    'snapshot':
+    {
+        'max_retry': 2,
+        'timeout_seconds': 30,
+    }
 }
 
 
@@ -236,6 +254,11 @@ def job_create(job_values):
         del values['job_metadata']
 
     job['retry_count'] = 0
+    now = timeutils.utcnow()
+    job_timeout_seconds = _job_get_timeout(values['action'])
+    if not 'timeout' in values:
+        values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
+    values['hard_timeout'] = now + timedelta(seconds=job_timeout_seconds)
     job.update(values)
     job.update(_gen_base_attributes())
 
@@ -283,22 +306,69 @@ def job_get_and_assign_next_by_action(action, worker_id):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
-    sel_job_id = None
-    for job_id in DATA['jobs']:
-        job = DATA['jobs'][job_id]
-        if job['action'] == action and \
-                (job['worker_id'] is None or job['worker_id'] == ''):
-            sel_job_id = job_id
-            break
+    _jobs_cleanup_hard_timed_out()
+    job_ref = None
+    now = timeutils.utcnow()
+    while job_ref is None:
+        jobs = _jobs_get_sorted()
+        for job in jobs:
+            if job['action'] == action and \
+                    (job['worker_id'] is None or job['timeout'] <= now):
+                job_ref = job
+                break
 
-    if sel_job_id is None:
-        raise exception.NotFound("No jobs found for action: %s" % action)
+        if job_ref is None:
+            raise exception.NotFound("No jobs found for action: %s" % action)
 
-    DATA['jobs'][sel_job_id]['worker_id'] = worker_id
-    job = copy.deepcopy(DATA['jobs'][sel_job_id])
-    job['job_metadata'] = job_meta_get_all_by_job_id(sel_job_id)
+        retry_count = job_ref['retry_count']
+        max_retry = _job_get_max_retry(action)
+        if retry_count >= max_retry:
+            job_delete(job_ref['id'])
+            job_ref = None
+
+    job_id = job_ref['id']
+    DATA['jobs'][job_id]['worker_id'] = worker_id
+    DATA['jobs'][job_id]['retry_count'] = job_ref['retry_count'] + 1
+    job = copy.deepcopy(DATA['jobs'][job_id])
+    job['job_metadata'] = job_meta_get_all_by_job_id(job_id)
 
     return job
+
+
+def _jobs_get_sorted():
+    jobs = copy.deepcopy(DATA['jobs'])
+    sorted_jobs = []
+    for job_id in jobs:
+        sorted_jobs.append(jobs[job_id])
+
+    sorted_jobs = sorted(sorted_jobs, key=itemgetter('created_at'))
+    return sorted_jobs
+
+
+def _job_get_max_retry(action):
+    return JOB_TYPES[action]['max_retry']
+
+
+def _job_get_timeout(action):
+    return JOB_TYPES[action]['timeout_seconds']
+
+
+def _jobs_cleanup_hard_timed_out():
+    """Find all jobs with hard_timeout values which have passed
+    and delete them, logging the timeout / failure as appropriate"""
+    now = timeutils.utcnow()
+    del_ids = []
+    for job_id in DATA['jobs']:
+        job = DATA['jobs'][job_id]
+        print now, job['hard_timeout']
+        print now - job['hard_timeout']
+        if (now - job['hard_timeout']) > timedelta(microseconds=0):
+            del_ids.append(job_id)
+
+    print del_ids
+    for job_id in del_ids:
+        job_delete(job_id)
+    return len(del_ids)
 
 
 def job_update(job_id, job_values):

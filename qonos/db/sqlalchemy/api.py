@@ -5,6 +5,7 @@ Defines interface for DB access
 import functools
 import logging
 import time
+from datetime import timedelta
 from qonos.openstack.common.gettextutils import _
 
 import sqlalchemy
@@ -35,6 +36,20 @@ db_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(db_opts)
+
+# TODO: Move to config
+JOB_TYPES = {
+    'default':
+    {
+        'max_retry': 3,
+        'timeout_seconds': 60,
+    },
+    'snapshot':
+    {
+        'max_retry': 2,
+        'timeout_seconds': 30,
+    }
+}
 
 
 def force_dict(func):
@@ -421,6 +436,11 @@ def job_create(job_values):
         _set_job_metadata(job_ref, metadata)
         del values['job_metadata']
 
+    now = timeutils.utcnow()
+    job_timeout_seconds = _job_get_timeout(values['action'])
+    if not 'timeout' in values:
+        values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
+    values['hard_timeout'] = now + timedelta(seconds=job_timeout_seconds)
     job_ref.update(values)
     job_ref.save(session=session)
 
@@ -467,24 +487,65 @@ def job_get_and_assign_next_by_action(action, worker_id):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
+    _jobs_cleanup_hard_timed_out()
+    now = timeutils.utcnow()
     session = get_session()
     job_id = None
     try:
-        job_ref = session.query(models.Job)\
-            .options(sa_orm.subqueryload('job_metadata'))\
-            .filter_by(action=action, worker_id=None)\
-            .with_lockmode('update')\
-            .first()
-        if job_ref is None:
-            raise exception.NotFound()
+        job_ref = None
+        while job_ref is None:
+            job_ref = _job_get_next_by_action(session, now, action)
 
-        job_ref.update({'worker_id': worker_id})
+            if job_ref is None:
+                raise exception.NotFound()
+
+            retry_count = job_ref['retry_count']
+            max_retry = _job_get_max_retry(action)
+            if retry_count >= max_retry:
+                session.delete(job_ref)
+                session.flush()
+                job_ref = None
+
+        job_ref.update({'worker_id': worker_id,
+                        'retry_count': job_ref['retry_count'] + 1})
         job_id = job_ref['id']
         job_ref.save(session)
     except sa_orm.exc.NoResultFound:
         raise exception.NotFound()
 
     return _job_get_by_id(job_id)
+
+
+def _job_get_next_by_action(session, now, action):
+    job_ref = session.query(models.Job)\
+        .options(sa_orm.subqueryload('job_metadata'))\
+        .filter_by(action=action)\
+        .filter(sa_sql.or_(models.Job.worker_id == None,
+                           models.Job.timeout <= now))\
+        .with_lockmode('update')\
+        .order_by(models.Job.created_at.asc())\
+        .first()
+    return job_ref
+
+
+def _job_get_max_retry(action):
+    return JOB_TYPES[action]['max_retry']
+
+
+def _job_get_timeout(action):
+    return JOB_TYPES[action]['timeout_seconds']
+
+
+def _jobs_cleanup_hard_timed_out():
+    """Find all jobs with hard_timeout values which have passed
+    and delete them, logging the timeout / failure as appropriate"""
+    now = timeutils.utcnow()
+    session = get_session()
+    num_del = session.query(models.Job)\
+        .filter(models.Job.hard_timeout <= now)\
+        .delete()
+    session.flush()
+    return num_del
 
 
 @force_dict
