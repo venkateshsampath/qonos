@@ -9,6 +9,9 @@ from qonos.tests import utils as utils
 from qonos.tests.unit import utils as unit_utils
 
 
+TENANT_1 = uuid.uuid4()
+TENANT_2 = uuid.uuid4()
+
 #NOTE(ameade): This is set in each individual db test module
 db_api = None
 
@@ -48,7 +51,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
 
     def _create_schedules(self):
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant_id': str(TENANT_1),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -56,7 +59,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         }
         self.schedule_1 = self.db_api.schedule_create(fixture)
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant_id': str(TENANT_2),
             'action': 'snapshot',
             'minute': 30,
             'hour': 3,
@@ -72,6 +75,14 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         filters = {}
         filters['next_run_after'] = self.schedule_1['next_run']
         filters['next_run_before'] = self.schedule_1['next_run']
+        filters['tenant_id'] = str(TENANT_1)
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
+
+    def test_schedule_get_all_tenant_id_filter(self):
+        filters = {}
+        filters['tenant_id'] = str(TENANT_1)
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
