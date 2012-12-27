@@ -121,6 +121,16 @@ class TestApi(utils.BaseTestCase):
         schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 0)
 
+        #list schedules, tenant_id filter
+        filter = {}
+        filter['tenant_id'] = TENANT1
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+        filter['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 0)
+
         #update schedule
         request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
