@@ -87,6 +87,8 @@ class TestApi(utils.BaseTestCase):
                 'action': 'snapshot',
                 'minute': 30,
                 'hour': 12,
+                'schedule_metadata': [{'key': 'instance_id',
+                                       'value': 'my_instance_1'}]
             }
         }
         schedule = self.client.create_schedule(request)
@@ -128,6 +130,16 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
         filter['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 0)
+
+        #list schedules, instance_id filter
+        filter = {}
+        filter['instance_id'] = 'my_instance_1'
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+        filter['instance_id'] = 'aaaa-bbbb-cccc-dddd'
         schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 0)
 
