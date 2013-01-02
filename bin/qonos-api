@@ -18,8 +18,8 @@ if os.path.exists(os.path.join(possible_topdir, 'qonos', '__init__.py')):
 
 gettext.install('qonos', unicode=1)
 
+from qonos.api import api
 from qonos.common import config
-from qonos.openstack.common.wsgi import run_server
 from qonos.openstack.common import log
 
 def fail(returncode, e):
@@ -29,8 +29,8 @@ def fail(returncode, e):
 if __name__ == '__main__':
     try:
         config.parse_args()
-        log.setup('qonos')
-
-        run_server(config.load_paste_app(), 8080)
+        log.setup("qonos")
+        app = api.API(config.load_paste_app())
+        app.run()
     except RuntimeError, e:
         fail(1, e)
