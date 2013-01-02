@@ -503,6 +503,41 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(metadata[0]['value'],
                          fixture['job_metadata'][0]['value'])
 
+    def test_job_create_no_worker_assigned(self):
+        fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
+            'schedule_id': unit_utils.SCHEDULE_UUID2,
+            'status': 'queued',
+            'job_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
+        }
+
+        timeutils.set_time_override()
+        now = timeutils.utcnow()
+        job = self.db_api.job_create(fixture)
+        timeutils.clear_time_override()
+
+        self.assertTrue(uuidutils.is_uuid_like(job['id']))
+        self.assertNotEqual(job['created_at'], None)
+        self.assertNotEqual(job['updated_at'], None)
+        self.assertEqual(job['timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['hard_timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['schedule_id'], fixture['schedule_id'])
+        self.assertEqual(job['worker_id'], None)
+        self.assertEqual(job['status'], fixture['status'])
+        self.assertEqual(job['retry_count'], 0)
+        metadata = job['job_metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['job_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['job_metadata'][0]['value'])
+
     def test_jobs_cleanup_hard_timed_out(self):
         workers = self.db_api.job_get_all()
         self.assertEqual(len(workers), 2)
