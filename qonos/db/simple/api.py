@@ -287,6 +287,7 @@ def job_create(job_values):
         del values['job_metadata']
 
     job['retry_count'] = 0
+    job['worker_id'] = None
     now = timeutils.utcnow()
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
