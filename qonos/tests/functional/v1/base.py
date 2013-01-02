@@ -123,6 +123,19 @@ class TestApi(utils.BaseTestCase):
         schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 0)
 
+        #list schedules, next_run_before filter
+        filter = {}
+        filter['next_run_before'] = schedule['next_run']
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 0)
+
+        #list schedules, next_run_after filter
+        filter = {}
+        filter['next_run_after'] = schedule['next_run']
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+
         #list schedules, tenant_id filter
         filter = {}
         filter['tenant_id'] = TENANT1
