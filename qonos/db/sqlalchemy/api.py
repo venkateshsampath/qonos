@@ -253,6 +253,8 @@ def schedule_get_all(filter_args={}):
             models.Schedule.next_run.between(filter_args['next_run_after'],
                                              filter_args['next_run_before']))
 
+    if filter_args.get('tenant_id') is not None:
+        query = query.filter_by(tenant_id=filter_args['tenant_id'])
     return query.all()
 
 
