@@ -62,23 +62,42 @@ def _schedule_create(values):
 
 def schedule_get_all(filter_args={}):
     schedules = copy.deepcopy(DATA['schedules'].values())
+    schedules_mutate = copy.deepcopy(DATA['schedules'].values())
 
     for schedule in schedules:
         schedule['schedule_metadata'] =\
             copy.deepcopy(schedule_meta_get_all(schedule['id']))
 
-    if (filter_args.get('next_run_after') is not None and
-            filter_args.get('next_run_before') is not None):
+    schedules_mutate = copy.deepcopy(schedules)
+
+    if 'next_run_after' in filter_args and 'next_run_before' in filter_args:
         for schedule in schedules:
             if not((schedule['next_run'] > filter_args['next_run_after'] and
                     schedule['next_run'] < filter_args['next_run_before']) or
                     schedule['next_run'] == filter_args['next_run_after']):
-                del schedules[schedules.index(schedule)]
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    if ('next_run_after' not in filter_args and
+        'next_run_before' in filter_args):
+        for schedule in schedules:
+            if not (schedule['next_run'] < filter_args['next_run_before']):
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    if ('next_run_after' in filter_args and
+        'next_run_before' not in filter_args):
+        for schedule in schedules:
+            if not(schedule['next_run'] > filter_args['next_run_after'] or
+                   schedule['next_run'] == filter_args['next_run_after']):
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
 
     if filter_args.get('tenant_id') is not None:
         for schedule in schedules:
             if schedule['tenant_id'] != filter_args['tenant_id']:
-                del schedules[schedules.index(schedule)]
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
 
     if filter_args.get('instance_id') is not None:
         instance_id = filter_args['instance_id']
@@ -87,11 +106,13 @@ def schedule_get_all(filter_args={}):
                 for schedule_metadata in schedule['schedule_metadata']:
                     if not(schedule_metadata['key'] == 'instance_id' and
                            schedule_metadata['value'] == instance_id):
-                        del schedules[schedules.index(schedule)]
+                        del schedules_mutate[schedules_mutate.index(schedule)]
                         break
             else:
-                del schedules[schedules.index(schedule)]
-    return schedules
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    return schedules_mutate
 
 
 def schedule_get_by_id(schedule_id):
