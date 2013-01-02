@@ -68,6 +68,40 @@ class TestApi(utils.BaseTestCase):
         self.assertRaises(client_exc.NotFound, self.client.get_next_job,
                           worker['id'], 'snapshot')
 
+        # (setup) create schedule
+        meta1 = {'key': 'key1', 'value': 'value1'}
+        meta2 = {'key': 'key2', 'value': 'value2'}
+        request = {
+            'schedule':
+            {
+                'tenant_id': TENANT1,
+                'action': 'snapshot',
+                'minute': '30',
+                'hour': '12',
+                'schedule_metadata': [
+                    meta1,
+                    meta2,
+                ]
+            }
+        }
+        schedule = self.client.create_schedule(request)
+
+        # (setup) create job
+
+        self.client.create_job(schedule['id'])
+
+        next_job = self.client.get_next_job(worker['id'], 'snapshot')
+        self.assertIsNotNone(next_job.get('id'))
+        self.assertEqual(next_job['schedule_id'], schedule['id'])
+        self.assertEqual(next_job['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(next_job['action'], schedule['action'])
+        self.assertEqual(next_job['status'], 'queued')
+        self.assertMetadataInList(next_job['job_metadata'], meta1)
+        self.assertMetadataInList(next_job['job_metadata'], meta2)
+
+        # get job for worker no jobs left for action
+        self.assertRaises(client_exc.NotFound, self.client.get_next_job,
+                          worker['id'], 'snapshot')
         # delete worker
         self.client.delete_worker(worker['id'])
 
