@@ -55,7 +55,13 @@ class TestSchedulesDBApi(utils.BaseTestCase):
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
-            'next_run': qonos_utils.cron_string_to_next_datetime(30, 2)
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 2),
+            'schedule_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance_1',
+                },
+            ],
         }
         self.schedule_1 = self.db_api.schedule_create(fixture)
         fixture = {
@@ -63,7 +69,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
             'action': 'snapshot',
             'minute': 30,
             'hour': 3,
-            'next_run': qonos_utils.cron_string_to_next_datetime(30, 3)
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 3),
         }
         self.schedule_2 = self.db_api.schedule_create(fixture)
 
@@ -83,6 +89,13 @@ class TestSchedulesDBApi(utils.BaseTestCase):
     def test_schedule_get_all_tenant_id_filter(self):
         filters = {}
         filters['tenant_id'] = str(TENANT_1)
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
+
+    def test_schedule_get_all_instance_id_filter(self):
+        filters = {}
+        filters['instance_id'] = 'my_instance_1'
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0]['id'], self.schedule_1['id'])

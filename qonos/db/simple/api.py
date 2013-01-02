@@ -80,6 +80,17 @@ def schedule_get_all(filter_args={}):
             if schedule['tenant_id'] != filter_args['tenant_id']:
                 del schedules[schedules.index(schedule)]
 
+    if filter_args.get('instance_id') is not None:
+        instance_id = filter_args['instance_id']
+        for schedule in schedules:
+            if schedule['schedule_metadata']:
+                for schedule_metadata in schedule['schedule_metadata']:
+                    if not(schedule_metadata['key'] == 'instance_id' and
+                           schedule_metadata['value'] == instance_id):
+                        del schedules[schedules.index(schedule)]
+                        break
+            else:
+                del schedules[schedules.index(schedule)]
     return schedules
 
 
