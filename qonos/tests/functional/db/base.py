@@ -9,6 +9,9 @@ from qonos.tests import utils as utils
 from qonos.tests.unit import utils as unit_utils
 
 
+TENANT_1 = uuid.uuid4()
+TENANT_2 = uuid.uuid4()
+
 #NOTE(ameade): This is set in each individual db test module
 db_api = None
 
@@ -48,19 +51,25 @@ class TestSchedulesDBApi(utils.BaseTestCase):
 
     def _create_schedules(self):
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant_id': str(TENANT_1),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
-            'next_run': qonos_utils.cron_string_to_next_datetime(30, 2)
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 2),
+            'schedule_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance_1',
+                },
+            ],
         }
         self.schedule_1 = self.db_api.schedule_create(fixture)
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant_id': str(TENANT_2),
             'action': 'snapshot',
             'minute': 30,
             'hour': 3,
-            'next_run': qonos_utils.cron_string_to_next_datetime(30, 3)
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 3),
         }
         self.schedule_2 = self.db_api.schedule_create(fixture)
 
@@ -72,9 +81,36 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         filters = {}
         filters['next_run_after'] = self.schedule_1['next_run']
         filters['next_run_before'] = self.schedule_1['next_run']
+        filters['tenant_id'] = str(TENANT_1)
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
+
+    def test_schedule_get_all_tenant_id_filter(self):
+        filters = {}
+        filters['tenant_id'] = str(TENANT_1)
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
+
+    def test_schedule_get_all_instance_id_filter(self):
+        filters = {}
+        filters['instance_id'] = 'my_instance_1'
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
+
+    def test_schedule_get_next_run_before_filter(self):
+        filters = {}
+        filters['next_run_before'] = self.schedule_1['next_run']
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 0)
+
+    def test_schedule_get_next_run_after_filter(self):
+        filters = {}
+        filters['next_run_after'] = self.schedule_1['next_run']
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 2)
 
     def test_schedule_get_by_id(self):
         fixture = {
@@ -458,6 +494,41 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(job['hard_timeout'], now + timedelta(seconds=30))
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], fixture['worker_id'])
+        self.assertEqual(job['status'], fixture['status'])
+        self.assertEqual(job['retry_count'], 0)
+        metadata = job['job_metadata']
+        self.assertEqual(len(metadata), 1)
+        self.assertEqual(metadata[0]['key'],
+                         fixture['job_metadata'][0]['key'])
+        self.assertEqual(metadata[0]['value'],
+                         fixture['job_metadata'][0]['value'])
+
+    def test_job_create_no_worker_assigned(self):
+        fixture = {
+            'action': 'snapshot',
+            'tenant_id': unit_utils.TENANT1,
+            'schedule_id': unit_utils.SCHEDULE_UUID2,
+            'status': 'queued',
+            'job_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
+        }
+
+        timeutils.set_time_override()
+        now = timeutils.utcnow()
+        job = self.db_api.job_create(fixture)
+        timeutils.clear_time_override()
+
+        self.assertTrue(uuidutils.is_uuid_like(job['id']))
+        self.assertNotEqual(job['created_at'], None)
+        self.assertNotEqual(job['updated_at'], None)
+        self.assertEqual(job['timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['hard_timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['schedule_id'], fixture['schedule_id'])
+        self.assertEqual(job['worker_id'], None)
         self.assertEqual(job['status'], fixture['status'])
         self.assertEqual(job['retry_count'], 0)
         metadata = job['job_metadata']

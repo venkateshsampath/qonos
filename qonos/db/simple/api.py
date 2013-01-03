@@ -61,25 +61,58 @@ def _schedule_create(values):
 
 
 def schedule_get_all(filter_args={}):
-    to_return = []
     schedules = copy.deepcopy(DATA['schedules'].values())
+    schedules_mutate = copy.deepcopy(DATA['schedules'].values())
 
-    if not filter_args:
-        to_return = schedules
-        for schedule in schedules:
-            schedule['schedule_metadata'] =\
-                copy.deepcopy(schedule_meta_get_all(schedule['id']))
+    for schedule in schedules:
+        schedule['schedule_metadata'] =\
+            copy.deepcopy(schedule_meta_get_all(schedule['id']))
 
-    if (filter_args.get('next_run_after') is not None and
-            filter_args.get('next_run_before') is not None):
+    schedules_mutate = copy.deepcopy(schedules)
+
+    if 'next_run_after' in filter_args and 'next_run_before' in filter_args:
         for schedule in schedules:
-            if ((schedule['next_run'] > filter_args['next_run_after'] and
+            if not((schedule['next_run'] > filter_args['next_run_after'] and
                     schedule['next_run'] < filter_args['next_run_before']) or
                     schedule['next_run'] == filter_args['next_run_after']):
-                schedule['schedule_metadata'] =\
-                    copy.deepcopy(schedule_meta_get_all(schedule['id']))
-                to_return.append(schedule)
-    return to_return
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    if ('next_run_after' not in filter_args and
+        'next_run_before' in filter_args):
+        for schedule in schedules:
+            if not (schedule['next_run'] < filter_args['next_run_before']):
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    if ('next_run_after' in filter_args and
+        'next_run_before' not in filter_args):
+        for schedule in schedules:
+            if not(schedule['next_run'] > filter_args['next_run_after'] or
+                   schedule['next_run'] == filter_args['next_run_after']):
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    if filter_args.get('tenant_id') is not None:
+        for schedule in schedules:
+            if schedule['tenant_id'] != filter_args['tenant_id']:
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    if filter_args.get('instance_id') is not None:
+        instance_id = filter_args['instance_id']
+        for schedule in schedules:
+            if schedule['schedule_metadata']:
+                for schedule_metadata in schedule['schedule_metadata']:
+                    if not(schedule_metadata['key'] == 'instance_id' and
+                           schedule_metadata['value'] == instance_id):
+                        del schedules_mutate[schedules_mutate.index(schedule)]
+                        break
+            else:
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+
+    return schedules_mutate
 
 
 def schedule_get_by_id(schedule_id):
@@ -255,10 +288,13 @@ def job_create(job_values):
 
     if not 'retry_count' in values:
         values['retry_count'] = 0
+    job['worker_id'] = None
 
     now = timeutils.utcnow()
+
     if not 'action' in values:
         values['action'] = None
+
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
