@@ -92,8 +92,8 @@ class Schedule(BASE, ModelBase):
     """Represents a schedule in the datastore"""
     __tablename__ = 'schedules'
 
-    tenant_id = Column(String(255))
-    action = Column(String(255))
+    tenant_id = Column(String(255), nullable=False)
+    action = Column(String(255), nullable=False)
     minute = Column(Integer, nullable=True)
     hour = Column(Integer, nullable=True)
     day_of_month = Column(Integer, nullable=True)
@@ -128,10 +128,10 @@ class Job(BASE, ModelBase):
     __tablename__ = 'jobs'
 
     schedule_id = Column(String(36))
-    tenant_id = Column(String(36))
-    worker_id = Column(String(36))
-    status = Column(String(255))
-    action = Column(String(255))
+    tenant_id = Column(String(36), nullable=False)
+    worker_id = Column(String(36), nullable=True)
+    status = Column(String(255), nullable=True)
+    action = Column(String(255), nullable=False)
     retry_count = Column(Integer, nullable=False, default=0)
     timeout = Column(DateTime, nullable=False)
     hard_timeout = Column(DateTime, nullable=False)

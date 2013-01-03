@@ -5,6 +5,7 @@ Defines interface for DB access
 import functools
 import logging
 import time
+import qonos.db.db_utils as db_utils
 from datetime import timedelta
 from qonos.openstack.common.gettextutils import _
 
@@ -223,6 +224,7 @@ def wrap_db_error(f):
 
 @force_dict
 def schedule_create(schedule_values):
+    db_utils.validate_schedule_values(schedule_values)
     # make a copy so we can remove 'schedule_metadata'
     # without affecting the caller
     values = schedule_values.copy()
@@ -245,8 +247,8 @@ def schedule_create(schedule_values):
 def schedule_get_all(filter_args={}):
     session = get_session()
     query = session.query(models.Schedule)\
-                   .options(
-                    sa_orm.joinedload(models.Schedule.schedule_metadata))
+                   .options(sa_orm.joinedload(
+                            models.Schedule.schedule_metadata))
 
     if 'next_run_after' in filter_args and 'next_run_before' in filter_args:
         query = query.filter(
@@ -445,6 +447,7 @@ def worker_delete(worker_id):
 
 @force_dict
 def job_create(job_values):
+    db_utils.validate_job_values(job_values)
     values = job_values.copy()
     session = get_session()
     job_ref = models.Job()
@@ -455,6 +458,7 @@ def job_create(job_values):
         del values['job_metadata']
 
     now = timeutils.utcnow()
+
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
@@ -540,10 +544,14 @@ def _job_get_next_by_action(session, now, action):
 
 
 def _job_get_max_retry(action):
+    if not action in JOB_TYPES:
+        action = 'default'
     return JOB_TYPES[action]['max_retry']
 
 
 def _job_get_timeout(action):
+    if not action in JOB_TYPES:
+        action = 'default'
     return JOB_TYPES[action]['timeout_seconds']
 
 

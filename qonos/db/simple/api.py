@@ -1,6 +1,7 @@
 import functools
 import uuid
 import copy
+import qonos.db.db_utils as db_utils
 from datetime import timedelta
 from operator import itemgetter
 from operator import methodcaller
@@ -125,6 +126,7 @@ def schedule_get_by_id(schedule_id):
 
 
 def schedule_create(schedule_values):
+    db_utils.validate_schedule_values(schedule_values)
     values = copy.deepcopy(schedule_values)
     schedule = {}
 
@@ -278,6 +280,7 @@ def worker_delete(worker_id):
 
 def job_create(job_values):
     global DATA
+    db_utils.validate_job_values(job_values)
     values = job_values.copy()
     job = {}
 
@@ -286,9 +289,12 @@ def job_create(job_values):
         metadata = values['job_metadata']
         del values['job_metadata']
 
-    job['retry_count'] = 0
+    if not 'retry_count' in values:
+        values['retry_count'] = 0
     job['worker_id'] = None
+
     now = timeutils.utcnow()
+
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
@@ -398,7 +404,6 @@ def _jobs_cleanup_hard_timed_out():
         if (now - job['hard_timeout']) > timedelta(microseconds=0):
             del_ids.append(job_id)
 
-    print del_ids
     for job_id in del_ids:
         job_delete(job_id)
     return len(del_ids)
