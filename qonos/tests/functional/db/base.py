@@ -73,6 +73,10 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         }
         self.schedule_2 = self.db_api.schedule_create(fixture)
 
+    def _create_basic_schedule(self):
+        return db_api.schedule_create({'action': 'snapshot',
+                                       'tenant_id': unit_utils.TENANT1})
+
     def test_schedule_get_all(self):
         schedules = self.db_api.schedule_get_all()
         self.assertEqual(len(schedules), 2)
@@ -144,6 +148,20 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         schedule_id = str(uuid.uuid4())
         self.assertRaises(exception.NotFound,
                           self.db_api.schedule_get_by_id, schedule_id)
+
+    def test_schedule_create_no_action(self):
+        fixture = {
+            'tenant_id': unit_utils.TENANT1,
+        }
+        self.assertRaises(exception.MissingValue,
+                          self.db_api.schedule_create, fixture)
+
+    def test_schedule_create_no_tenant_id(self):
+        fixture = {
+            'action': 'snapshot',
+        }
+        self.assertRaises(exception.MissingValue,
+                          self.db_api.schedule_create, fixture)
 
     def test_schedule_create(self):
         fixture = {
@@ -272,7 +290,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                          fixture['schedule_metadata'][0]['value'])
 
     def test_metadata_create(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.schedule_meta_create(schedule['id'], fixture)
         self.assertEqual(meta['schedule_id'], schedule['id'])
@@ -283,7 +301,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertIsNotNone(meta['id'])
 
     def test_metadata_create_duplicate(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.schedule_meta_create(schedule['id'], fixture)
         fixture = {'key': 'key1', 'value': 'value1'}
@@ -292,7 +310,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                           schedule['id'], fixture)
 
     def test_metadata_get(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.schedule_meta_create(schedule['id'], fixture)
         meta = db_api.schedule_meta_get(schedule['id'], fixture['key'])
@@ -303,7 +321,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertEquals(meta['value'], fixture['value'])
 
     def test_metadata_get_all(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture1 = {'key': 'key1', 'value': 'value1'}
         db_api.schedule_meta_create(schedule['id'], fixture1)
         fixture2 = {'key': 'key2', 'value': 'value2'}
@@ -320,12 +338,12 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertMetadataInList(metadata, fixture2)
 
     def test_metadata_get_all_no_meta_create(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         metadata = db_api.schedule_meta_get_all(schedule['id'])
         self.assertEqual(len(metadata), 0)
 
     def test_metadata_delete(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.schedule_meta_create(schedule['id'], fixture)
         db_api.schedule_meta_delete(schedule['id'], fixture['key'])
@@ -334,7 +352,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         self.assertFalse(meta in metadata)
 
     def test_metadata_delete_not_found(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.schedule_meta_create(schedule['id'], fixture)
         db_api.schedule_meta_delete(schedule['id'], fixture['key'])
@@ -342,7 +360,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                           schedule['id'], fixture['key'])
 
     def test_metadata_update(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.schedule_meta_create(schedule['id'], fixture)
         update_fixture = {'key': 'key1', 'value': 'value2'}
@@ -358,7 +376,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                           schedule_id, 'key2', {})
 
     def test_metadata_update_key_not_found(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.schedule_meta_create(schedule['id'], fixture)
         self.assertRaises(exception.NotFound, db_api.schedule_meta_update,
@@ -375,7 +393,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                           schedule_id, 'key')
 
     def test_metadata_get_key_not_found(self):
-        schedule = db_api.schedule_create({})
+        schedule = self._create_basic_schedule()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.schedule_meta_create(schedule['id'], fixture)
         self.assertRaises(exception.NotFound, db_api.schedule_meta_get,
@@ -466,6 +484,24 @@ class TestJobsDBApi(utils.BaseTestCase):
             'retry_count': 0,
         }
         self.job_2 = self.db_api.job_create(fixture)
+
+    def _create_basic_job(self):
+        return db_api.job_create({'action': 'snapshot',
+                                  'tenant_id': unit_utils.TENANT1})
+
+    def test_job_create_no_action(self):
+        fixture = {
+            'tenant_id': unit_utils.TENANT1,
+        }
+        self.assertRaises(exception.MissingValue,
+                          self.db_api.job_create, fixture)
+
+    def test_job_create_no_tenant_id(self):
+        fixture = {
+            'action': 'snapshot',
+        }
+        self.assertRaises(exception.MissingValue,
+                          self.db_api.job_create, fixture)
 
     def test_job_create(self):
         fixture = {
@@ -640,7 +676,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           self.db_api.job_delete, str(uuid.uuid4))
 
     def test_metadata_create(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         self.assertEqual(meta['job_id'], job['id'])
@@ -651,7 +687,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertIsNotNone(meta['id'])
 
     def test_metadata_create_duplicate(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         fixture = {'key': 'key1', 'value': 'value1'}
@@ -660,7 +696,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job['id'], fixture)
 
     def test_metadata_get_all_by_job_id(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         fixture = {'key': 'key2', 'value': 'value2'}
@@ -669,12 +705,12 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEqual(len(meta_list), 2)
 
     def test_metadata_get_all_by_job_id_no_meta(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         meta_list = db_api.job_meta_get_all_by_job_id(job['id'])
         self.assertEqual(len(meta_list), 0)
 
     def test_metadata_get(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         meta = db_api.job_meta_get(job['id'], 'key1')
@@ -685,12 +721,12 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertEquals(meta['value'], fixture['value'])
 
     def test_metadata_get_not_found(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         self.assertRaises(exception.NotFound, db_api.job_meta_get,
                           job['id'], 'key1')
 
     def test_metadata_delete(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         db_api.job_meta_delete(job['id'], fixture['key'])
@@ -699,7 +735,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertFalse(meta in metadata)
 
     def test_metadata_delete_not_found(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.job_meta_create(job['id'], fixture)
         db_api.job_meta_delete(job['id'], fixture['key'])
@@ -707,7 +743,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job['id'], fixture['key'])
 
     def test_metadata_update(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         meta = db_api.job_meta_create(job['id'], fixture)
         update_fixture = {'key': 'key1', 'value': 'value2'}
@@ -723,7 +759,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job_id, 'key2', {})
 
     def test_metadata_update_key_not_found(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.job_meta_create(job['id'], fixture)
         self.assertRaises(exception.NotFound, db_api.job_meta_update,
@@ -735,7 +771,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job_id, 'key')
 
     def test_metadata_get_key_not_found(self):
-        job = db_api.job_create({})
+        job = self._create_basic_job()
         fixture = {'key': 'key1', 'value': 'value1'}
         db_api.job_meta_create(job['id'], fixture)
         self.assertRaises(exception.NotFound, db_api.job_meta_get,

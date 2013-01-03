@@ -5,6 +5,7 @@ Defines interface for DB access
 import functools
 import logging
 import time
+import qonos.db.db_utils as db_utils
 from datetime import timedelta
 from qonos.openstack.common.gettextutils import _
 
@@ -223,6 +224,7 @@ def wrap_db_error(f):
 
 @force_dict
 def schedule_create(schedule_values):
+    db_utils.validate_schedule_values(schedule_values)
     # make a copy so we can remove 'schedule_metadata'
     # without affecting the caller
     values = schedule_values.copy()
@@ -445,6 +447,7 @@ def worker_delete(worker_id):
 
 @force_dict
 def job_create(job_values):
+    db_utils.validate_job_values(job_values)
     values = job_values.copy()
     session = get_session()
     job_ref = models.Job()
@@ -455,8 +458,7 @@ def job_create(job_values):
         del values['job_metadata']
 
     now = timeutils.utcnow()
-    if not 'action' in values:
-        values['action'] = None
+
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)

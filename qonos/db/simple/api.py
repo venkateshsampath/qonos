@@ -1,6 +1,7 @@
 import functools
 import uuid
 import copy
+import qonos.db.db_utils as db_utils
 from datetime import timedelta
 from operator import itemgetter
 from operator import methodcaller
@@ -125,6 +126,7 @@ def schedule_get_by_id(schedule_id):
 
 
 def schedule_create(schedule_values):
+    db_utils.validate_schedule_values(schedule_values)
     values = copy.deepcopy(schedule_values)
     schedule = {}
 
@@ -278,6 +280,7 @@ def worker_delete(worker_id):
 
 def job_create(job_values):
     global DATA
+    db_utils.validate_job_values(job_values)
     values = job_values.copy()
     job = {}
 
@@ -291,9 +294,6 @@ def job_create(job_values):
     job['worker_id'] = None
 
     now = timeutils.utcnow()
-
-    if not 'action' in values:
-        values['action'] = None
 
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:

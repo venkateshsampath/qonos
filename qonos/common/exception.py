@@ -21,3 +21,7 @@ class NotFound(QonosException):
 
 class Duplicate(QonosException):
     message = _('An object with the specified identifier already exists.')
+
+
+class MissingValue(QonosException):
+    message = _('A required value was not provided')
