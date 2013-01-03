@@ -245,6 +245,32 @@ def schedule_create(schedule_values):
     return _schedule_get_by_id(schedule_ref['id'])
 
 
+def paginate_query(query, model, sort_keys, limit=None, marker=None,
+                   sort_dir=None, sort_dirs=None):
+    """
+    #Note(nikhil): add the docstring help here
+    """
+    if marker is not None:
+        marker_values = []
+        for sort_key in sort_keys:
+            v = getattr(marker, sort_key)
+            marker_values.append(v)
+
+        criteria_list = []
+        crit_attrs = []
+        crit_attrs.append((model_attr > marker_values[0]))
+        criteria = sa_sql.and_(*crit_attrs)
+        criteria_list.append(criteria)
+
+        f = sa_sql.or_(*criteria_list)
+        query = query.filter(f)
+
+    if limit is not None:
+        query = query.limit(limit)
+
+    return query
+
+
 @force_dict
 def schedule_get_all(filter_args={}):
     session = get_session()
@@ -256,7 +282,6 @@ def schedule_get_all(filter_args={}):
         query = query.filter(
             models.Schedule.next_run.between(filter_args['next_run_after'],
                                              filter_args['next_run_before']))
-
     if ('next_run_after' in filter_args and
         'next_run_before' not in filter_args):
         query = query.filter(
@@ -274,6 +299,13 @@ def schedule_get_all(filter_args={}):
     if filter_args.get('instance_id') is not None:
         query = query.filter(models.Schedule.schedule_metadata.any(
                     key='instance_id', value=filter_args['instance_id']))
+
+    marker_schedule = None
+    if filter_args.get('marker') is not None:
+        marker_schedule = _schedule_get_by_id(filter_args['marker'])
+
+    query = paginate_query(query, models.Schedule, ['id'],
+                           limit=filter_args.get('limit'), marker=marker_schedule)
 
     return query.all()
 

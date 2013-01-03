@@ -5,12 +5,23 @@ from qonos.api.v1 import schedules
 from qonos.db.simple import api as db_api
 from qonos.common import exception
 from qonos.common import utils as qonos_utils
+from qonos.openstack.common import cfg
 from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
 
 
 SCHEDULE_ATTRS = ['id', 'tenant_id', 'action',
                   'minute', 'hour']
+
+
+CONF = cfg.CONF
+
+
+UUID1 = '34376f68-f84c-4dfc-a4e7-1b76df6b5c04'
+UUID2 = '390fd76f-2b9d-4519-9623-31539fb8836f'
+UUID3 = 'a3491c56-9d38-4a4e-8673-198da85cf778'
+UUID4 = 'b29bbc05-9dbd-4e23-bbeb-ed52c479c8b6'
+UUID_test = '4aacce32-0c8a-4205-a2e9-7ebf661a712e'
 
 
 class TestSchedulesApi(test_utils.BaseTestCase):
@@ -26,6 +37,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def _create_schedules(self):
         fixture = {
+            'id': UUID1,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
@@ -34,6 +46,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
+            'id': UUID2,
             'tenant_id': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
@@ -41,14 +54,33 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'next_run': qonos_utils.cron_string_to_next_datetime(30, 3)
         }
         self.schedule_2 = db_api.schedule_create(fixture)
+        fixture = {
+            'id': UUID3,
+            'tenant_id': unit_utils.TENANT3,
+            'action': 'snapshot',
+            'minute': '30',
+            'hour': '4',
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 4)
+        }
+        self.schedule_3 = db_api.schedule_create(fixture)
+        fixture = {
+            'id': UUID4,
+            'tenant_id': unit_utils.TENANT4,
+            'action': 'snapshot',
+            'minute': '30',
+            'hour': '5',
+            'next_run': qonos_utils.cron_string_to_next_datetime(30, 5)
+        }
+        self.schedule_4 = db_api.schedule_create(fixture)
 
     def test_list(self):
         request = unit_utils.get_fake_request(method='GET')
         schedules = self.controller.list(request).get('schedules')
-        self.assertEqual(len(schedules), 2)
+        self.assertEqual(len(schedules), 4)
         for k in SCHEDULE_ATTRS:
             self.assertEqual(set([s[k] for s in schedules]),
-                             set([self.schedule_1[k], self.schedule_2[k]]))
+                             set([self.schedule_1[k], self.schedule_2[k],
+                                  self.schedule_3[k], self.schedule_4[k]]))
 
     def test_list_next_run_filtered(self):
         next_run = self.schedule_1['next_run']
@@ -57,6 +89,90 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(path=path, method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 1)
+
+    def test_list_limit(self):
+        path = '?limit=2'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 2)
+
+    def test_list_limit_invalid_format(self):
+        path = '?limit=a'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_zero_limit(self):
+        path = '?limit=0'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_negative_limit(self):
+        path = '?limit=-1'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_fraction_limit(self):
+        path = '?limit=1.1'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_limit_max(self):
+        self.config(api_limit_max=3)
+        path = '?limit=4'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 3)
+
+    def test_list_default_limit(self):
+        self.config(limit_param_default=2)
+        request = unit_utils.get_fake_request(method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 2)
+
+    def test_list_with_marker(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 2)
+        for k in SCHEDULE_ATTRS:
+            self.assertEqual(set([s[k] for s in schedules]),
+                             set([self.schedule_2[k], self.schedule_3[k]]))
+
+    def test_list_marker_not_specified(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % ''
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.list, request)
+
+    def test_list_marker_not_found(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % '3c5817e2-76cb-41fe-b012-2935e406db87'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.list, request)
+
+    def test_list_invalid_marker(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % '3c5817e2-76cb'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.list, request)
+
+    def test_list_with_limit_and_marker(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s&limit=1' % UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 1)
+        for k in SCHEDULE_ATTRS:
+            self.assertEqual(set([s[k] for s in schedules]),
+                             set([self.schedule_2[k]]))
 
     def test_get(self):
         request = unit_utils.get_fake_request(method='GET')
@@ -73,6 +189,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def test_create(self):
         fixture = {'schedule': {
+            'id': UUID_test,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',

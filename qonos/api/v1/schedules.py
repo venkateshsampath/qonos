@@ -4,8 +4,12 @@ from qonos.common import exception
 from qonos.common import utils
 import qonos.db
 from qonos.openstack.common import timeutils
+from qonos.openstack.common import cfg
 from qonos.openstack.common import wsgi
 from qonos.openstack.common.gettextutils import _
+
+
+CONF = cfg.CONF
 
 
 class SchedulesController(object):
@@ -13,7 +17,20 @@ class SchedulesController(object):
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
 
-    def _get_list_filter_args(self, request):
+    def _validate_limit(self, limit):
+        try:
+            limit = int(limit)
+        except ValueError:
+            msg = _("limit param must be an integer")
+            raise webob.exc.HTTPBadRequest(explanation=msg)
+
+        if limit <= 0:
+            msg = _("limit param must be positive")
+            raise webob.exc.HTTPBadRequest(explanation=msg)
+
+        return limit
+
+    def _get_request_params(self, request):
         filter_args = {}
         if request.params.get('next_run_after') is not None:
             next_run_after = request.params['next_run_after']
@@ -33,11 +50,33 @@ class SchedulesController(object):
         if request.params.get('instance_id') is not None:
             filter_args['instance_id'] = request.params['instance_id']
 
+        if request.params.get('limit') is not None:
+            limit = request.params['limit']
+            filter_args['limit'] = limit
+
+        if request.params.get('marker') is not None:
+            marker = request.params['marker']
+            filter_args['marker'] = marker
+
         return filter_args
 
     def list(self, request):
-        filter_args = self._get_list_filter_args(request)
-        schedules = self.db_api.schedule_get_all(filter_args=filter_args)
+        filter_args = self._get_request_params(request)
+        if filter_args.get('limit'):
+            limit = filter_args['limit']
+            limit = self._validate_limit(limit)
+            limit = min(CONF.api_limit_max, limit)
+            filter_args['limit'] = limit
+        else:
+            limit = CONF.limit_param_default
+            limit = self._validate_limit(limit)
+            limit = min(CONF.api_limit_max, limit)
+            filter_args['limit'] = limit
+        try:
+            schedules = self.db_api.schedule_get_all(filter_args=filter_args)
+        except exception.NotFound:
+            msg = _('The specified marker could not be found')
+            raise webob.exc.HTTPNotFound(explanation=msg)
         [utils.serialize_datetimes(sched) for sched in schedules]
         return {'schedules': schedules}
 
