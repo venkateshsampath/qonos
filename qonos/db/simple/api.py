@@ -62,22 +62,23 @@ def _schedule_create(values):
     return copy.deepcopy(values)
 
 
-def _do_pagination(schedules, marker, limit):
-    schedules = sorted(schedules, key=itemgetter('id'))
+def _do_pagination(items, marker, limit):
+    items = sorted(items, key=itemgetter('id'))
     start = 0
     end = -1
     if marker is None:
         start = 0
     else:
-        for i, schedule in enumerate(schedules):
-            if schedule['id'] == marker:
+        for i, item in enumerate(items):
+            if item['id'] == marker:
                 start = i + 1
                 break
         else:
-            raise exception.NotFound()
+            msg = _('Marker %s not found') % marker
+            raise exception.NotFound(explanation=msg)
 
     end = start + limit if limit is not None else None
-    return schedules[start:end]
+    return items[start:end]
 
 
 def schedule_get_all(filter_args={}):
@@ -233,7 +234,6 @@ def _check_schedule_exists(schedule_id):
         msg = _('Schedule %s could not be found') % schedule_id
         raise exception.NotFound(message=msg)
 
-
 def _check_meta_exists(schedule_id, key):
     _check_schedule_exists(schedule_id)
 
@@ -242,7 +242,6 @@ def _check_meta_exists(schedule_id, key):
         msg = _('Meta %s could not be found for Schedule %s ')
         msg = msg % (key, schedule_id)
         raise exception.NotFound(message=msg)
-
 
 def schedule_meta_get_all(schedule_id):
     _check_schedule_exists(schedule_id)
@@ -269,15 +268,19 @@ def schedule_meta_update(schedule_id, key, values):
     return copy.deepcopy(meta)
 
 
-def schedule_meta_delete(schedule_id, key):
-    _check_meta_exists(schedule_id, key)
-
+def _delete_schedule_meta(schedule_id, key):
     del DATA['schedule_metadata'][schedule_id][key]
 
+def schedule_meta_delete(schedule_id, key):
+    _check_meta_exists(schedule_id, key)
+    _delete_schedule_meta(schedule_id, key)
 
-def worker_get_all():
-    return DATA['workers'].values()
-
+def worker_get_all(params={}):
+    workers = copy.deepcopy(DATA['workers'].values())
+    marker = params.get('marker')
+    limit = params.get('limit')
+    workers = _do_pagination(workers, marker, limit)
+    return workers
 
 def worker_get_by_id(worker_id):
     if worker_id not in DATA['workers']:

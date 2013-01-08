@@ -17,13 +17,6 @@ SCHEDULE_ATTRS = ['id', 'tenant_id', 'action',
 CONF = cfg.CONF
 
 
-UUID1 = '34376f68-f84c-4dfc-a4e7-1b76df6b5c04'
-UUID2 = '390fd76f-2b9d-4519-9623-31539fb8836f'
-UUID3 = 'a3491c56-9d38-4a4e-8673-198da85cf778'
-UUID4 = 'b29bbc05-9dbd-4e23-bbeb-ed52c479c8b6'
-UUID_test = '4aacce32-0c8a-4205-a2e9-7ebf661a712e'
-
-
 class TestSchedulesApi(test_utils.BaseTestCase):
 
     def setUp(self):
@@ -37,7 +30,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def _create_schedules(self):
         fixture = {
-            'id': UUID1,
+            'id': unit_utils.SCHEDULE_UUID1,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
@@ -46,7 +39,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
-            'id': UUID2,
+            'id': unit_utils.SCHEDULE_UUID2,
             'tenant_id': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
@@ -55,7 +48,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         }
         self.schedule_2 = db_api.schedule_create(fixture)
         fixture = {
-            'id': UUID3,
+            'id': unit_utils.SCHEDULE_UUID3,
             'tenant_id': unit_utils.TENANT3,
             'action': 'snapshot',
             'minute': '30',
@@ -64,7 +57,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         }
         self.schedule_3 = db_api.schedule_create(fixture)
         fixture = {
-            'id': UUID4,
+            'id': unit_utils.SCHEDULE_UUID4,
             'tenant_id': unit_utils.TENANT4,
             'action': 'snapshot',
             'minute': '30',
@@ -135,7 +128,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def test_list_with_marker(self):
         self.config(limit_param_default=2, api_limit_max=4)
-        path = '?marker=%s' % UUID1
+        path = '?marker=%s' % unit_utils.SCHEDULE_UUID1
         request = unit_utils.get_fake_request(path=path, method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 2)
@@ -166,7 +159,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def test_list_with_limit_and_marker(self):
         self.config(limit_param_default=2, api_limit_max=4)
-        path = '?marker=%s&limit=1' % UUID1
+        path = '?marker=%s&limit=1' % unit_utils.SCHEDULE_UUID1
         request = unit_utils.get_fake_request(path=path, method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 1)
@@ -189,7 +182,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def test_create(self):
         fixture = {'schedule': {
-            'id': UUID_test,
+            'id': unit_utils.SCHEDULE_UUID5,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',

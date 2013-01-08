@@ -434,9 +434,16 @@ def schedule_meta_delete(schedule_id, key):
 
 
 @force_dict
-def worker_get_all():
+def worker_get_all(params={}):
     session = get_session()
     query = session.query(models.Worker)
+
+    marker_worker = None
+    if params.get('marker') is not None:
+        marker_worker = _worker_get_by_id(params['marker'])
+
+    query = paginate_query(query, models.Worker, ['id'],
+                           limit=params.get('limit'), marker=marker_worker)
 
     return query.all()
 
