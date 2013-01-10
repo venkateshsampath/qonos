@@ -98,6 +98,12 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
                           request, None)
 
+    def test_create_malformed_body_bad_request(self):
+        request = unit_utils.get_fake_request(method='POST')
+        schedule_id = str(uuid.uuid4())
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
+                          request, 'fake-body')
+
     def test_create_no_schedule_bad_request(self):
         request = unit_utils.get_fake_request(method='POST')
         schedule_id = str(uuid.uuid4())

@@ -113,6 +113,21 @@ class TestApi(utils.BaseTestCase):
         schedules = self.client.list_schedules()
         self.assertEqual(len(schedules), 0)
 
+        # create invalid schedule
+        request = {'not a schedule': 'yes'}
+
+        self.assertRaises(client_exc.BadRequest, self.client.create_schedule,
+                          request)
+
+        # create malformed schedule
+        request = 'not a schedule'
+
+        self.assertRaises(client_exc.BadRequest, self.client.create_schedule,
+                          request)
+
+        # create schedule with no body
+        self.assertRaises(client_exc.BadRequest, self.client.create_schedule,
+                          None)
         # create schedule
         request = {
             'schedule':

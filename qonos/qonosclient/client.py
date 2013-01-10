@@ -22,6 +22,9 @@ class Client(object):
         conn.request(method, url, body=body,
                      headers={'Content-Type': 'application/json'})
         response = conn.getresponse()
+        if response.status == 400:
+            raise exception.BadRequest('Bad Request Received')
+
         if response.status == 404:
             raise exception.NotFound('Resource Not Found')
 
