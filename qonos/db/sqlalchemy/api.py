@@ -250,17 +250,32 @@ def paginate_query(query, model, sort_keys, limit=None, marker=None,
     """
     #Note(nikhil): add the docstring help here
     """
+
+    for sort_key in sort_keys:
+        try:
+            sort_key_attr = getattr(model, sort_key)
+        except AttributeError:
+            raise exception.InvalidSortKey()
+        query = query.order_by(sqlalchemy.asc(sort_key_attr))
+
     if marker is not None:
         marker_values = []
         for sort_key in sort_keys:
             v = getattr(marker, sort_key)
             marker_values.append(v)
 
+    #Note(nikhil): the underlying code only supports asc order of sort_dir
+    #at the moment. However, more than one sort_keys could be supplied.
         criteria_list = []
-        crit_attrs = []
-        crit_attrs.append((model_attr > marker_values[0]))
-        criteria = sa_sql.and_(*crit_attrs)
-        criteria_list.append(criteria)
+        for i in xrange(0, len(sort_keys)):
+            crit_attrs = []
+            for j in xrange(0, i): 
+                model_attr = getattr(model, sort_keys[j])
+                crit_attrs.append((model_attr == marker_values[j]))
+            model_attr = getattr(model, sort_keys[i])
+            crit_attrs.append((model_attr > marker_values[i]))
+            criteria = sa_sql.and_(*crit_attrs)
+            criteria_list.append(criteria)
 
         f = sa_sql.or_(*criteria_list)
         query = query.filter(f)

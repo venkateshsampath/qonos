@@ -53,7 +53,7 @@ class WorkersController(object):
             limit = min(CONF.api_limit_max, limit)
             params['limit'] = limit
         try:
-            workers = self.db_api.worker_get_all(params)
+            workers = self.db_api.worker_get_all(params=params)
         except exception.NotFound:
             raise webob.exc.HTTPNotFound()
         [utils.serialize_datetimes(worker) for worker in workers]

@@ -2,6 +2,7 @@
 import os
 import sys
 from random import randint
+from operator import itemgetter
 
 from qonos.common import config
 import qonos.db
@@ -375,3 +376,137 @@ class TestApi(utils.BaseTestCase):
         # make sure job no longer exists
         self.assertRaises(client_exc.NotFound, self.client.get_job,
                           job['id'])
+
+    def test_pagination(self):
+
+        # (setup) create schedule
+        meta1 = {'key': 'key1', 'value': 'value1'}
+        meta2 = {'key': 'key2', 'value': 'value2'}
+        request = {
+            'schedule':
+            {
+                'tenant_id': TENANT1,
+                'action': 'snapshot',
+                'minute': '30',
+                'hour': '12',
+                'schedule_metadata': [
+                    meta1,
+                    meta2,
+                ]
+            }
+        }
+        schedule_1 = self.client.create_schedule(request)
+        schedule_2 = self.client.create_schedule(request)
+        schedule_3 = self.client.create_schedule(request)
+        schedule_4 = self.client.create_schedule(request)
+        schedules = [schedule_1, schedule_2, schedule_3, schedule_4]
+        schedules = sorted(schedules, key=itemgetter('id'))
+
+        # create worker
+        worker_1 = self.client.create_worker('hostname')
+        worker_2 = self.client.create_worker('hostname')
+        worker_3 = self.client.create_worker('hostname')
+        worker_4 = self.client.create_worker('hostname')
+        workers = [worker_1, worker_2, worker_3, worker_4]
+        workers = sorted(workers, key=itemgetter('id'))
+
+        # create job
+        job_1 = self.client.create_job(schedule_1['id'])
+        job_2 = self.client.create_job(schedule_2['id'])
+        job_3 = self.client.create_job(schedule_3['id'])
+        job_4 = self.client.create_job(schedule_4['id'])
+        jobs = [job_1, job_2, job_3, job_4]
+        jobs = sorted(jobs, key=itemgetter('id'))
+
+        #list schedules
+        response = self.client.list_schedules()
+        self.assertEqual(len(response), 4)
+        response_ids = set(r['id'] for r in response)
+        schedule_ids = set(s['id'] for s in schedules)
+        self.assertEqual(response_ids, schedule_ids)
+
+        #list schedules with limit
+        filter_args = {'limit': '2'}
+        response = self.client.list_schedules(filter_args=filter_args)
+        self.assertEqual(len(response), 2)
+        response_ids = set(r['id'] for r in response)
+        schedule_ids = set(s['id'] for s in schedules[0:2])
+        self.assertEqual(response_ids, schedule_ids)
+
+        #list schedules with marker
+        filter_args = {'marker': schedules[0]['id']}
+        response = self.client.list_schedules(filter_args=filter_args)
+        self.assertEqual(len(response), 3)
+        response_ids = set(r['id'] for r in response)
+        schedule_ids = set(s['id'] for s in schedules[1:4])
+        self.assertEqual(response_ids, schedule_ids)
+
+        #list schedules with limit and marker
+        filter_args = {'limit': '2', 'marker': schedules[0]['id']}
+        response = self.client.list_schedules(filter_args=filter_args)
+        self.assertEqual(len(response), 2)
+        response_ids = set(r['id'] for r in response)
+        schedule_ids = set(s['id'] for s in schedules[1:3])
+        self.assertEqual(response_ids, schedule_ids)
+
+        # list workers
+        response = self.client.list_workers()
+        self.assertEqual(len(response), 4)
+        response_ids = set(r['id'] for r in response)
+        worker_ids = set(w['id'] for w in workers)
+        self.assertEqual(response_ids, worker_ids)
+
+        # list workers with limit
+        params = {'limit': '2'}
+        response = self.client.list_workers(params=params)
+        self.assertEqual(len(response), 2)
+        response_ids = set(r['id'] for r in response)
+        worker_ids = set(w['id'] for w in workers[0:2])
+        self.assertEqual(response_ids, worker_ids)
+
+        # list workers with marker
+        params = {'marker': workers[0]['id']}
+        response = self.client.list_workers(params=params)
+        self.assertEqual(len(response), 3)
+        response_ids = set(r['id'] for r in response)
+        worker_ids = set(w['id'] for w in workers[1:4])
+        self.assertEqual(response_ids, worker_ids)
+
+        # list workers with limit and marker
+        params = {'marker': workers[0]['id'], 'limit': '2'}
+        response = self.client.list_workers(params=params)
+        self.assertEqual(len(response), 2)
+        response_ids = set(r['id'] for r in response)
+        worker_ids = set(w['id'] for w in workers[1:3])
+        self.assertEqual(response_ids, worker_ids)
+
+        # list jobs
+        response = self.client.list_jobs()
+        self.assertEqual(len(response), 4)
+        response_ids = set(r['id'] for r in response)
+        job_ids = set(j['id'] for j in jobs)
+        self.assertEqual(response_ids, job_ids)
+
+        # list jobs with limit
+        params = {'limit': '2'}
+        response = self.client.list_jobs(params=params)
+        self.assertEqual(len(response), 2)
+        response_ids = set(r['id'] for r in response)
+        job_ids = set(j['id'] for j in jobs[0:2])
+        self.assertEqual(job_ids, response_ids)
+
+        # list jobs with marker
+        params = {'marker': jobs[0]['id']}
+        response = self.client.list_jobs(params=params)
+        self.assertEqual(len(response), 3)
+        response_ids = set(r['id'] for r in response)
+        job_ids = set(j['id'] for j in jobs[1:4])
+        self.assertEqual(response_ids, job_ids)
+
+        # list jobs with limit and marker
+        params = {'limit': '2', 'marker': jobs[0]['id']}
+        response = self.client.list_jobs(params=params)
+        self.assertEqual(len(response), 2)
+        response_ids = set(r['id'] for r in response)
+        job_ids = set(j['id'] for j in jobs[1:3])
+        self.assertEqual(job_ids, response_ids)
