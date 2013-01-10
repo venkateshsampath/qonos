@@ -575,18 +575,18 @@ class TestJobsDBApi(utils.BaseTestCase):
                          fixture['job_metadata'][0]['value'])
 
     def test_jobs_cleanup_hard_timed_out(self):
-        workers = self.db_api.job_get_all()
-        self.assertEqual(len(workers), 2)
+        jobs = self.db_api.job_get_all()
+        self.assertEqual(len(jobs), 2)
         timeutils.set_time_override()
         timeutils.advance_time_seconds(61)
         self.db_api._jobs_cleanup_hard_timed_out()
         timeutils.clear_time_override()
-        workers = self.db_api.job_get_all()
-        self.assertEqual(len(workers), 0)
+        jobs = self.db_api.job_get_all()
+        self.assertEqual(len(jobs), 0)
 
     def test_job_get_all(self):
-        workers = self.db_api.job_get_all()
-        self.assertEqual(len(workers), 2)
+        jobs = self.db_api.job_get_all()
+        self.assertEqual(len(jobs), 2)
 
     def test_job_get_by_id(self):
         expected = self.job_1
