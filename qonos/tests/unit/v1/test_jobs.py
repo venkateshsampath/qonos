@@ -27,6 +27,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def _create_jobs(self):
         fixture = {
+            'id': unit_utils.SCHEDULE_UUID1,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
@@ -35,6 +36,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
+            'id': unit_utils.SCHEDULE_UUID2,
             'tenant_id': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
@@ -49,6 +51,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         }
         self.schedule_2 = db_api.schedule_create(fixture)
         fixture = {
+            'id': unit_utils.JOB_UUID1,
             'schedule_id': self.schedule_1['id'],
             'tenant_id': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
@@ -58,6 +61,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         }
         self.job_1 = db_api.job_create(fixture)
         fixture = {
+            'id': unit_utils.JOB_UUID2,
             'schedule_id': self.schedule_2['id'],
             'tenant_id': unit_utils.TENANT2,
             'worker_id': unit_utils.WORKER_UUID2,
@@ -72,8 +76,29 @@ class TestJobsApi(test_utils.BaseTestCase):
             ],
         }
         self.job_2 = db_api.job_create(fixture)
+        fixture = {
+            'id': unit_utils.JOB_UUID3,
+            'schedule_id': self.schedule_1['id'],
+            'tenant_id': unit_utils.TENANT1,
+            'worker_id': unit_utils.WORKER_UUID1,
+            'action': 'snapshot',
+            'status': 'queued',
+            'retry_count': 0,
+        }
+        self.job_3 = db_api.job_create(fixture)
+        fixture = {
+            'id': unit_utils.JOB_UUID4,
+            'schedule_id': self.schedule_1['id'],
+            'tenant_id': unit_utils.TENANT1,
+            'worker_id': unit_utils.WORKER_UUID1,
+            'action': 'snapshot',
+            'status': 'queued',
+            'retry_count': 0,
+        }
+        self.job_4 = db_api.job_create(fixture)
 
     def test_list(self):
+        self.config(api_limit_max=4, limit_param_default=2)
         request = unit_test_utils.get_fake_request(method='GET')
         jobs = self.controller.list(request).get('jobs')
         self.assertEqual(len(jobs), 2)
@@ -81,9 +106,94 @@ class TestJobsApi(test_utils.BaseTestCase):
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_1[k], self.job_2[k]]))
 
+    def test_list_limit(self):
+        path = '?limit=2'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 2)
+
+    def test_list_limit_invalid_format(self):
+        path = '?limit=a'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_zero_limit(self):
+        path = '?limit=0'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_negative_limit(self):
+        path = '?limit=-1'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_fraction_limit(self):
+        path = '?limit=1.1'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.list, request)
+
+    def test_list_limit_max(self):
+        self.config(api_limit_max=3)
+        path = '?limit=4'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 3)
+
+    def test_list_default_limit(self):
+        self.config(limit_param_default=2)
+        request = unit_utils.get_fake_request(method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 2)
+
+    def test_list_with_marker(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % unit_utils.JOB_UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 2)
+        for k in JOB_ATTRS:
+            self.assertEqual(set([s[k] for s in jobs]),
+                             set([self.job_2[k], self.job_3[k]]))
+
+    def test_list_marker_not_specified(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % ''
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.list, request)
+
+    def test_list_marker_not_found(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % '3c5817e2-76cb-41fe-b012-2935e406db87'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.list, request)
+
+    def test_list_invalid_marker(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % '3c5817e2-76cb'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          self.controller.list, request)
+
+    def test_list_with_limit_and_marker(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s&limit=1' % unit_utils.JOB_UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        for k in JOB_ATTRS:
+            self.assertEqual(set([s[k] for s in jobs]),
+                             set([self.job_2[k]]))
+
     def test_create(self):
         request = unit_test_utils.get_fake_request(method='POST')
-        fixture = {'job': {'schedule_id': self.schedule_1['id']}}
+        fixture = {'job': {'schedule_id': self.schedule_1['id'],
+                            'id': unit_utils.JOB_UUID5}}
         job = self.controller.create(request, fixture).get('job')
         self.assertIsNotNone(job)
         self.assertIsNotNone(job.get('id'))
@@ -95,7 +205,8 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def test_create_with_metadata(self):
         request = unit_test_utils.get_fake_request(method='POST')
-        fixture = {'job': {'schedule_id': self.schedule_2['id']}}
+        fixture = {'job': {'schedule_id': self.schedule_2['id'],
+                           'id': unit_utils.JOB_UUID5}}
         job = self.controller.create(request, fixture).get('job')
         self.assertIsNotNone(job)
         self.assertIsNotNone(job.get('id'))

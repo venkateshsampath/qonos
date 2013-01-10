@@ -338,12 +338,16 @@ def job_create(job_values):
     return job_get_by_id(job['id'])
 
 
-def job_get_all():
+def job_get_all(params={}):
     jobs = copy.deepcopy(DATA['jobs'].values())
 
     for job in jobs:
         job['job_metadata'] =\
             job_meta_get_all_by_job_id(job['id'])
+
+    marker = params.get('marker')
+    limit = params.get('limit')
+    jobs = _do_pagination(jobs, marker, limit)
 
     return jobs
 

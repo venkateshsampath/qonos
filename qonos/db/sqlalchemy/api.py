@@ -511,10 +511,17 @@ def job_create(job_values):
 
 
 @force_dict
-def job_get_all():
+def job_get_all(params={}):
     session = get_session()
     query = session.query(models.Job)\
                    .options(sa_orm.subqueryload('job_metadata'))
+
+    marker_job = None
+    if params.get('marker') is not None:
+        marker_job = _job_get_by_id(params['marker'])
+
+    query = paginate_query(query, models.Job, ['id'],
+                           limit=params.get('limit'), marker=marker_job)
 
     return query.all()
 
