@@ -50,8 +50,9 @@ class SchedulesController(object):
         return utils.cron_string_to_next_datetime(minute, hour, day_of_month,
                                                   month, day_of_week)
 
-    def create(self, request, body):
-        if body is None or body.get('schedule') is None:
+    def create(self, request, body=None):
+        if (body is None or type(body).__name__ != 'dict' or
+            body.get('schedule') is None):
             raise webob.exc.HTTPBadRequest()
 
         values = {}
