@@ -51,7 +51,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(workers), 0)
 
         # create worker
-        worker = self.client.create_worker('hostname')
+        worker = self.client.create_worker('hostname', 'workername')
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
 

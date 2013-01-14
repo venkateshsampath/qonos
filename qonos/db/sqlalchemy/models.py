@@ -119,8 +119,10 @@ class ScheduleMetadata(BASE, ModelBase):
 class Worker(BASE, ModelBase):
     """Represents a worker in the datastore"""
     __tablename__ = 'workers'
+    __table_args__ = (UniqueConstraint('host', 'worker_name'), {})
 
-    host = Column(Text)
+    host = Column(Text, nullable=False)
+    worker_name = Column(Text, nullable=False)
 
 
 class Job(BASE, ModelBase):

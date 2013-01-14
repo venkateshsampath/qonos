@@ -41,8 +41,8 @@ class Client(object):
     def list_workers(self):
         return self._do_request('GET', '/v1/workers')['workers']
 
-    def create_worker(self, host):
-        body = {'worker': {'host': host}}
+    def create_worker(self, host, worker_name):
+        body = {'worker': {'host': host, 'worker_name': worker_name}}
         return self._do_request('POST', '/v1/workers', body)['worker']
 
     def get_worker(self, worker_id):
