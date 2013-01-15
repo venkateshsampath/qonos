@@ -43,12 +43,13 @@ class WorkersController(object):
         try:
             # Check that worker exists
             self.db_api.worker_get_by_id(worker_id)
+
+            job = self.db_api.job_get_and_assign_next_by_action(action,
+                                                                worker_id)
         except exception.NotFound as e:
             msg = _('Worker %s could not be found.') % worker_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-        job = self.db_api.job_get_and_assign_next_by_action(action,
-                                                            worker_id)
         if not job is None:
             utils.serialize_datetimes(job)
         return {'job': job}
