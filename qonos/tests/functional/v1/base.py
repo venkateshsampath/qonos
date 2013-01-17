@@ -1,3 +1,4 @@
+
 import os
 import sys
 from random import randint
@@ -65,8 +66,8 @@ class TestApi(utils.BaseTestCase):
         self.assertDictEqual(workers[0], worker)
 
         # get job for worker no jobs for action
-        self.assertRaises(client_exc.NotFound, self.client.get_next_job,
-                          worker['id'], 'snapshot')
+        job = self.client.get_next_job(worker['id'], 'snapshot')
+        self.assertIsNone(job['job'])
 
         # (setup) create schedule
         meta1 = {'key': 'key1', 'value': 'value1'}
@@ -90,7 +91,8 @@ class TestApi(utils.BaseTestCase):
 
         self.client.create_job(schedule['id'])
 
-        next_job = self.client.get_next_job(worker['id'], 'snapshot')
+        job = self.client.get_next_job(worker['id'], 'snapshot')
+        next_job = job['job']
         self.assertIsNotNone(next_job.get('id'))
         self.assertEqual(next_job['schedule_id'], schedule['id'])
         self.assertEqual(next_job['tenant_id'], schedule['tenant_id'])
@@ -100,8 +102,9 @@ class TestApi(utils.BaseTestCase):
         self.assertMetadataInList(next_job['job_metadata'], meta2)
 
         # get job for worker no jobs left for action
-        self.assertRaises(client_exc.NotFound, self.client.get_next_job,
-                          worker['id'], 'snapshot')
+        job = self.client.get_next_job(worker['id'], 'snapshot')
+        self.assertIsNone(job['job'])
+
         # delete worker
         self.client.delete_worker(worker['id'])
 

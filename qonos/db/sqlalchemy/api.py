@@ -87,7 +87,9 @@ def force_dict(func):
         return to_return
 
     def convert_output(output):
-        if isinstance(output, list):
+        if output is None:
+            to_return = None
+        elif isinstance(output, list):
             to_return = convert_list(output)
         else:
             to_return = convert_object(output)
@@ -516,7 +518,7 @@ def job_get_and_assign_next_by_action(action, worker_id):
         job_ref = _job_get_next_by_action(session, now, action)
 
         if job_ref is None:
-            raise exception.NotFound()
+            return None
 
         job_ref.update({'worker_id': worker_id,
                         'retry_count': job_ref['retry_count'] + 1})

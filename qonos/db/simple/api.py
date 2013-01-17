@@ -359,7 +359,7 @@ def job_get_and_assign_next_by_action(action, worker_id):
             break
 
     if job_ref is None:
-        raise exception.NotFound("No jobs found for action: %s" % action)
+        return None
 
     job_id = job_ref['id']
     DATA['jobs'][job_id]['worker_id'] = worker_id
