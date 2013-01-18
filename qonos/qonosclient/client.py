@@ -67,7 +67,9 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        return self._do_request('GET', path % query)['schedules']
+        #return self._do_request('GET', path % query)['schedules']
+        res = self._do_request('GET', path % query)
+        return [res['schedules'], res['next_page']]
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)['schedule']
@@ -75,6 +77,7 @@ class Client(object):
     def get_schedule(self, schedule_id):
         path = '/v1/schedules/%s' % schedule_id
         return self._do_request('GET', path)['schedule']
+        #return self._do_request('GET', path)
 
     def update_schedule(self, schedule_id, schedule):
         path = '/v1/schedules/%s' % schedule_id

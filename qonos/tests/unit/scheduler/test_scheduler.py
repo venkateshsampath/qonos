@@ -79,7 +79,8 @@ class TestScheduler(test_utils.BaseTestCase):
 
         filter_args = {'next_run_after': previous_run,
                        'next_run_before': current_run}
-        self.client.list_schedules(filter_args=filter_args).AndReturn([])
+        #self.client.list_schedules(filter_args=filter_args).AndReturn([])
+        self.client.list_schedules(filter_args=filter_args)
         self.mox.ReplayAll()
         self.scheduler.get_schedules(previous_run, current_run)
         self.mox.VerifyAll()

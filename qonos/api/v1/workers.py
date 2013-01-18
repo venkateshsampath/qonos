@@ -40,18 +40,12 @@ class WorkersController(object):
         return params
 
     def list(self, request):
-        params = {}
         params = self._get_request_params(request)
-        if params.get('limit'):
-            limit = params['limit']
-            limit = self._validate_limit(limit)
-            limit = min(CONF.api_limit_max, limit)
-            params['limit'] = limit
-        else:
-            limit = CONF.limit_param_default
-            limit = self._validate_limit(limit)
-            limit = min(CONF.api_limit_max, limit)
-            params['limit'] = limit
+        params = self._get_request_params(request)
+        limit = params.get('limit') or CONF.limit_param_default
+        limit = self._validate_limit(limit)
+        limit = min(CONF.api_limit_max, limit)
+        params['limit'] = limit
         try:
             workers = self.db_api.worker_get_all(params=params)
         except exception.NotFound:

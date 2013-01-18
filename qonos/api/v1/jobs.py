@@ -41,18 +41,11 @@ class JobsController(object):
         return params
 
     def list(self, request):
-        params = {}
         params = self._get_request_params(request)
-        if params.get('limit'):
-            limit = params['limit']
-            limit = self._validate_limit(limit)
-            limit = min(CONF.api_limit_max, limit)
-            params['limit'] = limit
-        else:
-            limit = CONF.limit_param_default
-            limit = self._validate_limit(limit)
-            limit = min(CONF.api_limit_max, limit)
-            params['limit'] = limit
+        limit = params.get('limit') or CONF.limit_param_default
+        limit = self._validate_limit(limit)
+        limit = min(CONF.api_limit_max, limit)
+        params['limit'] = limit
         try:
             jobs = self.db_api.job_get_all(params)
         except exception.NotFound:

@@ -62,16 +62,10 @@ class SchedulesController(object):
 
     def list(self, request):
         filter_args = self._get_request_params(request)
-        if filter_args.get('limit'):
-            limit = filter_args['limit']
-            limit = self._validate_limit(limit)
-            limit = min(CONF.api_limit_max, limit)
-            filter_args['limit'] = limit
-        else:
-            limit = CONF.limit_param_default
-            limit = self._validate_limit(limit)
-            limit = min(CONF.api_limit_max, limit)
-            filter_args['limit'] = limit
+        limit = filter_args.get('limit') or CONF.limit_param_default
+        limit = self._validate_limit(limit)
+        limit = min(CONF.api_limit_max, limit)
+        filter_args['limit'] = limit
         try:
             schedules = self.db_api.schedule_get_all(filter_args=filter_args)
         except exception.NotFound:
