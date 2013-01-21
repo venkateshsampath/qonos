@@ -37,7 +37,9 @@ class TestApi(utils.BaseTestCase):
         for job in jobs:
             self.client.delete_job(job['id'])
 
-        schedules = self.client.list_schedules()
+        #schedules = self.client.list_schedules()
+        response = self.client.list_schedules()
+        schedules = response[0]
         for schedule in schedules:
             self.client.delete_schedule(schedule['id'])
 
@@ -114,7 +116,11 @@ class TestApi(utils.BaseTestCase):
                           worker['id'])
 
     def test_schedule_workflow(self):
-        schedules = self.client.list_schedules()
+        response = self.client.list_schedules()
+        schedules = response[0]
+        import pprint
+        pp = pprint.PrettyPrinter()
+        pp.pprint(schedules)
         self.assertEqual(len(schedules), 0)
 
         # create invalid schedule
@@ -160,7 +166,8 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(schedule['hour'], 12)
 
         #list schedules
-        schedules = self.client.list_schedules()
+        response = self.client.list_schedules()
+        schedules = response[0]  
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
 
@@ -168,45 +175,53 @@ class TestApi(utils.BaseTestCase):
         filter = {}
         filter['next_run_after'] = schedule['next_run']
         filter['next_run_before'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
         filter['next_run_after'] = '2010-11-30T15:23:00Z'
         filter['next_run_before'] = '2011-11-30T15:23:00Z'
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 0)
 
         #list schedules, next_run_before filter
         filter = {}
         filter['next_run_before'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 0)
 
         #list schedules, next_run_after filter
         filter = {}
         filter['next_run_after'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
 
         #list schedules, tenant_id filter
         filter = {}
         filter['tenant_id'] = TENANT1
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
         filter['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 0)
 
         #list schedules, instance_id filter
         filter = {}
         filter['instance_id'] = 'my_instance_1'
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
         filter['instance_id'] = 'aaaa-bbbb-cccc-dddd'
-        schedules = self.client.list_schedules(filter_args=filter)
+        response = self.client.list_schedules(filter_args=filter)
+        schedules = response[0]
         self.assertEqual(len(schedules), 0)
 
         #update schedule
@@ -420,34 +435,38 @@ class TestApi(utils.BaseTestCase):
 
         #list schedules
         response = self.client.list_schedules()
-        self.assertEqual(len(response), 4)
-        response_ids = set(r['id'] for r in response)
+        actual_schedules = response[0]
+        self.assertEqual(len(actual_schedules), 4)
+        actual_ids = set(a['id'] for a in actual_schedules)
         schedule_ids = set(s['id'] for s in schedules)
-        self.assertEqual(response_ids, schedule_ids)
+        self.assertEqual(actual_ids, schedule_ids)
 
         #list schedules with limit
         filter_args = {'limit': '2'}
         response = self.client.list_schedules(filter_args=filter_args)
-        self.assertEqual(len(response), 2)
-        response_ids = set(r['id'] for r in response)
+        actual_schedules = response[0]
+        self.assertEqual(len(actual_schedules), 2)
+        actual_ids = set(a['id'] for a in actual_schedules)
         schedule_ids = set(s['id'] for s in schedules[0:2])
-        self.assertEqual(response_ids, schedule_ids)
+        self.assertEqual(actual_ids, schedule_ids)
 
         #list schedules with marker
         filter_args = {'marker': schedules[0]['id']}
         response = self.client.list_schedules(filter_args=filter_args)
-        self.assertEqual(len(response), 3)
-        response_ids = set(r['id'] for r in response)
+        actual_schedules = response[0]
+        self.assertEqual(len(actual_schedules), 3)
+        actual_ids = set(a['id'] for a in actual_schedules)
         schedule_ids = set(s['id'] for s in schedules[1:4])
-        self.assertEqual(response_ids, schedule_ids)
+        self.assertEqual(actual_ids, schedule_ids)
 
         #list schedules with limit and marker
         filter_args = {'limit': '2', 'marker': schedules[0]['id']}
         response = self.client.list_schedules(filter_args=filter_args)
-        self.assertEqual(len(response), 2)
-        response_ids = set(r['id'] for r in response)
+        actual_schedules = response[0]
+        self.assertEqual(len(actual_schedules), 2)
+        actual_ids = set(a['id'] for a in actual_schedules)
         schedule_ids = set(s['id'] for s in schedules[1:3])
-        self.assertEqual(response_ids, schedule_ids)
+        self.assertEqual(actual_ids, schedule_ids)
 
         # list workers
         response = self.client.list_workers()

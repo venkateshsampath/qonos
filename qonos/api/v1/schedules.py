@@ -72,7 +72,8 @@ class SchedulesController(object):
             msg = _('The specified marker could not be found')
             raise webob.exc.HTTPNotFound(explanation=msg)
         [utils.serialize_datetimes(sched) for sched in schedules]
-        return {'schedules': schedules}
+        links = [ {'rel': 'next', 'href': next_page} ]
+        return {'schedules': schedules, 'schedules_links': links}
 
     def _schedule_to_next_run(self, schedule):
         minute = schedule.get('minute', '*')

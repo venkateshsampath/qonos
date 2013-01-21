@@ -79,8 +79,10 @@ class TestScheduler(test_utils.BaseTestCase):
 
         filter_args = {'next_run_after': previous_run,
                        'next_run_before': current_run}
-        #self.client.list_schedules(filter_args=filter_args).AndReturn([])
-        self.client.list_schedules(filter_args=filter_args)
+        #expected = [{'foo': 'bar'}, 'baz']
+        expected = [ None, None ]
+        self.client.list_schedules(filter_args=filter_args).AndReturn(expected)
+        #self.client.list_schedules(filter_args=filter_args)
         self.mox.ReplayAll()
         self.scheduler.get_schedules(previous_run, current_run)
         self.mox.VerifyAll()
@@ -91,7 +93,8 @@ class TestScheduler(test_utils.BaseTestCase):
         epoch = timeutils.isotime(datetime.datetime(1970, 1, 1))
         filter_args = {'next_run_after': epoch,
                        'next_run_before': current_run}
-        self.client.list_schedules(filter_args=filter_args).AndReturn([])
+        expected = [ None, None ]
+        self.client.list_schedules(filter_args=filter_args).AndReturn(expected)
         self.mox.ReplayAll()
         self.scheduler.get_schedules(current_run=current_run)
         self.mox.VerifyAll()

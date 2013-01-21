@@ -69,7 +69,13 @@ class Client(object):
             query += ('%s=%s&' % (key, filter_args[key]))
         #return self._do_request('GET', path % query)['schedules']
         res = self._do_request('GET', path % query)
-        return [res['schedules'], res['next_page']]
+        links = res['schedules_links']
+        for item in range(len(links)):
+            if links[item].get('rel')=='next':
+                next_page = links[item].get('href')
+                break
+
+        return [res['schedules'], next_page]
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)['schedule']
