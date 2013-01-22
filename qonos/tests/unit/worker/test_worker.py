@@ -18,7 +18,8 @@ class TestWorker(test_utils.BaseTestCase):
         def client_factory(*args, **kwargs):
             return self.client
 
-        self.worker = TestableWorker(client_factory)
+        self.processor = FakeProcessor()
+        self.worker = worker.Worker(client_factory, self.processor)
 
     def tearDown(self):
         self.mox.UnsetStubs()
@@ -49,9 +50,9 @@ class TestWorker(test_utils.BaseTestCase):
         self.stubs.Set(time, 'sleep', fake_sleep)
 
         self.worker.run(run_once=True, poll_once=True)
-        self.assertTrue(self.worker.was_init_worker_called(1))
-        self.assertTrue(self.worker.was_process_job_called(0))
-        self.assertTrue(self.worker.was_cleanup_worker_called(1))
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(0))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
 
         self.mox.VerifyAll()
 
@@ -67,9 +68,9 @@ class TestWorker(test_utils.BaseTestCase):
         self.stubs.Set(time, 'sleep', fake_sleep)
 
         self.worker.run(run_once=True, poll_once=True)
-        self.assertTrue(self.worker.was_init_worker_called(1))
-        self.assertTrue(self.worker.was_process_job_called(1))
-        self.assertTrue(self.worker.was_cleanup_worker_called(1))
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(1))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
 
         self.mox.VerifyAll()
 
@@ -85,35 +86,36 @@ class TestWorker(test_utils.BaseTestCase):
         self.stubs.Set(time, 'sleep', fake_sleep)
 
         self.worker.run(run_once=True, poll_once=False)
-        self.assertTrue(self.worker.was_init_worker_called(1))
-        self.assertTrue(self.worker.was_process_job_called(1))
-        self.assertTrue(self.worker.was_cleanup_worker_called(1))
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(1))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
 
         self.mox.VerifyAll()
 
 
-class TestableWorker(worker.Worker):
+class FakeProcessor(worker.JobProcessor):
 
-    def __init__(self, client_factory):
-        self.init_worker_called = 0
+    def __init__(self):
+        self.init_processor_called = 0
         self.process_job_called = 0
-        self.cleanup_worker_called = 0
-        super(TestableWorker, self).__init__(client_factory)
+        self.cleanup_processor_called = 0
+        super(FakeProcessor, self).__init__()
 
-    def init_worker(self):
-        self.init_worker_called += 1
+    def init_processor(self, worker):
+        super(FakeProcessor, self).init_processor(worker)
+        self.init_processor_called += 1
 
     def process_job(self, job):
         self.process_job_called += 1
 
-    def cleanup_worker(self):
-        self.cleanup_worker_called += 1
+    def cleanup_processor(self):
+        self.cleanup_processor_called += 1
 
-    def was_init_worker_called(self, times):
-        return self.init_worker_called == times
+    def was_init_processor_called(self, times):
+        return self.init_processor_called == times
 
     def was_process_job_called(self, times):
         return self.process_job_called == times
 
-    def was_cleanup_worker_called(self, times):
-        return self.cleanup_worker_called == times
+    def was_cleanup_processor_called(self, times):
+        return self.cleanup_processor_called == times

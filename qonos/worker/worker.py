@@ -39,9 +39,10 @@ CONF.register_cli_opts(worker_cli_opts)
 
 
 class Worker(object):
-    def __init__(self, client_factory):
+    def __init__(self, client_factory, processor):
         self.client = client_factory(CONF.worker.api_endpoint,
                                      CONF.worker.api_port)
+        self.processor = processor
         self.worker_id = None
         self.host = socket.gethostname()
         self.worker_name = CONF.worker.worker_name
@@ -51,14 +52,14 @@ class Worker(object):
     def run(self, run_once=False, poll_once=False):
         LOG.debug(_('Starting qonos worker service'))
 
-        self.init_worker()
+        self.processor.init_processor(self)
         self.worker_id = self._register_worker()
 
         if CONF.worker.daemonized:
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = []
-            for handler in pylog.getLogger().handlers:
+            for handler in pylogs.getLogger().handlers:
                 if (hasattr(handler, 'stream') and
                         hasattr(handler.stream, 'fileno')):
                     open_files.append(handler.stream)
@@ -81,13 +82,13 @@ class Worker(object):
             job = self._poll_for_next_job(poll_once)
             LOG.debug(_('Processing job: %s' % job))
             if not job is None:
-                self.process_job(job)
+                self.processor.process_job(job)
 
             if run_once:
                 self.running = False
 
         self._unregister_worker()
-        self.cleanup_worker()
+        self.processor.cleanup_processor()
 
     def _register_worker(self):
         worker_name = self.worker_name
@@ -120,25 +121,32 @@ class Worker(object):
     def update_job(self, job_id, status, timeout=None):
         pass
 
-    def init_worker(self):
+
+class JobProcessor(object):
+    def __init__(self):
+        self.worker = None
+
+    def init_processor(self, worker):
         """
-        Override to perform worker-specific setup.
+        Override to perform processor-specific setup.
+        Implementations should call the superclass implementation
+        to insure the worker attribute is initialized.
 
         Called BEFORE the worker is registered with QonoS.
         """
-        pass
+        self.worker = worker
 
     def process_job(self, job):
         """
-        Override to perform worker-specific job processing.
+        Override to perform actual job processing.
 
         Called each time a new job is fetched.
         """
         pass
 
-    def cleanup_worker(self):
+    def cleanup_processor(self):
         """
-        Override to perform worker-specific setup.
+        Override to perform processor-specific setup.
 
         Called BEFORE the worker is registered with QonoS.
         """
