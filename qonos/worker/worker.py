@@ -48,7 +48,7 @@ class Worker(object):
         if CONF.worker_name:
             self.worker_name = CONF.worker_name
 
-    def run(self, run_once=False):
+    def run(self, run_once=False, poll_once=False):
         LOG.debug(_('Starting qonos worker service'))
 
         self.init_worker()
@@ -65,9 +65,9 @@ class Worker(object):
             signal_map = self._signal_map()
             with daemon.DaemonContext(files_preserve=open_files,
                                       signal_map=signal_map):
-                self._run_loop(run_once)
+                self._run_loop(run_once, poll_once)
         else:
-            self._run_loop(run_once)
+            self._run_loop(run_once, poll_once)
 
     def _signal_map(self):
         return {
@@ -75,12 +75,12 @@ class Worker(object):
             signal.SIGHUP: self._terminate,
         }
 
-    def _run_loop(self, run_once=False):
+    def _run_loop(self, run_once=False, poll_once=False):
         self.running = True
         while self.running:
-            job = self._poll_for_next_job(run_once)
-
-            if job:
+            job = self._poll_for_next_job(poll_once)
+            LOG.debug(_('Processing job: %s' % job))
+            if not job is None:
                 self.process_job(job)
 
             if run_once:
@@ -97,23 +97,22 @@ class Worker(object):
 
     def _unregister_worker(self):
         worker_name = self.worker_name
-        LOG.debug(_('Unregistering worker. Name: %s, ID: %s'.format(
-                    worker_name, self.worker_id)))
+        LOG.debug(_('Unregistering worker. Name: %s, ID: %s' %
+                    (worker_name, self.worker_id)))
 
         self.client.delete_worker(self.worker_id)
 
     def _terminate(self, signum, frame):
         self.running = False
 
-    def _poll_for_next_job(self, run_once=False):
+    def _poll_for_next_job(self, poll_once=False):
         LOG.debug(_("Attempting to get next job from API"))
         job = None
         while job is None:
             time.sleep(CONF.worker.job_poll_interval)
-
             job = self.client.get_next_job(self.worker_id,
                                            CONF.worker.action_type)
-            if run_once:
+            if poll_once:
                 break
 
         return job
