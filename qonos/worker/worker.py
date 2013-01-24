@@ -81,7 +81,7 @@ class Worker(object):
         while self.running:
             job = self._poll_for_next_job(poll_once)
             LOG.debug(_('Processing job: %s' % job))
-            if not job is None:
+            if job:
                 self.processor.process_job(job)
 
             if run_once:
