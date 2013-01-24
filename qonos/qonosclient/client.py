@@ -129,8 +129,11 @@ class Client(object):
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('GET', path)
 
-    def update_job_status(self, job_id, status):
-        body = {'status': status}
+    def update_job_status(self, job_id, status, timeout=None):
+        body = {'status': {'status': status}}
+        if timeout:
+            body['status']['timeout'] = timeout
+
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('PUT', path, body)
 

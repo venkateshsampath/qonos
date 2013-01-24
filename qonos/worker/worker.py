@@ -119,7 +119,9 @@ class Worker(object):
         return job
 
     def update_job(self, job_id, status, timeout=None):
-        pass
+        LOG.debug(_("Worker: %s [%d] updating job [%d] Status: %s Timeout: %s"
+                    % (self.worker_name, job_id, status, str(timeout))))
+        self.client.update_job_status(job_id, status, timeout)
 
 
 class JobProcessor(object):

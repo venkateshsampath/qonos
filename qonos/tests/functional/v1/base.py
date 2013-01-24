@@ -303,11 +303,14 @@ class TestApi(utils.BaseTestCase):
         # create job
 
         new_job = self.client.create_job(schedule['id'])
+        print "Job: %s" % str(new_job)
         self.assertIsNotNone(new_job.get('id'))
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(new_job['action'], schedule['action'])
         self.assertEqual(new_job['status'], 'queued')
+        self.assertIsNotNone(new_job.get('timeout'))
+        self.assertIsNotNone(new_job.get('hard_timeout'))
         self.assertMetadataInList(new_job['job_metadata'], meta1)
         self.assertMetadataInList(new_job['job_metadata'], meta2)
 
@@ -351,11 +354,20 @@ class TestApi(utils.BaseTestCase):
         status = self.client.get_job_status(job['id'])['status']
         self.assertEqual(status, new_job['status'])
 
-        # update status
-        self.client.update_job_status(job['id'], 'done')
+        # update status without timeout
+        self.client.update_job_status(job['id'], 'processing')
         status = self.client.get_job_status(job['id'])['status']
         self.assertNotEqual(status, new_job['status'])
-        self.assertEqual(status, 'done')
+        self.assertEqual(status, 'processing')
+
+        # update status with timeout
+        timeout = '2010-11-30T17:00:00Z'
+        self.client.update_job_status(job['id'], 'done', timeout)
+        updated_job = self.client.get_job(new_job['id'])
+        self.assertNotEqual(updated_job['status'], new_job['status'])
+        self.assertEqual(updated_job['status'], 'done')
+        self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
+        self.assertEqual(updated_job['timeout'], timeout)
 
         # delete job
         self.client.delete_job(job['id'])

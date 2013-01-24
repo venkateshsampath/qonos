@@ -100,8 +100,13 @@ class JobsController(object):
         if not status:
             raise webob.exc.HTTPBadRequest()
 
+        values = {'status': status['status']}
+        if 'timeout' in status:
+            timeout = timeutils.parse_isotime(status['timeout'])
+            values['timeout'] = timeutils.normalize_time(timeout)
+
         try:
-            self.db_api.job_update(job_id, {'status': status})
+            self.db_api.job_update(job_id, values)
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
