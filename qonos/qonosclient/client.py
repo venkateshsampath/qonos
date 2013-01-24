@@ -67,15 +67,7 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        #return self._do_request('GET', path % query)['schedules']
-        res = self._do_request('GET', path % query)
-        links = res['schedules_links']
-        for item in range(len(links)):
-            if links[item].get('rel')=='next':
-                next_page = links[item].get('href')
-                break
-
-        return [res['schedules'], next_page]
+        return self._do_request('GET', path % query)['schedules']
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)['schedule']
@@ -83,7 +75,6 @@ class Client(object):
     def get_schedule(self, schedule_id):
         path = '/v1/schedules/%s' % schedule_id
         return self._do_request('GET', path)['schedule']
-        #return self._do_request('GET', path)
 
     def update_schedule(self, schedule_id, schedule):
         path = '/v1/schedules/%s' % schedule_id

@@ -245,12 +245,35 @@ def schedule_create(schedule_values):
     return _schedule_get_by_id(schedule_ref['id'])
 
 
-def paginate_query(query, model, sort_keys, limit=None, marker=None,
-                   sort_dir=None, sort_dirs=None):
+def paginate_query(query, model, sort_keys, limit=None, marker=None):
     """
-    #Note(nikhil): add the docstring help here
-    """
+    Returns a query with sorting and(or) pagination criteria added.
 
+    Pagination works by requiring a unique sort_key, specified by sort_keys.
+    (If sort_keys is not unique, then we risk looping through values.)
+    We use the last row in the previous page as the 'marker' for pagination.
+    So we must return values that follow the passed marker in the order.
+    With a single-valued sort_key, this would be easy: sort_key > X.
+    With a compound-values sort_key, (k1, k2, k3) we must do this to repeat
+    the lexicographical ordering:
+    (k1 > X1) or (k1 == X1 && k2 > X2) or (k1 == X1 && k2 == X2 && k3 > X3)
+
+    Typically, the id of the last row is used as the client-facing pagination
+    marker, then the actual marker object must be fetched from the db and
+    passed in to us as marker.
+
+    :param query: the query object to which we should add paging/sorting
+    :param model: the ORM model class
+    :param sort_keys: array of attributes by which results should be sorted
+    :param limit: maximum number of items to return
+    :param marker: the last item of the previous page; we returns the next
+                    results after this value.
+
+    :rtype: sqlalchemy.orm.query.Query
+    :return: The query with sorting and(or) pagination added.
+    """
+    # Note(nikhil): Curently pagination does not support sort directions. By
+    # default the items are sorted in ascending order.
     for sort_key in sort_keys:
         try:
             sort_key_attr = getattr(model, sort_key)
@@ -264,7 +287,7 @@ def paginate_query(query, model, sort_keys, limit=None, marker=None,
             v = getattr(marker, sort_key)
             marker_values.append(v)
 
-    #Note(nikhil): the underlying code only supports asc order of sort_dir
+    # Note(nikhil): the underlying code only supports asc order of sort_dir
     #at the moment. However, more than one sort_keys could be supplied.
         criteria_list = []
         for i in xrange(0, len(sort_keys)):

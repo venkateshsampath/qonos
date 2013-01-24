@@ -3,13 +3,9 @@ import webob.exc
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
-from qonos.openstack.common import cfg
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 from qonos.openstack.common.gettextutils import _
-
-
-CONF = cfg.CONF
 
 
 class JobsController(object):
@@ -17,35 +13,18 @@ class JobsController(object):
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
 
-    def _validate_limit(self, limit):
-        try:
-            limit = int(limit)
-        except ValueError:
-            msg = _("limit param must be an integer")
-            raise webob.exc.HTTPBadRequest(explanation=msg)
-
-        if limit <= 0:
-            msg = _("limit param must be positive")
-            raise webob.exc.HTTPBadRequest(explanation=msg)
-
-        return limit
-
     def _get_request_params(self, request):
         params = {}
-        if request.params.get('limit') is not None:
-            params['limit'] = request.params.get('limit')
-
-        if request.params.get('marker') is not None:
-            params['marker'] = request.params['marker']
-
+        params['limit'] = request.params.get('limit')
+        params['marker'] = request.params.get('marker')
         return params
 
     def list(self, request):
         params = self._get_request_params(request)
-        limit = params.get('limit') or CONF.limit_param_default
-        limit = self._validate_limit(limit)
-        limit = min(CONF.api_limit_max, limit)
-        params['limit'] = limit
+        try:
+            params = utils.get_pagination_limit(params)
+        except exception.Invalid as e:
+            raise webob.exc.HTTPBadRequest(explanation=str(e))
         try:
             jobs = self.db_api.job_get_all(params)
         except exception.NotFound:

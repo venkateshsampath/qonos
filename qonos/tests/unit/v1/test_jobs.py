@@ -112,30 +112,6 @@ class TestJobsApi(test_utils.BaseTestCase):
         jobs = self.controller.list(request).get('jobs')
         self.assertEqual(len(jobs), 2)
 
-    def test_list_limit_invalid_format(self):
-        path = '?limit=a'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
-    def test_list_zero_limit(self):
-        path = '?limit=0'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
-    def test_list_negative_limit(self):
-        path = '?limit=-1'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
-    def test_list_fraction_limit(self):
-        path = '?limit=1.1'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
     def test_list_limit_max(self):
         self.config(api_limit_max=3)
         path = '?limit=4'

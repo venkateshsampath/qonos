@@ -433,8 +433,14 @@ class TestWorkersDBApi(utils.BaseTestCase):
         self.db_api.reset()
 
     def _create_workers(self):
-        fixture_1 = {'host': 'foo', 'id': unit_utils.WORKER_UUID1}
-        fixture_2 = {'host': 'bar', 'id': unit_utils.WORKER_UUID2}
+        fixture_1 = {'host': 'foo',
+                     'id': unit_utils.WORKER_UUID1,
+                     'worker_name': 'worker_1',
+                    }
+        fixture_2 = {'host': 'bar',
+                     'id': unit_utils.WORKER_UUID2,
+                     'worker_name': 'worker_2',
+                    }
         self.worker_1 = self.db_api.worker_create(fixture_1)
         self.worker_2 = self.db_api.worker_create(fixture_2)
 

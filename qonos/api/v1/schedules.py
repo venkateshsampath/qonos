@@ -4,31 +4,14 @@ from qonos.common import exception
 from qonos.common import utils
 import qonos.db
 from qonos.openstack.common import timeutils
-from qonos.openstack.common import cfg
 from qonos.openstack.common import wsgi
 from qonos.openstack.common.gettextutils import _
-
-
-CONF = cfg.CONF
 
 
 class SchedulesController(object):
 
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
-
-    def _validate_limit(self, limit):
-        try:
-            limit = int(limit)
-        except ValueError:
-            msg = _("limit param must be an integer")
-            raise webob.exc.HTTPBadRequest(explanation=msg)
-
-        if limit <= 0:
-            msg = _("limit param must be positive")
-            raise webob.exc.HTTPBadRequest(explanation=msg)
-
-        return limit
 
     def _get_request_params(self, request):
         filter_args = {}
@@ -50,24 +33,22 @@ class SchedulesController(object):
         if request.params.get('instance_id') is not None:
             filter_args['instance_id'] = request.params['instance_id']
 
-        if request.params.get('limit') is not None:
-            limit = request.params['limit']
-            filter_args['limit'] = limit
-
-        if request.params.get('marker') is not None:
-            marker = request.params['marker']
-            filter_args['marker'] = marker
-
+        filter_args['limit'] = request.params.get('limit')
+        filter_args['marker'] = request.params.get('marker')
         return filter_args
 
     def list(self, request):
         filter_args = self._get_request_params(request)
-        limit = filter_args.get('limit') or CONF.limit_param_default
-        limit = self._validate_limit(limit)
-        limit = min(CONF.api_limit_max, limit)
-        filter_args['limit'] = limit
+        try:
+            filter_args = utils.get_pagination_limit(filter_args)
+        except exception.Invalid as e:
+            raise webob.exc.HTTPBadRequest(explanation=str(e))
         try:
             schedules = self.db_api.schedule_get_all(filter_args=filter_args)
+            if len(schedules) != 0 and len(schedules) == filter_args['limit']:
+                next_page = '/v1/schedules?marker=%s' % schedules[-1].get('id')
+            else:
+                next_page = None
         except exception.NotFound:
             msg = _('The specified marker could not be found')
             raise webob.exc.HTTPNotFound(explanation=msg)

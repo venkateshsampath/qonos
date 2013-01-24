@@ -69,11 +69,15 @@ class TestSchedulesApi(test_utils.BaseTestCase):
     def test_list(self):
         request = unit_utils.get_fake_request(method='GET')
         schedules = self.controller.list(request).get('schedules')
+        links = self.controller.list(request).get('schedules_links')
         self.assertEqual(len(schedules), 4)
         for k in SCHEDULE_ATTRS:
             self.assertEqual(set([s[k] for s in schedules]),
                              set([self.schedule_1[k], self.schedule_2[k],
                                   self.schedule_3[k], self.schedule_4[k]]))
+        for item in links:
+            if item.get('rel') == 'next':
+                self.assertEqual(item.get('href'), None)
 
     def test_list_next_run_filtered(self):
         next_run = self.schedule_1['next_run']
@@ -88,30 +92,6 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(path=path, method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 2)
-
-    def test_list_limit_invalid_format(self):
-        path = '?limit=a'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
-    def test_list_zero_limit(self):
-        path = '?limit=0'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
-    def test_list_negative_limit(self):
-        path = '?limit=-1'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
-
-    def test_list_fraction_limit(self):
-        path = '?limit=1.1'
-        request = unit_utils.get_fake_request(path=path, method='GET')
-        self.assertRaises(webob.exc.HTTPBadRequest,
-                          self.controller.list, request)
 
     def test_list_limit_max(self):
         self.config(api_limit_max=3)
@@ -166,6 +146,22 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         for k in SCHEDULE_ATTRS:
             self.assertEqual(set([s[k] for s in schedules]),
                              set([self.schedule_2[k]]))
+
+    def test_list_schedules_links(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % unit_utils.SCHEDULE_UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        links = self.controller.list(request).get('schedules_links')
+        self.assertEqual(len(schedules), 2)
+        for k in SCHEDULE_ATTRS:
+            self.assertEqual(set([s[k] for s in schedules]),
+                             set([self.schedule_2[k], self.schedule_3[k]]))
+        for item in links:
+            if item.get('rel') == 'next':
+                marker = unit_utils.SCHEDULE_UUID3
+                self.assertEqual(item.get('href'), '/v1/schedules?marker=%s' %
+                                 marker)
 
     def test_get(self):
         request = unit_utils.get_fake_request(method='GET')

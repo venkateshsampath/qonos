@@ -2,7 +2,13 @@ import datetime
 
 from croniter.croniter import croniter
 
+from qonos.common import exception as exc
+from qonos.openstack.common import cfg
+from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import timeutils
+
+
+CONF = cfg.CONF
 
 
 def serialize_datetimes(data):
@@ -27,3 +33,21 @@ def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
                    day_of_week or '*'))
     iter = croniter(cron_string, timeutils.utcnow())
     return iter.get_next(datetime.datetime)
+
+def _validate_limit(limit):
+    try:
+        limit = int(limit)
+    except ValueError:
+        msg = _("limit param must be an integer")
+        raise exc.Invalid(message=msg)
+    if limit <= 0:
+        msg = _("limit param must be positive")
+        raise exc.Invalid(message=msg)
+    return limit
+
+def get_pagination_limit(params):
+        limit = params.get('limit') or CONF.limit_param_default
+        limit = _validate_limit(limit)
+        limit = min(CONF.api_limit_max, limit)
+        params['limit'] = limit
+        return params

@@ -46,9 +46,9 @@ def reset():
         DATA[k] = {}
 
 
-def _gen_base_attributes(ID=None):
+def _gen_base_attributes(item_id=None):
     values = {}
-    if ID is None:
+    if item_id is None:
         values['id'] = str(uuid.uuid4())
     values['created_at'] = timeutils.utcnow()
     values['updated_at'] = timeutils.utcnow()
@@ -63,6 +63,12 @@ def _schedule_create(values):
 
 
 def _do_pagination(items, marker, limit):
+    """
+    This method mimics the behavior of sqlalchemy paginate_query.
+    It takes items and pagination parameters - 'limit' and 'marker' to filter out the
+    items to be returned. Items are sorted in lexicographical order based on the
+    sort key - 'id'.
+    """
     items = sorted(items, key=itemgetter('id'))
     start = 0
     end = -1
@@ -159,8 +165,8 @@ def schedule_create(schedule_values):
         del values['schedule_metadata']
 
     schedule.update(values)
-    ID = values.get('id')
-    schedule.update(_gen_base_attributes(ID=ID))
+    item_id = values.get('id')
+    schedule.update(_gen_base_attributes(item_id=item_id))
     schedule = _schedule_create(schedule)
 
     for metadatum in metadata:
@@ -275,7 +281,6 @@ def schedule_meta_delete(schedule_id, key):
     _check_meta_exists(schedule_id, key)
     _delete_schedule_meta(schedule_id, key)
 
-# Workers tests
 def worker_get_all(params={}):
     workers = copy.deepcopy(DATA['workers'].values())
     marker = params.get('marker')
@@ -293,8 +298,8 @@ def worker_create(values):
     global DATA
     worker = {}
     worker.update(values)
-    ID = values.get('id')
-    worker.update(_gen_base_attributes(ID=ID))
+    item_id = values.get('id')
+    worker.update(_gen_base_attributes(item_id=item_id))
     DATA['workers'][worker['id']] = worker
     return copy.deepcopy(worker)
 
@@ -305,7 +310,6 @@ def worker_delete(worker_id):
         raise exception.NotFound()
     del DATA['workers'][worker_id]
 
-#Jobs tests
 def job_create(job_values):
     global DATA
     db_utils.validate_job_values(job_values)
@@ -328,8 +332,8 @@ def job_create(job_values):
         values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
     values['hard_timeout'] = now + timedelta(seconds=job_timeout_seconds)
     job.update(values)
-    ID = values.get('id')
-    job.update(_gen_base_attributes(ID=ID))
+    item_id = values.get('id')
+    job.update(_gen_base_attributes(item_id=item_id))
 
     DATA['jobs'][job['id']] = job
 
