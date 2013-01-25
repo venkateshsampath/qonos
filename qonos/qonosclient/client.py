@@ -41,8 +41,8 @@ class Client(object):
     def list_workers(self):
         return self._do_request('GET', '/v1/workers')['workers']
 
-    def create_worker(self, host):
-        body = {'worker': {'host': host}}
+    def create_worker(self, host, worker_name):
+        body = {'worker': {'host': host, 'worker_name': worker_name}}
         return self._do_request('POST', '/v1/workers', body)['worker']
 
     def get_worker(self, worker_id):
@@ -129,8 +129,11 @@ class Client(object):
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('GET', path)
 
-    def update_job_status(self, job_id, status):
-        body = {'status': status}
+    def update_job_status(self, job_id, status, timeout=None):
+        body = {'status': {'status': status}}
+        if timeout:
+            body['status']['timeout'] = timeout
+
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('PUT', path, body)
 

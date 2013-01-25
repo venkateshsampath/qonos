@@ -1,5 +1,6 @@
 import uuid
 import webob.exc
+import datetime
 
 from qonos.api.v1 import jobs
 from qonos.common import exception
@@ -207,11 +208,27 @@ class TestJobsApi(test_utils.BaseTestCase):
                           self.controller.get_status, request, job_id)
 
     def test_update_status(self):
+        timeout = datetime.datetime(2012, 11, 16, 22, 0)
         request = unit_test_utils.get_fake_request(method='PUT')
-        body = {'status': 'error'}
+        body = {'status':
+                {
+                'status': 'error',
+                'timeout': str(timeout)
+                }
+                }
+        self.controller.update_status(request, self.job_1['id'], body)
+        job = db_api.job_get_by_id(self.job_1['id'])
+        actual_status = job['status']
+        actual_timeout = job['timeout']
+        self.assertEqual(actual_status, body['status']['status'])
+        self.assertEqual(actual_timeout, timeout)
+
+    def test_update_status_without_timeout(self):
+        request = unit_test_utils.get_fake_request(method='PUT')
+        body = {'status': {'status': 'error'}}
         self.controller.update_status(request, self.job_1['id'], body)
         actual = db_api.job_get_by_id(self.job_1['id'])['status']
-        self.assertEqual(actual, body['status'])
+        self.assertEqual(actual, body['status']['status'])
 
     def test_update_status_empty_body(self):
         request = unit_test_utils.get_fake_request(method='PUT')
@@ -223,7 +240,7 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_update_status_not_found(self):
         request = unit_test_utils.get_fake_request(method='PUT')
         job_id = str(uuid.uuid4())
-        body = {'status': 'queued'}
+        body = {'status': {'status': 'queued'}}
         self.assertRaises(webob.exc.HTTPNotFound,
                           self.controller.update_status,
                           request, job_id, body)
