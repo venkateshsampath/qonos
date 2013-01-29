@@ -22,6 +22,7 @@ class TestJobMetadataApi(test_utils.BaseTestCase):
 
     def _create_jobs_meta(self):
         fixture = {
+            'id': unit_utils.JOB_UUID1, 
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
         }

@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from qonos.common import exception
 from qonos.common import utils as qonos_utils
+from qonos.openstack.common import cfg
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import uuidutils
 from qonos.tests import utils as utils
@@ -11,6 +12,10 @@ from qonos.tests.unit import utils as unit_utils
 
 TENANT_1 = uuid.uuid4()
 TENANT_2 = uuid.uuid4()
+
+
+CONF = cfg.CONF
+
 
 #NOTE(ameade): This is set in each individual db test module
 db_api = None
@@ -51,6 +56,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
 
     def _create_schedules(self):
         fixture = {
+            'id': unit_utils.SCHEDULE_UUID1,
             'tenant_id': str(TENANT_1),
             'action': 'snapshot',
             'minute': 30,
@@ -65,6 +71,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         }
         self.schedule_1 = self.db_api.schedule_create(fixture)
         fixture = {
+            'id': unit_utils.SCHEDULE_UUID2,
             'tenant_id': str(TENANT_2),
             'action': 'snapshot',
             'minute': 30,
@@ -115,6 +122,20 @@ class TestSchedulesDBApi(utils.BaseTestCase):
         filters['next_run_after'] = self.schedule_1['next_run']
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 2)
+
+    def test_schedule_get_all_with_limit(self):
+        filters = {}
+        filters['limit'] = 1
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+
+    def test_schedule_get_all_with_marker(self):
+        filters = {}
+        filters['marker'] = self.schedule_1['id']
+        schedules = self.db_api.schedule_get_all(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        expected = [self.schedule_2]
+        self.assertEqual(expected, schedules)
 
     def test_schedule_get_by_id(self):
         fixture = {
@@ -412,14 +433,36 @@ class TestWorkersDBApi(utils.BaseTestCase):
         self.db_api.reset()
 
     def _create_workers(self):
-        fixture = {'host': 'myhost.example.com', 'worker_name': 'worker_1'}
-        self.worker_1 = self.db_api.worker_create(fixture)
-        fixture = {'host': 'myhost.example.com', 'worker_name': 'worker_2'}
-        self.worker_2 = self.db_api.worker_create(fixture)
+        fixture_1 = {'host': 'foo',
+                     'id': unit_utils.WORKER_UUID1,
+                     'worker_name': 'worker_1',
+                    }
+        fixture_2 = {'host': 'bar',
+                     'id': unit_utils.WORKER_UUID2,
+                     'worker_name': 'worker_2',
+                    }
+        self.worker_1 = self.db_api.worker_create(fixture_1)
+        self.worker_2 = self.db_api.worker_create(fixture_2)
 
     def test_worker_get_all(self):
         workers = self.db_api.worker_get_all()
         self.assertEqual(len(workers), 2)
+
+    def test_worker_get_all_with_limit(self):
+        params = {}
+        params['limit'] = 1 
+        workers = self.db_api.worker_get_all(params=params)
+        self.assertEqual(len(workers), 1)
+        expected = [self.worker_1]
+        self.assertEqual(expected, workers)
+
+    def test_worker_get_all_with_marker(self):
+        params = {}
+        params['marker'] = self.worker_1['id']
+        workers = self.db_api.worker_get_all(params=params)
+        self.assertEqual(len(workers), 1)
+        expected = [self.worker_2]
+        self.assertEqual(expected, workers)
 
     def test_worker_get_by_id(self):
         actual = self.db_api.worker_get_by_id(self.worker_1['id'])
@@ -467,6 +510,7 @@ class TestJobsDBApi(utils.BaseTestCase):
 
     def _create_jobs(self):
         fixture = {
+            'id': unit_utils.JOB_UUID1,
             'action': 'snapshot',
             'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID1,
@@ -477,6 +521,7 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.job_1 = self.db_api.job_create(fixture)
 
         fixture = {
+            'id': unit_utils.JOB_UUID2,
             'action': 'snapshot',
             'tenant_id': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
@@ -588,6 +633,22 @@ class TestJobsDBApi(utils.BaseTestCase):
     def test_job_get_all(self):
         jobs = self.db_api.job_get_all()
         self.assertEqual(len(jobs), 2)
+
+    def test_job_get_all_with_limit(self):
+        params = {}
+        params['limit'] = 1
+        jobs = self.db_api.job_get_all(params=params)
+        self.assertEqual(len(jobs), 1)
+        expected = [self.job_1]
+        self.assertEqual(expected, jobs)
+
+    def test_job_get_all_with_marker(self):
+        params = {}
+        params['marker'] = self.job_1['id']
+        jobs = self.db_api.job_get_all(params=params)
+        self.assertEqual(len(jobs), 1)
+        expected = [self.job_2]
+        self.assertEqual(expected, jobs)
 
     def test_job_get_by_id(self):
         expected = self.job_1
