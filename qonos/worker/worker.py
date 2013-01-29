@@ -4,6 +4,7 @@ import signal
 import sys
 
 from qonos.openstack.common import cfg
+from qonos.openstack.common import importutils
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 import socket
@@ -25,6 +26,9 @@ worker_opts = [
     cfg.StrOpt('worker_name', default=__name__,
                help=_('A string to uniquely identify the instance of the '
                       'worker on the host')),
+    cfg.StrOpt('processor_class', default=None,
+               help=_('The fully qualified class name of the processor '
+                      'to use in this worker')),
 ]
 
 worker_cli_opts = [
@@ -39,9 +43,12 @@ CONF.register_cli_opts(worker_cli_opts)
 
 
 class Worker(object):
-    def __init__(self, client_factory, processor):
+    def __init__(self, client_factory, processor=None):
         self.client = client_factory(CONF.worker.api_endpoint,
                                      CONF.worker.api_port)
+        if not processor:
+            processor = importutils.import_object(CONF.worker.processor_class)
+
         self.processor = processor
         self.worker_id = None
         self.host = socket.gethostname()
@@ -59,7 +66,7 @@ class Worker(object):
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = []
-            for handler in pylogs.getLogger().handlers:
+            for handler in pylog.getLogger().handlers:
                 if (hasattr(handler, 'stream') and
                         hasattr(handler.stream, 'fileno')):
                     open_files.append(handler.stream)
@@ -80,8 +87,8 @@ class Worker(object):
         self.running = True
         while self.running:
             job = self._poll_for_next_job(poll_once)
-            LOG.debug(_('Processing job: %s' % job))
             if job:
+                LOG.debug(_('Processing job: %s' % job))
                 self.processor.process_job(job)
 
             if run_once:
@@ -112,7 +119,7 @@ class Worker(object):
         while job is None:
             time.sleep(CONF.worker.job_poll_interval)
             job = self.client.get_next_job(self.worker_id,
-                                           CONF.worker.action_type)
+                                           CONF.worker.action_type)['job']
             if poll_once:
                 break
 
@@ -150,6 +157,6 @@ class JobProcessor(object):
         """
         Override to perform processor-specific setup.
 
-        Called BEFORE the worker is registered with QonoS.
+        Called AFTER the worker is unregistered from QonoS.
         """
         pass

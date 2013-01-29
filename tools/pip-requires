@@ -23,6 +23,9 @@ croniter
 # For Swift storage backend.
 #python-swiftclient>=1.2,<2
 
+# For snapshot worker to contact Nova
+python-novaclient
+
 # Note you will need gcc buildtools installed and must
 # have installed libxml headers for lxml to be successfully
 # installed using pip, therefore you will need to install the
