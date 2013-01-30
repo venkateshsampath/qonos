@@ -51,7 +51,10 @@ class SnapshotProcessor(worker.JobProcessor):
         while not_active:
             image_status = c.images.get(image_id).status
             LOG.debug("Image status: %s" % image_status)
+            if image_status == 'ERROR':
+                break
             not_active = image_status != 'ACTIVE'
+
         LOG.debug("Snapshot complete")
 
     def cleanup_processor(self):
