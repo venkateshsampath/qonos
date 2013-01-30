@@ -33,23 +33,29 @@ TIMEOUT = BASE_TIME + datetime.timedelta(hours=1)
 HARD_TIMEOUT = BASE_TIME + datetime.timedelta(hours=2)
 
 JOB = {
-    'id': JOB_ID,
-    'created_at': BASE_TIME,
-    'modified_at': BASE_TIME,
-    'schedule_id': SCHEDULE_ID,
-    'tenant_id': TENANT_ID,
-    'worker_id': WORKER_ID,
-    'status': 'SCHEDULED',
-    'action': 'snapshot',
-    'retry_count': 3,
-    'timeout': TIMEOUT,
-    'hard_timeout': HARD_TIMEOUT,
-    'job_metadata': [
-        {
-            'key': 'instance_id',
-            'value': INSTANCE_ID,
-        },
-    ],
+    'job': {
+        'id': JOB_ID,
+        'created_at': BASE_TIME,
+        'modified_at': BASE_TIME,
+        'schedule_id': SCHEDULE_ID,
+        'tenant_id': TENANT_ID,
+        'worker_id': WORKER_ID,
+        'status': 'SCHEDULED',
+        'action': 'snapshot',
+        'retry_count': 3,
+        'timeout': TIMEOUT,
+        'hard_timeout': HARD_TIMEOUT,
+        'job_metadata': [
+            {
+                'key': 'instance_id',
+                'value': INSTANCE_ID,
+            },
+        ],
+    }
+}
+
+JOB_NONE = {
+    'job': None
 }
 
 WORKER_HOST = 'snapshotters'
