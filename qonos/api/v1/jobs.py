@@ -13,8 +13,22 @@ class JobsController(object):
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
 
+    def _get_request_params(self, request):
+        params = {}
+        params['limit'] = request.params.get('limit')
+        params['marker'] = request.params.get('marker')
+        return params
+
     def list(self, request):
-        jobs = self.db_api.job_get_all()
+        params = self._get_request_params(request)
+        try:
+            params = utils.get_pagination_limit(params)
+        except exception.Invalid as e:
+            raise webob.exc.HTTPBadRequest(explanation=str(e))
+        try:
+            jobs = self.db_api.job_get_all(params)
+        except exception.NotFound:
+            raise webob.exc.HTTPNotFound()
         [utils.serialize_datetimes(job) for job in jobs]
         return {'jobs': jobs}
 

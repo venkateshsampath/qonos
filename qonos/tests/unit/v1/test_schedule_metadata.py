@@ -21,6 +21,7 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
 
     def _create_schedules(self):
         fixture = {
+            'id': unit_utils.SCHEDULE_UUID1,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
@@ -28,6 +29,7 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
+            'id': unit_utils.SCHEDULE_UUID2,
             'tenant_id': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',

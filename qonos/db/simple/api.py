@@ -3,6 +3,7 @@ import datetime
 import operator
 import uuid
 
+from operator import itemgetter
 from qonos.common import exception
 import qonos.db.db_utils as db_utils
 from qonos.openstack.common.gettextutils import _
@@ -44,9 +45,10 @@ def reset():
         DATA[k] = {}
 
 
-def _gen_base_attributes():
+def _gen_base_attributes(item_id=None):
     values = {}
-    values['id'] = str(uuid.uuid4())
+    if item_id is None:
+        values['id'] = str(uuid.uuid4())
     values['created_at'] = timeutils.utcnow()
     values['updated_at'] = timeutils.utcnow()
     return copy.deepcopy(values)
@@ -57,6 +59,31 @@ def _schedule_create(values):
     DATA['schedules'][values['id']] = values
     _schedule_meta_init(values['id'])
     return copy.deepcopy(values)
+
+
+def _do_pagination(items, marker, limit):
+    """
+    This method mimics the behavior of sqlalchemy paginate_query.
+    It takes items and pagination parameters - 'limit' and 'marker'
+    to filter out the items to be returned. Items are sorted in
+    lexicographical order based on the sort key - 'id'.
+    """
+    items = sorted(items, key=itemgetter('id'))
+    start = 0
+    end = -1
+    if marker is None:
+        start = 0
+    else:
+        for i, item in enumerate(items):
+            if item['id'] == marker:
+                start = i + 1
+                break
+        else:
+            msg = _('Marker %s not found') % marker
+            raise exception.NotFound(explanation=msg)
+
+    end = start + limit if limit is not None else None
+    return items[start:end]
 
 
 def schedule_get_all(filter_args={}):
@@ -111,6 +138,9 @@ def schedule_get_all(filter_args={}):
                 if schedule in schedules_mutate:
                     del schedules_mutate[schedules_mutate.index(schedule)]
 
+    marker = filter_args.get('marker')
+    limit = filter_args.get('limit')
+    schedules_mutate = _do_pagination(schedules_mutate, marker, limit)
     return schedules_mutate
 
 
@@ -134,7 +164,8 @@ def schedule_create(schedule_values):
         del values['schedule_metadata']
 
     schedule.update(values)
-    schedule.update(_gen_base_attributes())
+    item_id = values.get('id')
+    schedule.update(_gen_base_attributes(item_id=item_id))
     schedule = _schedule_create(schedule)
 
     for metadatum in metadata:
@@ -245,14 +276,21 @@ def schedule_meta_update(schedule_id, key, values):
     return copy.deepcopy(meta)
 
 
-def schedule_meta_delete(schedule_id, key):
-    _check_meta_exists(schedule_id, key)
-
+def _delete_schedule_meta(schedule_id, key):
     del DATA['schedule_metadata'][schedule_id][key]
 
 
-def worker_get_all():
-    return DATA['workers'].values()
+def schedule_meta_delete(schedule_id, key):
+    _check_meta_exists(schedule_id, key)
+    _delete_schedule_meta(schedule_id, key)
+
+
+def worker_get_all(params={}):
+    workers = copy.deepcopy(DATA['workers'].values())
+    marker = params.get('marker')
+    limit = params.get('limit')
+    workers = _do_pagination(workers, marker, limit)
+    return workers
 
 
 def worker_get_by_id(worker_id):
@@ -265,7 +303,8 @@ def worker_create(values):
     global DATA
     worker = {}
     worker.update(values)
-    worker.update(_gen_base_attributes())
+    item_id = values.get('id')
+    worker.update(_gen_base_attributes(item_id=item_id))
     DATA['workers'][worker['id']] = worker
     return copy.deepcopy(worker)
 
@@ -301,7 +340,8 @@ def job_create(job_values):
     values['hard_timeout'] = now +\
         datetime.timedelta(seconds=job_timeout_seconds)
     job.update(values)
-    job.update(_gen_base_attributes())
+    item_id = values.get('id')
+    job.update(_gen_base_attributes(item_id=item_id))
 
     DATA['jobs'][job['id']] = job
 
@@ -311,12 +351,16 @@ def job_create(job_values):
     return job_get_by_id(job['id'])
 
 
-def job_get_all():
+def job_get_all(params={}):
     jobs = copy.deepcopy(DATA['jobs'].values())
 
     for job in jobs:
         job['job_metadata'] =\
             job_meta_get_all_by_job_id(job['id'])
+
+    marker = params.get('marker')
+    limit = params.get('limit')
+    jobs = _do_pagination(jobs, marker, limit)
 
     return jobs
 

@@ -13,7 +13,7 @@ class SchedulesController(object):
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
 
-    def _get_list_filter_args(self, request):
+    def _get_request_params(self, request):
         filter_args = {}
         if request.params.get('next_run_after') is not None:
             next_run_after = request.params['next_run_after']
@@ -33,13 +33,28 @@ class SchedulesController(object):
         if request.params.get('instance_id') is not None:
             filter_args['instance_id'] = request.params['instance_id']
 
+        filter_args['limit'] = request.params.get('limit')
+        filter_args['marker'] = request.params.get('marker')
         return filter_args
 
     def list(self, request):
-        filter_args = self._get_list_filter_args(request)
-        schedules = self.db_api.schedule_get_all(filter_args=filter_args)
+        filter_args = self._get_request_params(request)
+        try:
+            filter_args = utils.get_pagination_limit(filter_args)
+        except exception.Invalid as e:
+            raise webob.exc.HTTPBadRequest(explanation=str(e))
+        try:
+            schedules = self.db_api.schedule_get_all(filter_args=filter_args)
+            if len(schedules) != 0 and len(schedules) == filter_args['limit']:
+                next_page = '/v1/schedules?marker=%s' % schedules[-1].get('id')
+            else:
+                next_page = None
+        except exception.NotFound:
+            msg = _('The specified marker could not be found')
+            raise webob.exc.HTTPNotFound(explanation=msg)
         [utils.serialize_datetimes(sched) for sched in schedules]
-        return {'schedules': schedules}
+        links = [{'rel': 'next', 'href': next_page}]
+        return {'schedules': schedules, 'schedules_links': links}
 
     def _schedule_to_next_run(self, schedule):
         minute = schedule.get('minute', '*')
