@@ -3,9 +3,8 @@ import webob.exc
 
 from qonos.api.v1 import schedule_metadata
 from qonos.db.simple import api as db_api
-from qonos.common import exception
-from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
+from qonos.tests import utils as test_utils
 
 
 class TestScheduleMetadataApi(test_utils.BaseTestCase):

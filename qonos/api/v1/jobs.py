@@ -3,9 +3,9 @@ import webob.exc
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
+from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
-from qonos.openstack.common.gettextutils import _
 
 
 class JobsController(object):
@@ -113,5 +113,5 @@ class JobsController(object):
 
 
 def create_resource():
-    """QonoS resource factory method"""
+    """QonoS resource factory method."""
     return wsgi.Resource(JobsController())

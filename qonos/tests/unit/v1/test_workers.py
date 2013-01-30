@@ -4,8 +4,8 @@ import webob.exc
 from qonos.api.v1 import workers
 from qonos.common import exception
 import qonos.db.simple.api as db_api
-from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_test_utils
+from qonos.tests import utils as test_utils
 
 WORKER_ATTRS = ['id', 'host']
 

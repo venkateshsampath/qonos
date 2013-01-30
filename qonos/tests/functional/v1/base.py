@@ -1,16 +1,12 @@
-
-import os
-import sys
-from random import randint
+import random
 
 from qonos.common import config
-import qonos.db
 from qonos.openstack.common import cfg
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
-from qonos.tests import utils as utils
 from qonos.qonosclient import client
 from qonos.qonosclient import exception as client_exc
+from qonos.tests import utils as utils
 
 
 CONF = cfg.CONF
@@ -24,7 +20,7 @@ class TestApi(utils.BaseTestCase):
     def setUp(self):
         super(TestApi, self).setUp()
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
-        self.port = randint(50000, 60000)
+        self.port = random.randint(50000, 60000)
         self.service = wsgi.Service()
         self.service.start(config.load_paste_app('qonos-api'), self.port)
         self.client = client.Client("localhost", self.port)

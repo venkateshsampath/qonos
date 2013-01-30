@@ -1,11 +1,10 @@
-from qonos.worker import worker
-from novaclient.v1_1 import client
+import datetime
 
+from novaclient.v1_1 import client
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
-from qonos.common import config
-import datetime
+from qonos.worker import worker
 
 LOG = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class SnapshotProcessor(worker.JobProcessor):
         super(SnapshotProcessor, self).init_processor(worker)
 
     def process_job(self, job):
-        LOG.debug("Process job: %s" % str(job))
+        LOG.debug(_("Process job: %s") % str(job))
         auth_url = CONF.snapshot_worker.auth_url
         user = CONF.snapshot_worker.nova_admin_user
         password = CONF.snapshot_worker.nova_admin_password

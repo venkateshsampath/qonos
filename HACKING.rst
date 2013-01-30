@@ -1,4 +1,4 @@
-QonoS Style Commandments
+Qono'S Style Commandments
 =======================
 
 - Step 1: Read http://www.python.org/dev/peps/pep-0008/

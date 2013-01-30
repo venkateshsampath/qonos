@@ -1,12 +1,12 @@
+import datetime
 import uuid
-from datetime import timedelta
 
 from qonos.common import exception
 from qonos.common import utils as qonos_utils
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import uuidutils
-from qonos.tests import utils as utils
 from qonos.tests.unit import utils as unit_utils
+from qonos.tests import utils as test_utils
 
 
 TENANT_1 = uuid.uuid4()
@@ -16,7 +16,7 @@ TENANT_2 = uuid.uuid4()
 db_api = None
 
 
-class TestDBApi(utils.BaseTestCase):
+class TestDBApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestDBApi, self).setUp()
@@ -38,7 +38,7 @@ class TestDBApi(utils.BaseTestCase):
         self.assertFalse(self.db_api.schedule_get_all())
 
 
-class TestSchedulesDBApi(utils.BaseTestCase):
+class TestSchedulesDBApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestSchedulesDBApi, self).setUp()
@@ -400,7 +400,7 @@ class TestSchedulesDBApi(utils.BaseTestCase):
                           schedule['id'], 'key2')
 
 
-class TestWorkersDBApi(utils.BaseTestCase):
+class TestWorkersDBApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestWorkersDBApi, self).setUp()
@@ -454,7 +454,7 @@ class TestWorkersDBApi(utils.BaseTestCase):
                           self.db_api.worker_delete, worker_id)
 
 
-class TestJobsDBApi(utils.BaseTestCase):
+class TestJobsDBApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestJobsDBApi, self).setUp()
@@ -527,8 +527,10 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
         self.assertNotEqual(job['created_at'], None)
         self.assertNotEqual(job['updated_at'], None)
-        self.assertEqual(job['timeout'], now + timedelta(seconds=30))
-        self.assertEqual(job['hard_timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['timeout'], now +
+                             datetime.timedelta(seconds=30))
+        self.assertEqual(job['hard_timeout'], now +
+                             datetime.timedelta(seconds=30))
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], fixture['worker_id'])
         self.assertEqual(job['status'], fixture['status'])
@@ -562,8 +564,10 @@ class TestJobsDBApi(utils.BaseTestCase):
         self.assertTrue(uuidutils.is_uuid_like(job['id']))
         self.assertNotEqual(job['created_at'], None)
         self.assertNotEqual(job['updated_at'], None)
-        self.assertEqual(job['timeout'], now + timedelta(seconds=30))
-        self.assertEqual(job['hard_timeout'], now + timedelta(seconds=30))
+        self.assertEqual(job['timeout'], now +
+                             datetime.timedelta(seconds=30))
+        self.assertEqual(job['hard_timeout'], now +
+                             datetime.timedelta(seconds=30))
         self.assertEqual(job['schedule_id'], fixture['schedule_id'])
         self.assertEqual(job['worker_id'], None)
         self.assertEqual(job['status'], fixture['status'])
@@ -779,7 +783,7 @@ class TestJobsDBApi(utils.BaseTestCase):
                           job['id'], 'key2')
 
 
-class TestJobsDBGetNextJobApi(utils.BaseTestCase):
+class TestJobsDBGetNextJobApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestJobsDBGetNextJobApi, self).setUp()
@@ -825,8 +829,8 @@ class TestJobsDBGetNextJobApi(utils.BaseTestCase):
         expected = self.jobs[0]
         self.assertEqual(job['id'], expected['id'])
         self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
-        timeout = expected['created_at'] + timedelta(seconds=30)
-        hard_timeout = expected['created_at'] + timedelta(seconds=30)
+        timeout = expected['created_at'] + datetime.timedelta(seconds=30)
+        hard_timeout = expected['created_at'] + datetime.timedelta(seconds=30)
         self.assertEqual(job['timeout'], timeout)
         self.assertEqual(job['hard_timeout'], hard_timeout)
         self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
@@ -834,15 +838,15 @@ class TestJobsDBGetNextJobApi(utils.BaseTestCase):
     def test_get_next_job_timed_out(self):
         timeutils.set_time_override()
         now = timeutils.utcnow()
-        self.job_fixture_2['timeout'] = now + timedelta(seconds=5)
+        self.job_fixture_2['timeout'] = now + datetime.timedelta(seconds=5)
         self._create_jobs(10, self.job_fixture_2, self.job_fixture_1)
         job = db_api.job_get_and_assign_next_by_action('snapshot',
                                                        unit_utils.WORKER_UUID1)
         expected = self.jobs[0]
         self.assertEqual(job['id'], expected['id'])
         self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
-        timeout = expected['created_at'] + timedelta(seconds=5)
-        hard_timeout = expected['created_at'] + timedelta(seconds=30)
+        timeout = expected['created_at'] + datetime.timedelta(seconds=5)
+        hard_timeout = expected['created_at'] + datetime.timedelta(seconds=30)
         self.assertEqual(job['timeout'], timeout)
         self.assertEqual(job['hard_timeout'], hard_timeout)
         self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
@@ -851,15 +855,15 @@ class TestJobsDBGetNextJobApi(utils.BaseTestCase):
         timeutils.set_time_override()
         now = timeutils.utcnow()
         self.job_fixture_2['retry_count'] = 3
-        self.job_fixture_2['timeout'] = now + timedelta(seconds=5)
+        self.job_fixture_2['timeout'] = now + datetime.timedelta(seconds=5)
         self._create_jobs(10, self.job_fixture_2, self.job_fixture_1)
         job = db_api.job_get_and_assign_next_by_action('snapshot',
                                                        unit_utils.WORKER_UUID1)
         expected = self.jobs[1]
         self.assertEqual(job['id'], expected['id'])
         self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
-        timeout = expected['created_at'] + timedelta(seconds=30)
-        hard_timeout = expected['created_at'] + timedelta(seconds=30)
+        timeout = expected['created_at'] + datetime.timedelta(seconds=30)
+        hard_timeout = expected['created_at'] + datetime.timedelta(seconds=30)
         self.assertEqual(job['timeout'], timeout)
         self.assertEqual(job['hard_timeout'], hard_timeout)
         self.assertEqual(job['retry_count'], expected['retry_count'] + 1)

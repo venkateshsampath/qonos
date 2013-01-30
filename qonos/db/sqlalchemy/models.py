@@ -34,7 +34,7 @@ BASE = declarative_base()
 
 
 class ModelBase(object):
-    """Base class for Nova and Glance Models"""
+    """Base class for Nova and Glance Models."""
     __table_args__ = {'mysql_engine': 'InnoDB'}
     __table_initialized__ = False
 
@@ -45,13 +45,13 @@ class ModelBase(object):
     id = Column(String(36), primary_key=True, default=uuidutils.generate_uuid)
 
     def save(self, session=None):
-        """Save this object"""
+        """Save this object."""
         session = session or qonos.db.sqlalchemy.api.get_session()
         session.add(self)
         session.flush()
 
     def delete(self, session=None):
-        """Delete this object"""
+        """Delete this object."""
         session = session or qonos.db.sqlalchemy.api.get_session()
         session.delete(self)
         session.flush()
@@ -89,7 +89,7 @@ class ModelBase(object):
 
 
 class Schedule(BASE, ModelBase):
-    """Represents a schedule in the datastore"""
+    """Represents a schedule in the datastore."""
     __tablename__ = 'schedules'
 
     tenant_id = Column(String(255), nullable=False)
@@ -104,7 +104,7 @@ class Schedule(BASE, ModelBase):
 
 
 class ScheduleMetadata(BASE, ModelBase):
-    """Represents metadata of a schedule in the datastore"""
+    """Represents metadata of a schedule in the datastore."""
     __tablename__ = 'schedule_metadata'
     __table_args__ = (UniqueConstraint('schedule_id', 'key'), {})
 
@@ -117,7 +117,7 @@ class ScheduleMetadata(BASE, ModelBase):
 
 
 class Worker(BASE, ModelBase):
-    """Represents a worker in the datastore"""
+    """Represents a worker in the datastore."""
     __tablename__ = 'workers'
     __table_args__ = (UniqueConstraint('host', 'worker_name'), {})
 
@@ -126,7 +126,7 @@ class Worker(BASE, ModelBase):
 
 
 class Job(BASE, ModelBase):
-    """Represents a job in the datastore"""
+    """Represents a job in the datastore."""
     __tablename__ = 'jobs'
 
     schedule_id = Column(String(36))
@@ -140,7 +140,7 @@ class Job(BASE, ModelBase):
 
 
 class JobMetadata(BASE, ModelBase):
-    """Represents job metadata in the datastore"""
+    """Represents job metadata in the datastore."""
     __tablename__ = 'job_metadata'
     __table_args__ = (UniqueConstraint('job_id', 'key'), {})
 
@@ -152,7 +152,7 @@ class JobMetadata(BASE, ModelBase):
 
 
 class JobFault(BASE, ModelBase):
-    """Represents a job fault in the datastore"""
+    """Represents a job fault in the datastore."""
     __tablename__ = 'job_faults'
 
     schedule_id = Column(String(36))
@@ -166,7 +166,7 @@ class JobFault(BASE, ModelBase):
 
 def register_models(engine):
     """
-    Creates database tables for all models with the given engine
+    Creates database tables for all models with the given engine.
     """
     models = (Schedule, ScheduleMetadata, Worker, Job, JobFault)
     for model in models:
@@ -175,7 +175,7 @@ def register_models(engine):
 
 def unregister_models(engine):
     """
-    Drops database tables for all models with the given engine
+    Drops database tables for all models with the given engine.
     """
     models = (Schedule, ScheduleMetadata, Worker, Job, JobFault)
     for model in models:

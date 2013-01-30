@@ -16,11 +16,9 @@
 Fakes For Worker tests.
 """
 
-import mox
-import uuid
 import datetime
+
 from qonos.openstack.common import timeutils
-from qonos.qonosclient import client
 
 WORKER_ID = '11111111-1111-1111-1111-11111111'
 JOB_ID = '22222222-2222-2222-2222-22222222'

@@ -17,14 +17,14 @@
 import setuptools
 
 from qonos.openstack.common import setup
-from qonos.version import version_info as version
+import qonos.version as version
 
 requires = setup.parse_requirements()
 depend_links = setup.parse_dependency_links()
 
 setuptools.setup(
     name='qonos',
-    version=version.canonical_version_string(always=True),
+    version=version.version_info.canonical_version_string(always=True),
     description='The QonoS project provides services for scheduling '
                 'instance snapshots.',
     license='Apache License (2.0)',

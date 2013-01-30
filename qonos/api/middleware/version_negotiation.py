@@ -18,14 +18,14 @@
 """
 A filter middleware that inspects the requested URI for a version string
 and/or Accept headers and attempts to negotiate an API controller to
-return
+return.
 """
 
 from qonos.api import versions
-from qonos.openstack.common import wsgi
-import qonos.openstack.common.log as logging
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
+import qonos.openstack.common.log as logging
+from qonos.openstack.common import wsgi
 
 CONF = cfg.CONF
 
@@ -39,7 +39,7 @@ class VersionNegotiationFilter(wsgi.Middleware):
         super(VersionNegotiationFilter, self).__init__(app)
 
     def process_request(self, req):
-        """Try to find a version first in the accept header, then the URL"""
+        """Try to find a version first in the accept header, then the URL."""
         msg = _("Determining version of request: %(method)s %(path)s"
                 " Accept: %(accept)s")
         args = {'method': req.method, 'path': req.path, 'accept': req.accept}

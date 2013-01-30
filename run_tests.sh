@@ -61,12 +61,36 @@ function run_tests {
 }
 
 function run_pep8 {
-  echo "Running pep8 ..."
-  PEP8_EXCLUDE=".venv,.tox,dist,doc,openstack"
-  PEP8_OPTIONS="--exclude=$PEP8_EXCLUDE --repeat"
-  PEP8_IGNORE="--ignore=E125,E126,E711,E712"
-  PEP8_INCLUDE="."
-  ${wrapper} pep8 $PEP8_OPTIONS $PEP8_INCLUDE $PEP8_IGNORE
+  # Files of interest
+  # NOTE(esheffield): Pulled from nova...
+  # NOTE(lzyeval): Avoid selecting qonos-api-paste.ini and qonos.conf in qonos/bin
+  #                when running on devstack.
+  # NOTE(lzyeval): Avoid selecting *.pyc files to reduce pep8 check-up time
+  #                when running on devstack.
+  srcfiles=`find qonos -type f -name "*.py" ! -wholename "qonos\/openstack*"`
+  srcfiles+=" `find bin -type f ! -name "qonos.conf*" ! -name "*api-paste.ini*" ! -name "*~"`"
+  srcfiles+=" `find tools -type f -name "*.py"`"
+  srcfiles+=" `find smoketests -type f -name "*.py"`"
+  srcfiles+=" setup.py"
+
+  # Until all these issues get fixed, ignore.
+  ignore='--ignore=E12,E711,E721,E712,N302,N403,N404'
+
+  echo "Running hacking.py self test"
+  ${wrapper} python tools/hacking.py --doctest
+
+  # Then actually run it
+  echo "Running pep8"
+  ${wrapper} python tools/hacking.py ${ignore} ${srcfiles}
+
+  ${wrapper} bash tools/unused_imports.sh
+
+  #echo "Running pep8 ..."
+  #PEP8_EXCLUDE=".venv,.tox,dist,doc,openstack"
+  #PEP8_OPTIONS="--exclude=$PEP8_EXCLUDE --repeat"
+  #PEP8_IGNORE="--ignore=E125,E126,E711,E712"
+  #PEP8_INCLUDE="."
+  # ${wrapper} pep8 $PEP8_OPTIONS $PEP8_INCLUDE $PEP8_IGNORE
 }
 
 
@@ -92,7 +116,7 @@ then
       if [ "x$use_ve" = "xY" -o "x$use_ve" = "x" -o "x$use_ve" = "xy" ]; then
         # Install the virtualenv and run the test suite in it
         python tools/install_venv.py
-		    wrapper=${with_venv}
+	wrapper=${with_venv}
       fi
     fi
   fi

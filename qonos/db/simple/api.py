@@ -1,14 +1,12 @@
-import functools
-import uuid
 import copy
-import qonos.db.db_utils as db_utils
-from datetime import timedelta
-from operator import itemgetter
-from operator import methodcaller
+import datetime
+import operator
+import uuid
 
 from qonos.common import exception
-from qonos.openstack.common import timeutils
+import qonos.db.db_utils as db_utils
 from qonos.openstack.common.gettextutils import _
+from qonos.openstack.common import timeutils
 
 
 DATA = {
@@ -21,7 +19,7 @@ DATA = {
 }
 
 
-# TODO: Move to config
+# TODO(CONFIG): Move to config
 JOB_TYPES = {
     'default':
     {
@@ -216,8 +214,9 @@ def _check_meta_exists(schedule_id, key):
 
     if (DATA['schedule_metadata'].get(schedule_id) is None or
             DATA['schedule_metadata'][schedule_id].get(key) is None):
-        msg = _('Meta %s could not be found for Schedule %s ')
-        msg = msg % (key, schedule_id)
+        msg = (_('Meta %(key)s could not be found '
+                 'for Schedule %(schedule_id)s ') %
+               {'key': key, 'schedule_id': schedule_id})
         raise exception.NotFound(message=msg)
 
 
@@ -297,8 +296,10 @@ def job_create(job_values):
 
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
-        values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
-    values['hard_timeout'] = now + timedelta(seconds=job_timeout_seconds)
+        values['timeout'] = now +\
+            datetime.timedelta(seconds=job_timeout_seconds)
+    values['hard_timeout'] = now +\
+        datetime.timedelta(seconds=job_timeout_seconds)
     job.update(values)
     job.update(_gen_base_attributes())
 
@@ -376,7 +377,7 @@ def _jobs_get_sorted():
     for job_id in jobs:
         sorted_jobs.append(jobs[job_id])
 
-    sorted_jobs = sorted(sorted_jobs, key=itemgetter('created_at'))
+    sorted_jobs = sorted(sorted_jobs, key=operator.itemgetter('created_at'))
     return sorted_jobs
 
 
@@ -401,7 +402,7 @@ def _jobs_cleanup_hard_timed_out():
         job = DATA['jobs'][job_id]
         print now, job['hard_timeout']
         print now - job['hard_timeout']
-        if (now - job['hard_timeout']) > timedelta(microseconds=0):
+        if (now - job['hard_timeout']) > datetime.timedelta(microseconds=0):
             del_ids.append(job_id)
 
     for job_id in del_ids:
@@ -474,8 +475,8 @@ def _check_job_meta_exists(job_id, key):
 
     if (DATA['job_metadata'].get(job_id) is None or
             DATA['job_metadata'][job_id].get(key) is None):
-        msg = _('Meta %s could not be found for Job %s ')
-        msg = msg % (key, job_id)
+        msg = (_('Meta %(key)s could not be found for Job %(job_id)s ') %
+               {'key': key, 'job_id': job_id})
         raise exception.NotFound(message=msg)
 
 

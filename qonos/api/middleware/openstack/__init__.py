@@ -1,12 +1,12 @@
 import webob
 import webob.exc
 
+from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import log as logging
 from qonos.openstack.common import wsgi as wsgi
-from qonos.openstack.common.gettextutils import _
-
 
 LOG = logging.getLogger(__name__)
+
 
 class FaultWrapper(wsgi.Middleware):
     """Calls down the middleware stack, making exceptions into faults."""
@@ -39,4 +39,3 @@ class FaultWrapper(wsgi.Middleware):
         def filter(app):
             return cls(app)
         return filter
-
