@@ -18,7 +18,6 @@ from eventlet import greenlet
 from eventlet import greenpool
 from eventlet import greenthread
 
-from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import log as logging
 from qonos.openstack.common import loopingcall
 

@@ -2,20 +2,20 @@
 Defines interface for DB access
 """
 
+import datetime
 import functools
 import logging
 import time
-import qonos.db.db_utils as db_utils
-from datetime import timedelta
-from qonos.openstack.common.gettextutils import _
 
 import sqlalchemy
 import sqlalchemy.orm as sa_orm
 import sqlalchemy.sql as sa_sql
 
 from qonos.common import exception
+import qonos.db.db_utils as db_utils
 from qonos.db.sqlalchemy import models
 from qonos.openstack.common import cfg
+from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as os_logging
 from qonos.openstack.common import timeutils
 
@@ -38,7 +38,7 @@ db_opts = [
 CONF = cfg.CONF
 CONF.register_opts(db_opts)
 
-# TODO: Move to config
+# TODO(CONFIG): Move to config
 JOB_TYPES = {
     'default':
     {
@@ -171,7 +171,7 @@ def reset():
 
 
 def get_session(autocommit=True, expire_on_commit=False):
-    """Helper method to grab session"""
+    """Helper method to grab session."""
     global _MAKER
     if not _MAKER:
         assert _ENGINE
@@ -292,7 +292,7 @@ def paginate_query(query, model, sort_keys, limit=None, marker=None):
         criteria_list = []
         for i in xrange(0, len(sort_keys)):
             crit_attrs = []
-            for j in xrange(0, i): 
+            for j in xrange(0, i):
                 model_attr = getattr(model, sort_keys[j])
                 crit_attrs.append((model_attr == marker_values[j]))
             model_attr = getattr(model, sort_keys[i])
@@ -343,7 +343,8 @@ def schedule_get_all(filter_args={}):
         marker_schedule = _schedule_get_by_id(filter_args['marker'])
 
     query = paginate_query(query, models.Schedule, ['id'],
-                           limit=filter_args.get('limit'), marker=marker_schedule)
+                           limit=filter_args.get('limit'),
+                           marker=marker_schedule)
 
     return query.all()
 
@@ -540,8 +541,10 @@ def job_create(job_values):
 
     job_timeout_seconds = _job_get_timeout(values['action'])
     if not 'timeout' in values:
-        values['timeout'] = now + timedelta(seconds=job_timeout_seconds)
-    values['hard_timeout'] = now + timedelta(seconds=job_timeout_seconds)
+        values['timeout'] = now +\
+            datetime.timedelta(seconds=job_timeout_seconds)
+    values['hard_timeout'] = now +\
+        datetime.timedelta(seconds=job_timeout_seconds)
     job_ref.update(values)
     job_ref.save(session=session)
 

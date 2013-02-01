@@ -4,8 +4,8 @@ import time
 
 from qonos.openstack.common import timeutils
 from qonos.scheduler import scheduler
-from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
+from qonos.tests import utils as test_utils
 
 
 class TestScheduler(test_utils.BaseTestCase):

@@ -1,8 +1,9 @@
-from qonos.common import utils
 from qonos.common import exception as exc
+from qonos.common import utils
 from qonos.tests import utils as test_utils
 
-class TestLimitParam(test_utils.BaseTestCase): 
+
+class TestLimitParam(test_utils.BaseTestCase):
 
     def test_list_limit(self):
         limit = utils.get_pagination_limit({'limit': '1'})

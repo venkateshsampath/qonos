@@ -1,13 +1,12 @@
 import logging as pylog
-import time
 import signal
-import sys
+import socket
+import time
 
 from qonos.openstack.common import cfg
-from qonos.openstack.common import importutils
 from qonos.openstack.common.gettextutils import _
+from qonos.openstack.common import importutils
 import qonos.openstack.common.log as logging
-import socket
 
 LOG = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class Worker(object):
         while self.running:
             job = self._poll_for_next_job(poll_once)
             if job:
-                LOG.debug(_('Processing job: %s' % job))
+                LOG.debug(_('Processing job: %s') % job)
                 self.processor.process_job(job)
 
             if run_once:
@@ -99,14 +98,14 @@ class Worker(object):
 
     def _register_worker(self):
         worker_name = self.worker_name
-        LOG.debug(_('Registering worker. Name: %s' % worker_name))
+        LOG.debug(_('Registering worker. Name: %s') % worker_name)
         worker = self.client.create_worker(self.host, worker_name)
         return worker['id']
 
     def _unregister_worker(self):
         worker_name = self.worker_name
-        LOG.debug(_('Unregistering worker. Name: %s, ID: %s' %
-                    (worker_name, self.worker_id)))
+        LOG.debug(_('Unregistering worker. Name: %(name)s, ID: %(id)s') %
+                    {'name': worker_name, 'id': self.worker_id})
 
         self.client.delete_worker(self.worker_id)
 
@@ -126,8 +125,12 @@ class Worker(object):
         return job
 
     def update_job(self, job_id, status, timeout=None):
-        LOG.debug(_("Worker: %s [%d] updating job [%d] Status: %s Timeout: %s"
-                    % (self.worker_name, job_id, status, str(timeout))))
+        LOG.debug(_("Worker: %(name)s [%(worker_id)d] updating "
+                    "job [%(job_id)d] Status: %(status)s Timeout: %(timeout)s")
+                    % {'worker_id': self.worker_name,
+                       'job_id': job_id,
+                       'status': status,
+                       'timeout': str(timeout)})
         self.client.update_job_status(job_id, status, timeout)
 
 

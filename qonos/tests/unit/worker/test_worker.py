@@ -1,12 +1,9 @@
-import datetime
 import fakes
 import mox
 import time
 
-from qonos.openstack.common import timeutils
-from qonos.worker import worker
 from qonos.tests import utils as test_utils
-from qonos.tests.unit import utils as unit_utils
+from qonos.worker import worker
 
 
 class TestWorker(test_utils.BaseTestCase):

@@ -1,8 +1,8 @@
 import sys
 
 from qonos.openstack.common import cfg
-from qonos.tests import utils as utils
 from qonos.tests.functional.v1 import base
+from qonos.tests import utils as utils
 
 CONF = cfg.CONF
 

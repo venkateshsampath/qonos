@@ -4,8 +4,8 @@ import time
 
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
-from qonos.openstack.common import timeutils
 import qonos.openstack.common.log as logging
+from qonos.openstack.common import timeutils
 
 LOG = logging.getLogger(__name__)
 

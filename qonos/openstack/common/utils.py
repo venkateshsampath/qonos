@@ -20,15 +20,6 @@ System-level utilities and helper functions.
 """
 
 import logging
-import random
-import shlex
-
-from eventlet.green import subprocess
-from eventlet import greenthread
-
-from qonos.openstack.common import exception
-from qonos.openstack.common.gettextutils import _
-
 
 LOG = logging.getLogger(__name__)
 

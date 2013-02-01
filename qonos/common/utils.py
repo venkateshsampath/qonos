@@ -34,6 +34,7 @@ def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
     iter = croniter(cron_string, timeutils.utcnow())
     return iter.get_next(datetime.datetime)
 
+
 def _validate_limit(limit):
     try:
         limit = int(limit)
@@ -44,6 +45,7 @@ def _validate_limit(limit):
         msg = _("limit param must be positive")
         raise exc.Invalid(message=msg)
     return limit
+
 
 def get_pagination_limit(params):
         limit = params.get('limit') or CONF.limit_param_default

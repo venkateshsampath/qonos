@@ -3,9 +3,8 @@ import webob.exc
 
 from qonos.api.v1 import job_metadata
 from qonos.db.simple import api as db_api
-from qonos.common import exception
-from qonos.tests import utils as test_utils
 from qonos.tests.unit import utils as unit_utils
+from qonos.tests import utils as test_utils
 
 
 class TestJobMetadataApi(test_utils.BaseTestCase):
@@ -22,7 +21,7 @@ class TestJobMetadataApi(test_utils.BaseTestCase):
 
     def _create_jobs_meta(self):
         fixture = {
-            'id': unit_utils.JOB_UUID1, 
+            'id': unit_utils.JOB_UUID1,
             'tenant_id': unit_utils.TENANT1,
             'action': 'snapshot',
         }
