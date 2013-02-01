@@ -86,24 +86,32 @@ def utcnow_ts():
 
 def utcnow():
     """Overridable version of utils.utcnow."""
-    if utcnow.override_time:
-        return utcnow.override_time
+    if utcnow.override_time_seq:
+        return _utcnow_override_time()
     return datetime.datetime.utcnow()
 
+def _utcnow_override_time():
+    if len(utcnow.override_time_seq) > 1:
+        del utcnow.override_time_seq[0]
+    return utcnow.override_time_seq[0]
 
-utcnow.override_time = None
-
+utcnow.override_time_seq = None
 
 def set_time_override(override_time=datetime.datetime.utcnow()):
     """Override utils.utcnow to return a constant time."""
-    utcnow.override_time = override_time
+    set_time_override_seq([override_time])
 
+def set_time_override_seq(override_time_seq=[datetime.datetime.utcnow()]):
+    """
+    Override utils.utcnow to return a sequence of times.
+    When the list is exhausted, keep returning the last one.
+    """
+    utcnow.override_time_seq = override_time_seq
 
 def advance_time_delta(timedelta):
     """Advance overridden time using a datetime.timedelta."""
-    assert(not utcnow.override_time is None)
-    utcnow.override_time += timedelta
-
+    assert(utcnow.override_time_seq)
+    utcnow.override_time_seq[0] += timedelta
 
 def advance_time_seconds(seconds):
     """Advance overridden time by seconds."""
@@ -112,7 +120,7 @@ def advance_time_seconds(seconds):
 
 def clear_time_override():
     """Remove the overridden time."""
-    utcnow.override_time = None
+    utcnow.override_time_seq = None
 
 
 def marshall_now(now=None):
