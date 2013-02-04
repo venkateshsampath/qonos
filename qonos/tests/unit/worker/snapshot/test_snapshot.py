@@ -28,10 +28,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_process_job_should_succeed_immediately(self):
         timeutils.set_time_override()
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str)).\
-            AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('ACTIVE'))
+        self.nova_client.servers.create_image(mox.IsA(str),
+            mox.IsA(str)).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'DONE', None)
         self.mox.ReplayAll()
@@ -45,16 +45,16 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_process_job_should_succeed_after_multiple_tries(self):
         timeutils.set_time_override()
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str)).\
-            AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('QUEUED'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('ACTIVE'))
+        self.nova_client.servers.create_image(mox.IsA(str), 
+            mox.IsA(str)).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('QUEUED'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'DONE', None)
         self.mox.ReplayAll()
@@ -79,16 +79,16 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(fakes.JOB['job'])
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str)).\
-            AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('QUEUED'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('ACTIVE'))
+        self.nova_client.servers.create_image(mox.IsA(str), 
+            mox.IsA(str)).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('QUEUED'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
@@ -116,16 +116,16 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(fakes.JOB['job'])
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str)).\
-            AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('QUEUED'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('ACTIVE'))
+        self.nova_client.servers.create_image(mox.IsA(str),
+            mox.IsA(str)).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('QUEUED'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
@@ -157,13 +157,12 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(fakes.JOB['job'])
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str)).\
-            AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('QUEUED'))
-        self.nova_client.images.get(IMAGE_ID).\
-            MultipleTimes().\
-            AndReturn(MockImageStatus('SAVING'))
+        self.nova_client.servers.create_image(mox.IsA(str), 
+            mox.IsA(str)).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('QUEUED'))
+        self.nova_client.images.get(IMAGE_ID).MultipleTimes().AndReturn(
+            MockImageStatus('SAVING'))
 
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
@@ -200,18 +199,18 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(fakes.JOB['job'])
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str)).\
-            AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('QUEUED'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('SAVING'))
-        self.nova_client.images.get(IMAGE_ID).\
-            AndReturn(MockImageStatus('ERROR'))
+        self.nova_client.servers.create_image(mox.IsA(str), 
+            mox.IsA(str)).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('QUEUED'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ERROR'))
 
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)

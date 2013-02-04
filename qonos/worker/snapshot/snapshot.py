@@ -51,12 +51,11 @@ class SnapshotProcessor(worker.JobProcessor):
         self.next_timeout = job['timeout']
         self.next_update = timeutils.utcnow() + self.update_interval
 
-        c = self._get_nova_client()
+        nova_client = self._get_nova_client()
 
         instance_id = self._get_instance_id(job)
-        image_id = c.servers.create_image(instance_id,
-                                          ('Daily-' +
-                                           str(datetime.datetime.utcnow())))
+        image_id = nova_client.servers.create_image(
+            instance_id, ('Daily-' + str(datetime.datetime.utcnow())))
         LOG.debug("Created image: %s" % image_id)
 
         image_status = None
@@ -64,7 +63,7 @@ class SnapshotProcessor(worker.JobProcessor):
         retry = True
 
         while not_active and retry:
-            image_status = c.images.get(image_id).status
+            image_status = nova_client.images.get(image_id).status
             LOG.debug("Image status: %s" % image_status)
             if image_status == 'ERROR':
                 break
