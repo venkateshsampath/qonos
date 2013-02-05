@@ -1,5 +1,6 @@
 import webob.exc
 
+import qonos.api.v1.api_utils as api_utils
 from qonos.common import exception
 import qonos.db
 from qonos.openstack.common import wsgi
@@ -12,15 +13,17 @@ class ScheduleMetadataController(object):
 
     def list(self, request, schedule_id):
         metadata = self.db_api.schedule_meta_get_all(schedule_id)
-        return {'metadata': metadata}
+        return {'metadata': api_utils.serialize_metadata(metadata)}
 
     def create(self, request, schedule_id, body):
         meta = body['meta']
+        new_meta = api_utils.deserialize_meta(meta)
         try:
-            meta = self.db_api.schedule_meta_create(schedule_id, meta)
+            meta = self.db_api.schedule_meta_create(
+                schedule_id, new_meta)
         except exception.Duplicate, e:
             raise webob.exc.HTTPConflict(explanation=e)
-        return {'meta': meta}
+        return {'meta': api_utils.serialize_meta(meta)}
 
     def get(self, request, schedule_id, key):
         try:
@@ -28,7 +31,7 @@ class ScheduleMetadataController(object):
         except exception.NotFound, e:
             raise webob.exc.HTTPNotFound(explanation=e)
 
-        return {'meta': meta}
+        return {'meta': api_utils.serialize_meta(meta)}
 
     def delete(self, request, schedule_id, key):
         try:
@@ -38,13 +41,13 @@ class ScheduleMetadataController(object):
 
     def update(self, request, schedule_id, key, body):
         meta = body['meta']
+        new_meta = api_utils.deserialize_meta(meta)
         try:
             updated_meta = self.db_api.schedule_meta_update(schedule_id,
-                                                            key, meta)
+                                                            key, new_meta)
         except exception.NotFound, e:
             raise webob.exc.HTTPNotFound(explanation=e)
-
-        return {'meta': updated_meta}
+        return {'meta': api_utils.serialize_meta(updated_meta)}
 
 
 def create_resource():

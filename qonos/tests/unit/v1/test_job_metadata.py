@@ -35,15 +35,17 @@ class TestJobMetadataApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='GET')
         metadata = self.controller.list(request, self.job_1['id'])
         self.assertEqual(2, len(metadata['metadata']))
-        self.assertMetadataInList(metadata['metadata'], self.meta_1)
-        self.assertMetadataInList(metadata['metadata'], self.meta_2)
+        self.assertMetaInList(metadata['metadata'],
+                              {self.meta_1['key']: self.meta_1['value']})
+        self.assertMetaInList(metadata['metadata'],
+                              {self.meta_2['key']: self.meta_2['value']})
 
     def test_get_meta(self):
         request = unit_utils.get_fake_request(method='GET')
-        meta = self.controller.get(request, self.job_1['id'],
-                                   self.meta_1['key'])
-        self.assertEqual(meta['meta']['key'], self.meta_1['key'])
-        self.assertEqual(meta['meta']['value'], self.meta_1['value'])
+        meta = self.controller.get(request, self.job_1['id'], 'key1')
+        self.assertEqual(1, len(meta['meta']))
+        self.assertTrue('key1' in meta['meta'])
+        self.assertEqual(meta['meta']['key1'], self.meta_1['value'])
 
     def test_get_meta_schedule_not_found(self):
         request = unit_utils.get_fake_request(method='GET')

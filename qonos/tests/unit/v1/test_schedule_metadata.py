@@ -39,40 +39,44 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
 
     def test_create_meta(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        key = 'key1'
+        fixture = {'meta': {key: 'value1'}}
         meta = self.controller.create(request, self.schedule_1['id'], fixture)
-        self.assertEqual(meta['meta']['key'], fixture['meta']['key'])
-        self.assertEqual(meta['meta']['value'], fixture['meta']['value'])
+        self.assertTrue(key in meta['meta'])
+        self.assertEqual(meta['meta'][key], fixture['meta'][key])
 
     def test_create_meta_duplicate(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        key = 'key1'
+        fixture = {'meta': {key: 'value1'}}
         meta = self.controller.create(request, self.schedule_1['id'], fixture)
         # Same schedule ID and key conflict
-        fixture = {'meta': {'key': 'key1', 'value': 'value2'}}
+        fixture = {'meta': {key: 'value2'}}
         self.assertRaises(webob.exc.HTTPConflict, self.controller.create,
                           request, self.schedule_1['id'], fixture)
 
     def test_list_meta(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        fixture = {'meta': {'key1': 'value1'}}
         self.controller.create(request, self.schedule_1['id'], fixture)
-        fixture2 = {'meta': {'key': 'key2', 'value': 'value2'}}
+        fixture2 = {'meta': {'key2': 'value2'}}
         self.controller.create(request, self.schedule_1['id'], fixture2)
         request = unit_utils.get_fake_request(method='GET')
         metadata = self.controller.list(request, self.schedule_1['id'])
         self.assertEqual(2, len(metadata['metadata']))
-        self.assertMetadataInList(metadata['metadata'], fixture['meta'])
-        self.assertMetadataInList(metadata['metadata'], fixture2['meta'])
+        self.assertMetaInList(metadata['metadata'], fixture['meta'])
+        self.assertMetaInList(metadata['metadata'], fixture2['meta'])
 
     def test_get_meta(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        key = 'key1'
+        fixture = {'meta': {key: 'value1'}}
         self.controller.create(request, self.schedule_1['id'], fixture)
         request = unit_utils.get_fake_request(method='GET')
         meta = self.controller.get(request, self.schedule_1['id'], 'key1')
-        self.assertEqual(meta['meta']['key'], fixture['meta']['key'])
-        self.assertEqual(meta['meta']['value'], fixture['meta']['value'])
+        self.assertEqual(1, len(meta['meta']))
+        self.assertTrue(key in meta['meta'])
+        self.assertEqual(meta['meta'][key], fixture['meta'][key])
 
     def test_get_meta_schedule_not_found(self):
         request = unit_utils.get_fake_request(method='GET')
@@ -87,7 +91,7 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
 
     def test_delete_meta(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        fixture = {'meta': {'key1': 'value1'}}
         self.controller.create(request, self.schedule_1['id'], fixture)
         request = unit_utils.get_fake_request(method='DELETE')
         self.controller.delete(request, self.schedule_1['id'], 'key1')
@@ -108,23 +112,20 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
 
     def test_update_meta(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key': 'key1', 'value': 'value1'}}
+        key = 'key1'
+        fixture = {'meta': {key: 'value1'}}
         self.controller.create(request, self.schedule_1['id'], fixture)
         request = unit_utils.get_fake_request(method='PUT')
-        update_fixture = {'meta': {'key': 'key1', 'value': 'value2'}}
+        update_fixture = {'meta': {key: 'value2'}}
 
         self.controller.update(request, self.schedule_1['id'], 'key1',
                                update_fixture)
         meta = self.controller.get(request, self.schedule_1['id'], 'key1')
-
-        self.assertEqual(meta['meta']['key'],
-                         fixture['meta']['key'])
-        self.assertEqual(meta['meta']['key'],
-                         update_fixture['meta']['key'])
-        self.assertEqual(meta['meta']['value'],
-                         update_fixture['meta']['value'])
-        self.assertNotEqual(meta['meta']['value'],
-                            fixture['meta']['value'])
+        self.assertTrue(key in meta['meta'])
+        self.assertEqual(meta['meta'][key],
+                         update_fixture['meta'][key])
+        self.assertNotEqual(meta['meta'][key],
+                            fixture['meta'][key])
 
     def test_update_meta_schedule_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
