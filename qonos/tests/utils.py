@@ -47,6 +47,14 @@ class BaseTestCase(unittest.TestCase):
                 self.assertEqual(element['value'], meta['value'])
         self.assertTrue(found)
 
+    def assertDbMetaInList(self, metadata, meta):
+        found = False
+        test_meta = {item['key']: item['value'] for item in metadata}
+        found = meta['key'] in test_meta
+        if found:
+            self.assertEqual(test_meta[meta['key']], meta['value'])
+        self.assertTrue(found)
+
 
 def import_test_cases(target_module, test_module, suffix=""):
     """Adds test cases to target module.

@@ -355,8 +355,9 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
             self.assertIsNotNone(element['created_at'])
             self.assertIsNotNone(element['updated_at'])
             self.assertEqual(element['schedule_id'], schedule['id'])
-        self.assertMetadataInList(metadata, fixture1)
-        self.assertMetadataInList(metadata, fixture2)
+
+        self.assertDbMetaInList(metadata, fixture1)
+        self.assertDbMetaInList(metadata, fixture2)
 
     def test_metadata_get_all_no_meta_create(self):
         schedule = self._create_basic_schedule()

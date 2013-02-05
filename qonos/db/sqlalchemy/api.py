@@ -313,7 +313,7 @@ def paginate_query(query, model, sort_keys, limit=None, marker=None):
 def schedule_get_all(filter_args={}):
     session = get_session()
     query = session.query(models.Schedule)\
-                   .options(sa_orm.joinedload(
+                   .options(sa_orm.joinedload_all(
                             models.Schedule.schedule_metadata))
 
     if 'next_run_after' in filter_args and 'next_run_before' in filter_args:
@@ -349,11 +349,11 @@ def schedule_get_all(filter_args={}):
     return query.all()
 
 
-def _schedule_get_by_id(schedule_id):
-    session = get_session()
+def _schedule_get_by_id(schedule_id, session=None):
+    session = session or get_session()
     try:
         schedule = session.query(models.Schedule)\
-                          .options(sa_orm.subqueryload('schedule_metadata'))\
+                          .options(sa_orm.joinedload_all('schedule_metadata'))\
                           .filter_by(id=schedule_id)\
                           .one()
     except sa_orm.exc.NoResultFound:
@@ -373,25 +373,48 @@ def schedule_update(schedule_id, schedule_values):
     # without affecting the caller
     values = schedule_values.copy()
     session = get_session()
+    session.begin()
     schedule_ref = _schedule_get_by_id(schedule_id)
 
     if 'schedule_metadata' in values:
-        for metadata_ref in schedule_ref.schedule_metadata:
-            schedule_ref.schedule_metadata.remove(metadata_ref)
+        metadata = values.pop('schedule_metadata')
+        _schedule_metadata_update_in_place(
+            schedule_ref, metadata, session)
 
-        metadata = values['schedule_metadata']
-        _set_schedule_metadata(schedule_ref, metadata)
-        del values['schedule_metadata']
-
+    print "Values: %s" % values
     schedule_ref.update(values)
-    schedule_ref.save(session=session)
+    session.merge(schedule_ref)
+    session.commit()
     return _schedule_get_by_id(schedule_id)
+
+
+def _schedule_metadata_update_in_place(schedule, metadata, session):
+    new_meta = {meta['key']: meta['value'] for meta in metadata}
+    to_delete = []
+    for meta in schedule.schedule_metadata:
+        if not meta['key'] in new_meta:
+            to_delete = meta
+        else:
+            meta['value'] = new_meta[meta['key']]
+            del new_meta[meta['key']]
+
+    for key, value in new_meta.iteritems():
+        meta_ref = models.ScheduleMetadata()
+        meta_ref.key = key
+        meta_ref.value = value
+        schedule.schedule_metadata.append(meta_ref)
+
+    for meta in to_delete:
+        schedule['schedule_metadata'].remove(meta)
 
 
 def schedule_delete(schedule_id):
     session = get_session()
-    schedule_ref = _schedule_get_by_id(schedule_id)
-    schedule_ref.delete(session=session)
+    session.begin()
+    schedule_ref = _schedule_get_by_id(schedule_id, session)
+    session.delete(schedule_ref)
+    session.commit()
+    #schedule_ref.delete(session=session)
 
 
 def _set_schedule_metadata(schedule_ref, metadata):
