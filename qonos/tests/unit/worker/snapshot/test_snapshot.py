@@ -183,7 +183,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
-    def test_process_job_should_update_image_error(self):
+    def _do_test_process_job_should_update_image_error(self, error_status):
         base_time = timeutils.utcnow()
         time_seq = [
             base_time,
@@ -210,7 +210,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
-            MockImageStatus('ERROR'))
+            error_status)
 
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
@@ -218,6 +218,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
         self.worker.update_job(fakes.JOB_ID, 'ERROR', None)
+        self.worker.report_job_fault(mox.IsA(dict), mox.IsA(str))
 
         self.mox.ReplayAll()
 
@@ -227,6 +228,25 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         processor.process_job(job)
 
         self.mox.VerifyAll()
+
+    def test_process_job_should_update_image_error(self):
+        status = MockImageStatus('ERROR')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_killed(self):
+        status = MockImageStatus('KILLED')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_deleted(self):
+        status = MockImageStatus('DELETED')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_pending_delete(self):
+        status = MockImageStatus('PENDING_DELETE')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_none(self):
+        self._do_test_process_job_should_update_image_error(None)
 
 
 class MockNovaClient(object):

@@ -133,6 +133,10 @@ class Worker(object):
                        'timeout': str(timeout)})
         self.client.update_job_status(job_id, status, timeout)
 
+    def report_job_fault(self, job, message):
+        #TODO(WORKER) Implement when job fault api is done
+        pass
+
 
 class JobProcessor(object):
     def __init__(self):
@@ -140,6 +144,9 @@ class JobProcessor(object):
 
     def update_job(self, job_id, status, timeout=None):
         self.worker.update_job(job_id, status, timeout)
+
+    def report_job_fault(self, job, message):
+        self.worker.report_job_fault(job, message)
 
     def init_processor(self, worker):
         """
