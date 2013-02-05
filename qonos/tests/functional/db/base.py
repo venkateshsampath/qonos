@@ -48,11 +48,14 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def setUp(self):
         super(TestSchedulesDBApi, self).setUp()
         self.db_api = db_api
+        timeutils.set_time_override(datetime.datetime(
+                year=2013, month=1, day=1, hour=9, minute=0))
         self._create_schedules()
 
     def tearDown(self):
         super(TestSchedulesDBApi, self).setUp()
         self.db_api.reset()
+        timeutils.clear_time_override()
 
     def _create_schedules(self):
         fixture = {
