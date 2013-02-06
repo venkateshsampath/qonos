@@ -373,17 +373,14 @@ def schedule_update(schedule_id, schedule_values):
     # without affecting the caller
     values = schedule_values.copy()
     session = get_session()
-    session.begin()
-    schedule_ref = _schedule_get_by_id(schedule_id)
+    schedule_ref = _schedule_get_by_id(schedule_id, session)
 
     if 'schedule_metadata' in values:
         metadata = values.pop('schedule_metadata')
-        _schedule_metadata_update_in_place(
-            schedule_ref, metadata, session)
+        _schedule_metadata_update_in_place(schedule_ref, metadata)
 
     schedule_ref.update(values)
-    session.merge(schedule_ref)
-    session.commit()
+    schedule_ref.save(session=session)
     return _schedule_get_by_id(schedule_id)
 
 
@@ -409,10 +406,8 @@ def _schedule_metadata_update_in_place(schedule, metadata):
 
 def schedule_delete(schedule_id):
     session = get_session()
-    session.begin()
     schedule_ref = _schedule_get_by_id(schedule_id, session)
-    session.delete(schedule_ref)
-    session.commit()
+    schedule_ref.delete(session=session)
 
 
 def _set_schedule_metadata(schedule_ref, metadata):
@@ -426,8 +421,8 @@ def _set_schedule_metadata(schedule_ref, metadata):
 
 @force_dict
 def schedule_meta_create(schedule_id, values):
-    _schedule_get_by_id(schedule_id)
     session = get_session()
+    _schedule_get_by_id(schedule_id, session)
     meta_ref = models.ScheduleMetadata()
     values['schedule_id'] = schedule_id
     meta_ref.update(values)
@@ -442,21 +437,21 @@ def schedule_meta_create(schedule_id, values):
 
 @force_dict
 def schedule_meta_get_all(schedule_id):
-    _schedule_get_by_id(schedule_id)
     session = get_session()
+    _schedule_get_by_id(schedule_id, session)
     query = session.query(models.ScheduleMetadata)\
                    .filter_by(schedule_id=schedule_id)
 
     return query.all()
 
 
-def _schedule_meta_get(schedule_id, key):
+def _schedule_meta_get(schedule_id, key, session=None):
+    session = session or get_session()
     try:
-        _schedule_get_by_id(schedule_id)
+        _schedule_get_by_id(schedule_id, session)
     except exception.NotFound:
         msg = _('Schedule %s could not be found') % schedule_id
         raise exception.NotFound(message=msg)
-    session = get_session()
     try:
         meta = session.query(models.ScheduleMetadata)\
                       .filter_by(schedule_id=schedule_id)\
@@ -475,18 +470,18 @@ def schedule_meta_get(schedule_id, key):
 
 @force_dict
 def schedule_meta_update(schedule_id, key, values):
-    _schedule_get_by_id(schedule_id)
     session = get_session()
-    meta_ref = _schedule_meta_get(schedule_id, key)
+    _schedule_get_by_id(schedule_id, session)
+    meta_ref = _schedule_meta_get(schedule_id, key, session)
     meta_ref.update(values)
     meta_ref.save(session=session)
     return meta_ref
 
 
 def schedule_meta_delete(schedule_id, key):
-    _schedule_get_by_id(schedule_id)
     session = get_session()
-    meta_ref = _schedule_meta_get(schedule_id, key)
+    _schedule_get_by_id(schedule_id, session)
+    meta_ref = _schedule_meta_get(schedule_id, key, session)
     meta_ref.delete(session=session)
 
 
