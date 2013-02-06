@@ -555,3 +555,13 @@ def job_meta_delete(job_id, key):
     _check_job_meta_exists(job_id, key)
 
     del DATA['job_metadata'][job_id][key]
+
+
+def job_fault_create(values):
+    global DATA
+    job_fault = {}
+    job_fault.update(values)
+    item_id = values.get('id')
+    job_fault.update(_gen_base_attributes(item_id=item_id))
+    DATA['job_faults'][job_fault['id']] = job_fault
+    return copy.deepcopy(job_fault)

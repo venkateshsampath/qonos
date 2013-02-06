@@ -933,3 +933,54 @@ class TestJobsDBGetNextJobApi(test_utils.BaseTestCase):
         self.assertEqual(job['timeout'], timeout)
         self.assertEqual(job['hard_timeout'], hard_timeout)
         self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
+
+
+class TestJobFaultDBApi(test_utils.BaseTestCase):
+
+    def setUp(self):
+        super(TestJobFaultDBApi, self).setUp()
+        self.db_api = db_api
+
+    def tearDown(self):
+        super(TestJobFaultDBApi, self).tearDown()
+        self.db_api.reset()
+
+    def test_job_fault_create_minimal(self):
+        fixture = {
+            'schedule_id': str(uuid.uuid4()),
+            'tenant_id': str(uuid.uuid4()),
+            'worker_id': str(uuid.uuid4()),
+            'job_id': str(uuid.uuid4()),
+            'action': 'milking',
+            }
+        job_fault = self.db_api.job_fault_create(fixture)
+        self.assertTrue(uuidutils.is_uuid_like(job_fault['id']))
+        self.assertEqual(job_fault['schedule_id'], fixture['schedule_id'])
+        self.assertEqual(job_fault['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(job_fault['worker_id'], fixture['worker_id'])
+        self.assertEqual(job_fault['job_id'], fixture['job_id'])
+        self.assertEqual(job_fault['action'], fixture['action'])
+        self.assertNotEqual(job_fault['created_at'], None)
+        self.assertNotEqual(job_fault['updated_at'], None)
+
+    def test_job_fault_create_full(self):
+        fixture = {
+            'schedule_id': str(uuid.uuid4()),
+            'tenant_id': str(uuid.uuid4()),
+            'worker_id': str(uuid.uuid4()),
+            'job_id': str(uuid.uuid4()),
+            'action': 'milking',
+            'message': 'There are too many cows here!',
+            'job_metadata': 'When were these cows supposed to leave?',
+            }
+        job_fault = self.db_api.job_fault_create(fixture)
+        self.assertTrue(uuidutils.is_uuid_like(job_fault['id']))
+        self.assertEqual(job_fault['schedule_id'], fixture['schedule_id'])
+        self.assertEqual(job_fault['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(job_fault['worker_id'], fixture['worker_id'])
+        self.assertEqual(job_fault['job_id'], fixture['job_id'])
+        self.assertEqual(job_fault['action'], fixture['action'])
+        self.assertEqual(job_fault['message'], fixture['message'])
+        self.assertEqual(job_fault['job_metadata'], fixture['job_metadata'])
+        self.assertNotEqual(job_fault['created_at'], None)
+        self.assertNotEqual(job_fault['updated_at'], None)

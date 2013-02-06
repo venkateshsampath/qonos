@@ -120,16 +120,39 @@ class JobsController(object):
         if not status:
             raise webob.exc.HTTPBadRequest()
 
-        values = {'status': status['status']}
+        values = {'status': status['status'].upper()}
         if 'timeout' in status:
             timeout = timeutils.parse_isotime(status['timeout'])
             values['timeout'] = timeutils.normalize_time(timeout)
 
+        job = None
         try:
-            self.db_api.job_update(job_id, values)
+            job = self.db_api.job_update(job_id, values)
         except exception.NotFound:
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
+
+        if status['status'].upper() == 'ERROR':
+            values = self._get_error_values(status, job)
+            self.db_api.job_fault_create(values)
+
+        return {'job': job}
+
+    def _get_error_values(self, status, job):
+        values = {
+            'job_id': job['id'],
+            'action': job['action'],
+            'schedule_id': job['schedule_id'],
+            'tenant_id': job['tenant_id'],
+            'worker_id': job['worker_id'] or 'UNASSIGNED',
+            'job_metadata': str(job['job_metadata']),
+            }
+        if 'error_message' in status:
+            values['message'] = status['error_message']
+        else:
+            values['message'] = 'No message supplied'
+
+        return values
 
 
 def create_resource():

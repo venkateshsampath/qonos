@@ -14,6 +14,7 @@ CONF = cfg.CONF
 
 TENANT1 = '6838eb7b-6ded-434a-882c-b344c77fe8df'
 TENANT2 = '2c014f32-55eb-467d-8fcb-4bd706012f81'
+WORKER = '12345678-9abc-def0-fedc-ba9876543210'
 
 
 class TestApi(utils.BaseTestCase):
@@ -329,6 +330,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(new_job['action'], schedule['action'])
         self.assertEqual(new_job['status'], 'queued')
+        self.assertIsNone(new_job['worker_id'])
         self.assertIsNotNone(new_job.get('timeout'))
         self.assertIsNotNone(new_job.get('hard_timeout'))
         self.assertMetadataInList(new_job['metadata'], meta_fixture1)
@@ -378,16 +380,24 @@ class TestApi(utils.BaseTestCase):
         self.client.update_job_status(job['id'], 'processing')
         status = self.client.get_job_status(job['id'])['status']
         self.assertNotEqual(status, new_job['status'])
-        self.assertEqual(status, 'processing')
+        self.assertEqual(status, 'PROCESSING')
 
         # update status with timeout
         timeout = '2010-11-30T17:00:00Z'
         self.client.update_job_status(job['id'], 'done', timeout)
         updated_job = self.client.get_job(new_job['id'])
         self.assertNotEqual(updated_job['status'], new_job['status'])
-        self.assertEqual(updated_job['status'], 'done')
+        self.assertEqual(updated_job['status'], 'DONE')
         self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
         self.assertEqual(updated_job['timeout'], timeout)
+
+        # update status with error
+        # hmmmm - how to check faults without direct db access?
+        self.client.update_job_status(job['id'], 'error',
+                                      error_message='ermagerd! errer!')
+        status = self.client.get_job_status(job['id'])['status']
+        self.assertNotEqual(status, new_job['status'])
+        self.assertEqual(status, 'ERROR')
 
         # delete job
         self.client.delete_job(job['id'])

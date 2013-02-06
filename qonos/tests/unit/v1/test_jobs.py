@@ -294,7 +294,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='PUT')
         body = {'status':
                 {
-                'status': 'error',
+                'status': 'processing',
                 'timeout': str(timeout)
                 }
                 }
@@ -302,15 +302,15 @@ class TestJobsApi(test_utils.BaseTestCase):
         job = db_api.job_get_by_id(self.job_1['id'])
         actual_status = job['status']
         actual_timeout = job['timeout']
-        self.assertEqual(actual_status, body['status']['status'])
+        self.assertEqual(actual_status, body['status']['status'].upper())
         self.assertEqual(actual_timeout, timeout)
 
     def test_update_status_without_timeout(self):
         request = unit_utils.get_fake_request(method='PUT')
-        body = {'status': {'status': 'error'}}
+        body = {'status': {'status': 'done'}}
         self.controller.update_status(request, self.job_1['id'], body)
         actual = db_api.job_get_by_id(self.job_1['id'])['status']
-        self.assertEqual(actual, body['status']['status'])
+        self.assertEqual(actual, body['status']['status'].upper())
 
     def test_update_status_empty_body(self):
         request = unit_utils.get_fake_request(method='PUT')

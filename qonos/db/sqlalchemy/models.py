@@ -155,13 +155,13 @@ class JobFault(BASE, ModelBase):
     """Represents a job fault in the datastore."""
     __tablename__ = 'job_faults'
 
-    schedule_id = Column(String(36))
-    worker_id = Column(String(36))
-    job_id = Column(String(36))
-    exception_type = Column(String(255))
-    message = Column(String(255))
-    traceback = Column(Text)
-    schedule_data = Column(Text)
+    job_id = Column(String(36), nullable=False)
+    schedule_id = Column(String(36), nullable=False)
+    tenant_id = Column(String(36), nullable=False)
+    worker_id = Column(String(36), nullable=False)
+    action = Column(String(255), nullable=False)
+    message = Column(String(255), nullable=True)
+    job_metadata = Column(Text, nullable=True)
 
 
 def register_models(engine):
