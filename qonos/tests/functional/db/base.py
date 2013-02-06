@@ -48,11 +48,14 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def setUp(self):
         super(TestSchedulesDBApi, self).setUp()
         self.db_api = db_api
+        timeutils.set_time_override(datetime.datetime(
+                year=2013, month=1, day=1, hour=9, minute=0))
         self._create_schedules()
 
     def tearDown(self):
         super(TestSchedulesDBApi, self).setUp()
         self.db_api.reset()
+        timeutils.clear_time_override()
 
     def _create_schedules(self):
         fixture = {
@@ -116,6 +119,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         filters['next_run_before'] = self.schedule_1['next_run']
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 0)
+        timeutils.clear_time_override()
 
     def test_schedule_get_next_run_after_filter(self):
         filters = {}
@@ -355,8 +359,9 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
             self.assertIsNotNone(element['created_at'])
             self.assertIsNotNone(element['updated_at'])
             self.assertEqual(element['schedule_id'], schedule['id'])
-        self.assertMetadataInList(metadata, fixture1)
-        self.assertMetadataInList(metadata, fixture2)
+
+        self.assertDbMetaInList(metadata, fixture1)
+        self.assertDbMetaInList(metadata, fixture2)
 
     def test_metadata_get_all_no_meta_create(self):
         schedule = self._create_basic_schedule()

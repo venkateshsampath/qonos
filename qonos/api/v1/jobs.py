@@ -1,5 +1,6 @@
 import webob.exc
 
+from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
@@ -29,7 +30,10 @@ class JobsController(object):
             jobs = self.db_api.job_get_all(params)
         except exception.NotFound:
             raise webob.exc.HTTPNotFound()
-        [utils.serialize_datetimes(job) for job in jobs]
+
+        for job in jobs:
+            utils.serialize_datetimes(job)
+            api_utils.serialize_job_metadata(job)
         return {'jobs': jobs}
 
     def create(self, request, body):
@@ -52,6 +56,7 @@ class JobsController(object):
 
         job = self.db_api.job_create(values)
         utils.serialize_datetimes(job)
+        api_utils.serialize_job_metadata(job)
 
         return {'job': job}
 
@@ -61,6 +66,7 @@ class JobsController(object):
         except exception.NotFound:
             raise webob.exc.HTTPNotFound
         utils.serialize_datetimes(job)
+        api_utils.serialize_job_metadata(job)
         return {'job': job}
 
     def delete(self, request, job_id):

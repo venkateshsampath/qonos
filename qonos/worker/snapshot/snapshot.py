@@ -108,7 +108,6 @@ class SnapshotProcessor(worker.JobProcessor):
     def _is_error_status(self, status):
         job_status = status['job_status']
         if job_status == 'ERROR':
-            self._job_failed(self.current_job['id'])
             instance_id = self._get_instance_id(self.current_job)
             msg = (('Error occurred while taking snapshot: '
                     'Instance: %(instance_id)s, image: %(image_id)s, '
@@ -117,7 +116,7 @@ class SnapshotProcessor(worker.JobProcessor):
                     'image_id': status['image_id'],
                     'image_status': status['image_status']})
             LOG.warn(msg)
-            self.report_job_fault(self.current_job, msg)
+            self._job_failed(self.current_job['id'], msg)
             return True
         return False
 
@@ -161,8 +160,8 @@ class SnapshotProcessor(worker.JobProcessor):
     def _job_timed_out(self, job_id):
         self.update_job(job_id, 'TIMED_OUT')
 
-    def _job_failed(self, job_id):
-        self.update_job(job_id, 'ERROR')
+    def _job_failed(self, job_id, error_message):
+        self.update_job(job_id, 'ERROR', error_message=error_message)
 
     def _try_update(self, job_id, status):
         now = timeutils.utcnow()

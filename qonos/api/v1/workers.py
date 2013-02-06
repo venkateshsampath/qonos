@@ -1,5 +1,6 @@
 import webob.exc
 
+from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
@@ -63,8 +64,9 @@ class WorkersController(object):
 
         job = self.db_api.job_get_and_assign_next_by_action(action,
                                                             worker_id)
-        if not job is None:
+        if job:
             utils.serialize_datetimes(job)
+            api_utils.serialize_job_metadata(job)
         return {'job': job}
 
 

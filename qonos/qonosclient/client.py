@@ -90,18 +90,18 @@ class Client(object):
         return self._do_request('GET', path)['metadata']
 
     def create_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {'key': key, 'value': value}}
+        meta = {'meta': {key: value}}
         path = '/v1/schedules/%s/meta' % schedule_id
         return self._do_request('POST', path, meta)['meta']
 
     def get_schedule_meta(self, schedule_id, key):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('GET', path)['meta']['value']
+        return self._do_request('GET', path)['meta'][key]
 
     def update_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {'key': key, 'value': value}}
+        meta = {'meta': {key: value}}
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('PUT', path, meta)['meta']['value']
+        return self._do_request('PUT', path, meta)['meta'][key]
 
     def delete_schedule_meta(self, schedule_id, key):
         path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
@@ -155,7 +155,7 @@ class Client(object):
 
     def get_job_metadata(self, job_id, key):
         path = '/v1/jobs/%s/meta/%s' % (job_id, key)
-        return self._do_request('GET', path)['meta']['value']
+        return self._do_request('GET', path)['meta'][key]
 
 
 def create_client(endpoint, port):

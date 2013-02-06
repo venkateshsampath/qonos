@@ -42,10 +42,10 @@ class TestJobsApi(test_utils.BaseTestCase):
             'hour': '2',
             'next_run': '2012-11-27T02:30:00Z',
             'schedule_metadata': [
-                {
+                    {
                     'key': 'instance_id',
                     'value': 'my_instance',
-                },
+                    }
             ],
         }
         self.schedule_2 = db_api.schedule_create(fixture)
@@ -68,11 +68,11 @@ class TestJobsApi(test_utils.BaseTestCase):
             'status': 'error',
             'retry_count': 1,
             'job_metadata': [
-                {
+                    {
                     'key': 'instance_id',
                     'value': 'my_instance',
-                },
-            ],
+                    },
+                ]
         }
         self.job_2 = db_api.job_create(fixture)
         fixture = {
@@ -176,7 +176,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['tenant_id'], self.schedule_1['tenant_id'])
         self.assertEqual(job['action'], self.schedule_1['action'])
         self.assertEqual(job['status'], 'queued')
-        self.assertEqual(len(job['job_metadata']), 0)
+        self.assertEqual(len(job['metadata']), 0)
 
     def test_create_with_metadata(self):
         request = unit_utils.get_fake_request(method='POST')
@@ -189,11 +189,9 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['tenant_id'], self.schedule_2['tenant_id'])
         self.assertEqual(job['action'], self.schedule_2['action'])
         self.assertEqual(job['status'], 'queued')
-        self.assertEqual(len(job['job_metadata']), 1)
-        self.assertEqual(job['job_metadata'][0]['key'],
-                         self.schedule_2['schedule_metadata'][0]['key'])
-        self.assertEqual(job['job_metadata'][0]['value'],
-                         self.schedule_2['schedule_metadata'][0]['value'])
+        self.assertEqual(len(job['metadata']), 1)
+        self.assertTrue('instance_id' in job['metadata'])
+        self.assertEqual(job['metadata']['instance_id'], 'my_instance')
 
     def test_get(self):
         request = unit_utils.get_fake_request(method='GET')
@@ -214,11 +212,9 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['retry_count'], 1)
         self.assertNotEqual(job['updated_at'], None)
         self.assertNotEqual(job['created_at'], None)
-        self.assertEqual(len(job['job_metadata']), 1)
-        self.assertEqual(job['job_metadata'][0]['key'],
-                         self.job_2['job_metadata'][0]['key'])
-        self.assertEqual(job['job_metadata'][0]['value'],
-                         self.job_2['job_metadata'][0]['value'])
+        self.assertEqual(len(job['metadata']), 1)
+        self.assertTrue('instance_id' in job['metadata'])
+        self.assertEqual(job['metadata']['instance_id'], 'my_instance')
 
     def test_get_not_found(self):
         request = unit_utils.get_fake_request(method='GET')

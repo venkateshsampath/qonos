@@ -76,16 +76,17 @@ class TestApi(utils.BaseTestCase):
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12',
-                'schedule_metadata': [
-                    meta1,
-                    meta2,
-                ]
+                'metadata': {
+                    meta1['key']: meta1['value'],
+                    meta2['key']: meta2['value'],
+                }
             }
         }
         schedule = self.client.create_schedule(request)
+        meta_fixture1 = {meta1['key']: meta1['value']}
+        meta_fixture2 = {meta2['key']: meta2['value']}
 
         # (setup) create job
-
         self.client.create_job(schedule['id'])
 
         job = self.client.get_next_job(worker['id'], 'snapshot')
@@ -95,8 +96,8 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(next_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(next_job['action'], schedule['action'])
         self.assertEqual(next_job['status'], 'queued')
-        self.assertMetadataInList(next_job['job_metadata'], meta1)
-        self.assertMetadataInList(next_job['job_metadata'], meta2)
+        self.assertMetadataInList(next_job['metadata'], meta_fixture1)
+        self.assertMetadataInList(next_job['metadata'], meta_fixture2)
 
         # get job for worker no jobs left for action
         job = self.client.get_next_job(worker['id'], 'snapshot')
@@ -136,8 +137,7 @@ class TestApi(utils.BaseTestCase):
                 'action': 'snapshot',
                 'minute': 30,
                 'hour': 12,
-                'schedule_metadata': [{'key': 'instance_id',
-                                       'value': 'my_instance_1'}]
+                'metadata': {'instance_id': 'my_instance_1'},
             }
         }
         schedule = self.client.create_schedule(request)
@@ -146,6 +146,10 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(schedule['action'], 'snapshot')
         self.assertEqual(schedule['minute'], 30)
         self.assertEqual(schedule['hour'], 12)
+        self.assertTrue('metadata' in schedule)
+        metadata = schedule['metadata']
+        self.assertEqual(1, len(metadata))
+        self.assertEqual(metadata['instance_id'], 'my_instance_1')
 
         # get schedule
         schedule = self.client.get_schedule(schedule['id'])
@@ -215,6 +219,24 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(updated_schedule['hour'], request['schedule']['hour'])
         self.assertNotEqual(updated_schedule['hour'], schedule['hour'])
 
+        #update schedule metadata
+        request = {'schedule': {
+                'metadata': {
+                    'instance_id': 'my_instance_2',
+                    'retention': '3',
+                }
+            }
+        }
+        updated_schedule = self.client.update_schedule(schedule['id'], request)
+        self.assertEqual(updated_schedule['id'], schedule['id'])
+        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['action'], schedule['action'])
+        self.assertTrue('metadata' in updated_schedule)
+        metadata = updated_schedule['metadata']
+        self.assertEqual(2, len(metadata))
+        self.assertEqual(metadata['instance_id'], 'my_instance_2')
+        self.assertEqual(metadata['retention'], '3')
+
         # delete schedule
         self.client.delete_schedule(schedule['id'])
 
@@ -239,8 +261,9 @@ class TestApi(utils.BaseTestCase):
         # create meta
         meta = self.client.create_schedule_meta(schedule['id'], 'key1',
                                                 'value1')
-        self.assertEqual(meta['key'], 'key1')
-        self.assertEqual(meta['value'], 'value1')
+        self.assertEqual(1, len(meta))
+        self.assertTrue('key1' in meta)
+        self.assertEqual(meta['key1'], 'value1')
 
         # make sure duplicate metadata can't be created
         self.assertRaises(client_exc.Duplicate,
@@ -252,8 +275,8 @@ class TestApi(utils.BaseTestCase):
         # list meta
         metadata = self.client.list_schedule_meta(schedule['id'])
         self.assertEqual(len(metadata), 1)
-        self.assertEqual(metadata[0]['key'], 'key1')
-        self.assertEqual(metadata[0]['value'], 'value1')
+        self.assertTrue('key1' in metadata)
+        self.assertEqual(metadata['key1'], 'value1')
 
         # get meta
         value = self.client.get_schedule_meta(schedule['id'], 'key1')
@@ -289,18 +312,18 @@ class TestApi(utils.BaseTestCase):
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12',
-                'schedule_metadata': [
-                    meta1,
-                    meta2,
-                ]
+                'metadata': {
+                    meta1['key']: meta1['value'],
+                    meta2['key']: meta2['value'],
+                }
             }
         }
         schedule = self.client.create_schedule(request)
-
+        meta_fixture1 = {meta1['key']: meta1['value']}
+        meta_fixture2 = {meta2['key']: meta2['value']}
         # create job
 
         new_job = self.client.create_job(schedule['id'])
-        print "Job: %s" % str(new_job)
         self.assertIsNotNone(new_job.get('id'))
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
@@ -308,8 +331,8 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(new_job['status'], 'queued')
         self.assertIsNotNone(new_job.get('timeout'))
         self.assertIsNotNone(new_job.get('hard_timeout'))
-        self.assertMetadataInList(new_job['job_metadata'], meta1)
-        self.assertMetadataInList(new_job['job_metadata'], meta2)
+        self.assertMetadataInList(new_job['metadata'], meta_fixture1)
+        self.assertMetadataInList(new_job['metadata'], meta_fixture2)
 
         # list jobs
         jobs = self.client.list_jobs()
@@ -328,8 +351,8 @@ class TestApi(utils.BaseTestCase):
 
         # list job metadata
         metadata = self.client.list_job_metadata(new_job['id'])
-        self.assertMetadataInList(metadata, meta1)
-        self.assertMetadataInList(metadata, meta2)
+        self.assertMetadataInList(metadata, meta_fixture1)
+        self.assertMetadataInList(metadata, meta_fixture2)
 
         # get job metadata
         meta_value = self.client.get_job_metadata(new_job['id'], meta1['key'])
