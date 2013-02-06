@@ -1,5 +1,6 @@
 import webob.exc
 
+from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
@@ -52,7 +53,9 @@ class SchedulesController(object):
         except exception.NotFound:
             msg = _('The specified marker could not be found')
             raise webob.exc.HTTPNotFound(explanation=msg)
-        [utils.serialize_datetimes(sched) for sched in schedules]
+        for sched in schedules:
+            utils.serialize_datetimes(sched),
+            api_utils.serialize_schedule_metadata(sched)
         links = [{'rel': 'next', 'href': next_page}]
         return {'schedules': schedules, 'schedules_links': links}
 
@@ -70,18 +73,21 @@ class SchedulesController(object):
             body.get('schedule') is None):
             raise webob.exc.HTTPBadRequest()
 
+        api_utils.deserialize_schedule_metadata(body['schedule'])
         values = {}
         values.update(body['schedule'])
         values['next_run'] = self._schedule_to_next_run(body['schedule'])
         schedule = self.db_api.schedule_create(values)
 
         utils.serialize_datetimes(schedule)
+        api_utils.serialize_schedule_metadata(schedule)
         return {'schedule': schedule}
 
     def get(self, request, schedule_id):
         try:
             schedule = self.db_api.schedule_get_by_id(schedule_id)
             utils.serialize_datetimes(schedule)
+            api_utils.serialize_schedule_metadata(schedule)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)
@@ -99,12 +105,14 @@ class SchedulesController(object):
             raise webob.exc.HTTPBadRequest()
 
         try:
+            api_utils.deserialize_schedule_metadata(body['schedule'])
             values = {}
             values.update(body['schedule'])
             values['next_run'] = self._schedule_to_next_run(body['schedule'])
             schedule = self.db_api.schedule_update(schedule_id,
                                                    values)
             utils.serialize_datetimes(schedule)
+            api_utils.serialize_schedule_metadata(schedule)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)

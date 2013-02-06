@@ -377,15 +377,14 @@ def schedule_update(schedule_id, schedule_values):
 
     if 'schedule_metadata' in values:
         metadata = values.pop('schedule_metadata')
-        _schedule_metadata_update_in_place(
-            schedule_ref, metadata, session)
+        _schedule_metadata_update_in_place(schedule_ref, metadata)
 
     schedule_ref.update(values)
     schedule_ref.save(session=session)
     return _schedule_get_by_id(schedule_id)
 
 
-def _schedule_metadata_update_in_place(schedule, metadata, session):
+def _schedule_metadata_update_in_place(schedule, metadata):
     new_meta = {meta['key']: meta['value'] for meta in metadata}
     to_delete = []
     for meta in schedule.schedule_metadata:

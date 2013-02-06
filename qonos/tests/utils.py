@@ -39,12 +39,25 @@ class BaseTestCase(unittest.TestCase):
         for k, v in kw.iteritems():
             CONF.set_override(k, v, group)
 
-    def assertMetadataInList(self, metadata, meta):
+    def assertMetadataInList(self, expected_metadata, actual_metadata):
+        for key, value in actual_metadata.iteritems():
+            self.assertMetaInList(expected_metadata, {key: value})
+
+    def assertMetaInList(self, metadata, meta):
         found = False
-        for element in metadata:
-            if element['key'] == meta['key']:
-                found = True
-                self.assertEqual(element['value'], meta['value'])
+        self.assertEqual(1, len(meta))
+        key = meta.keys()[0]
+        if key in metadata:
+            found = True
+            self.assertEqual(metadata[key], meta[key])
+        self.assertTrue(found)
+
+    def assertDbMetaInList(self, metadata, meta):
+        found = False
+        test_meta = {item['key']: item['value'] for item in metadata}
+        found = meta['key'] in test_meta
+        if found:
+            self.assertEqual(test_meta[meta['key']], meta['value'])
         self.assertTrue(found)
 
     def assertDbMetaInList(self, metadata, meta):
