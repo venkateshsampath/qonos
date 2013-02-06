@@ -138,6 +138,9 @@ class JobProcessor(object):
     def __init__(self):
         self.worker = None
 
+    def update_job(self, job_id, status, timeout=None):
+        self.worker.update_job(job_id, status, timeout)
+
     def init_processor(self, worker):
         """
         Override to perform processor-specific setup.
