@@ -783,3 +783,28 @@ def job_meta_delete(job_id, key):
     session = get_session()
     meta_ref = _job_meta_get(job_id, key)
     meta_ref.delete(session=session)
+
+
+##################### Job fault methods
+
+def job_fault_latest_for_job_id(job_id):
+    session = get_session()
+    try:
+        job_fault = session.query(models.JobFault)\
+            .filter_by(job_id=job_id)\
+            .order_by(models.JobFault.created_at.desc())\
+            .one()
+        return job_fault
+    except sa_orm.exc.NoResultFound:
+        return None
+
+
+@force_dict
+def job_fault_create(values):
+    session = get_session()
+    job_fault_ref = models.JobFault()
+    job_fault_ref.update(values)
+
+    job_fault_ref.save(session=session)
+
+    return job_fault_ref

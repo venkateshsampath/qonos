@@ -137,10 +137,13 @@ class Client(object):
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('GET', path)
 
-    def update_job_status(self, job_id, status, timeout=None):
+    def update_job_status(self, job_id, status, timeout=None,
+                          error_message=None):
         body = {'status': {'status': status}}
         if timeout:
             body['status']['timeout'] = timeout
+        if status.upper() == 'ERROR' and error_message:
+            body['status']['error_message'] = error_message
 
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('PUT', path, body)

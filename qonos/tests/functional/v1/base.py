@@ -2,6 +2,7 @@ from operator import itemgetter
 import random
 
 from qonos.common import config
+import qonos.db
 from qonos.openstack.common import cfg
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
@@ -14,6 +15,7 @@ CONF = cfg.CONF
 
 TENANT1 = '6838eb7b-6ded-434a-882c-b344c77fe8df'
 TENANT2 = '2c014f32-55eb-467d-8fcb-4bd706012f81'
+WORKER = '12345678-9abc-def0-fedc-ba9876543210'
 
 
 class TestApi(utils.BaseTestCase):
@@ -23,8 +25,10 @@ class TestApi(utils.BaseTestCase):
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
         self.port = random.randint(50000, 60000)
         self.service = wsgi.Service()
-        self.service.start(config.load_paste_app('qonos-api'), self.port)
+        app = config.load_paste_app('qonos-api')
+        self.service.start(app, self.port)
         self.client = client.Client("localhost", self.port)
+        self.db_api = qonos.db.get_api()
 
     def tearDown(self):
         super(TestApi, self).tearDown()
@@ -42,6 +46,7 @@ class TestApi(utils.BaseTestCase):
             self.client.delete_worker(worker['id'])
 
         self.service.stop()
+        self.db_api = None
 
     def test_workers_workflow(self):
         workers = self.client.list_workers()
@@ -329,6 +334,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(new_job['action'], schedule['action'])
         self.assertEqual(new_job['status'], 'queued')
+        self.assertIsNone(new_job['worker_id'])
         self.assertIsNotNone(new_job.get('timeout'))
         self.assertIsNotNone(new_job.get('hard_timeout'))
         self.assertMetadataInList(new_job['metadata'], meta_fixture1)
@@ -378,23 +384,44 @@ class TestApi(utils.BaseTestCase):
         self.client.update_job_status(job['id'], 'processing')
         status = self.client.get_job_status(job['id'])['status']
         self.assertNotEqual(status, new_job['status'])
-        self.assertEqual(status, 'processing')
+        self.assertEqual(status, 'PROCESSING')
 
         # update status with timeout
         timeout = '2010-11-30T17:00:00Z'
         self.client.update_job_status(job['id'], 'done', timeout)
         updated_job = self.client.get_job(new_job['id'])
         self.assertNotEqual(updated_job['status'], new_job['status'])
-        self.assertEqual(updated_job['status'], 'done')
+        self.assertEqual(updated_job['status'], 'DONE')
         self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
         self.assertEqual(updated_job['timeout'], timeout)
+
+        # update status with error
+        error_message = 'ermagerd! errer!'
+        self.client.update_job_status(job['id'], 'error',
+                                      error_message=error_message)
+        status = self.client.get_job_status(job['id'])['status']
+        self.assertNotEqual(status, new_job['status'])
+        self.assertEqual(status, 'ERROR')
+        job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])
+        self.assertIsNotNone(job_fault)
+        print "Job fault: %s" % str(job_fault)
+        self.assertEqual(job_fault['job_id'], job['id'])
+        self.assertEqual(job_fault['tenant_id'], job['tenant_id'])
+        self.assertEqual(job_fault['schedule_id'], job['schedule_id'])
+        self.assertEqual(job_fault['worker_id'],
+                         job['worker_id'] or 'UNASSIGNED')
+        self.assertEqual(job_fault['action'], job['action'])
+        self.assertIsNotNone(job_fault['job_metadata'])
+        self.assertEqual(job_fault['message'], error_message)
+        self.assertIsNotNone(job_fault['created_at'])
+        self.assertIsNotNone(job_fault['updated_at'])
+        self.assertIsNotNone(job_fault['id'])
 
         # delete job
         self.client.delete_job(job['id'])
 
         # make sure job no longer exists
-        self.assertRaises(client_exc.NotFound, self.client.get_job,
-                          job['id'])
+        self.assertRaises(client_exc.NotFound, self.client.get_job, job['id'])
 
     def test_pagination(self):
 
