@@ -124,13 +124,21 @@ class Worker(object):
 
         return job
 
-    def update_job(self, job_id, status, timeout=None):
-        LOG.debug(_("Worker: %(name)s [%(worker_id)d] updating "
-                    "job [%(job_id)d] Status: %(status)s Timeout: %(timeout)s")
-                    % {'worker_id': self.worker_name,
-                       'job_id': job_id,
-                       'status': status,
-                       'timeout': str(timeout)})
+    def update_job(self, job_id, status, timeout=None, error_message=None):
+        msg = (_("Worker: %(name)s [%(worker_id)d] updating "
+               "job [%(job_id)d] Status: %(status)s") %
+                {'worker_id': self.worker_name,
+                 'job_id': job_id,
+                 'status': status})
+
+        if timeout:
+            msg += _("Timeout: %s") % str(timeout)
+
+        if error_message:
+            msg += _("Error message: %s") % error_message
+
+        LOG.debug(msg)
+        #TODO(WORKER) Pass error message when available in client
         self.client.update_job_status(job_id, status, timeout)
 
 
@@ -138,8 +146,9 @@ class JobProcessor(object):
     def __init__(self):
         self.worker = None
 
-    def update_job(self, job_id, status, timeout=None):
-        self.worker.update_job(job_id, status, timeout)
+    def update_job(self, job_id, status, timeout=None, error_message=None):
+        self.worker.update_job(job_id, status, timeout=timeout,
+                               error_message=error_message)
 
     def init_processor(self, worker):
         """

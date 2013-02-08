@@ -32,8 +32,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str)).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
+                               error_message=None)
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -55,8 +57,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
+                               error_message=None)
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -89,10 +93,14 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
+                               error_message=None)
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -126,12 +134,17 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               mox.IsA(datetime.datetime))
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', None)
+                               timeout=mox.IsA(datetime.datetime),
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
+                               error_message=None)
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -141,7 +154,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
-    def test_process_job_should_update_status_and_timestamp(self):
+    def test_process_job_should_update_status_timestamp_no_retries(self):
         base_time = timeutils.utcnow()
         time_seq = [
             base_time,
@@ -164,15 +177,21 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.images.get(IMAGE_ID).MultipleTimes().AndReturn(
             MockImageStatus('SAVING'))
 
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               mox.IsA(datetime.datetime))
+                               timeout=mox.IsA(datetime.datetime),
+                               error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               mox.IsA(datetime.datetime))
+                               timeout=mox.IsA(datetime.datetime),
+                               error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               mox.IsA(datetime.datetime))
-        self.worker.update_job(fakes.JOB_ID, 'TIMED_OUT', None)
+                               timeout=mox.IsA(datetime.datetime),
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'TIMED_OUT', timeout=None,
+                               error_message=None)
 
         self.mox.ReplayAll()
 
@@ -183,7 +202,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
-    def test_process_job_should_update_image_error(self):
+    def _do_test_process_job_should_update_image_error(self, error_status):
         base_time = timeutils.utcnow()
         time_seq = [
             base_time,
@@ -210,14 +229,20 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
-            MockImageStatus('ERROR'))
+            error_status)
 
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', None)
-        self.worker.update_job(fakes.JOB_ID, 'ERROR', None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'ERROR', timeout=None,
+                               error_message=mox.IsA(str))
 
         self.mox.ReplayAll()
 
@@ -227,6 +252,25 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         processor.process_job(job)
 
         self.mox.VerifyAll()
+
+    def test_process_job_should_update_image_error(self):
+        status = MockImageStatus('ERROR')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_killed(self):
+        status = MockImageStatus('KILLED')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_deleted(self):
+        status = MockImageStatus('DELETED')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_pending_delete(self):
+        status = MockImageStatus('PENDING_DELETE')
+        self._do_test_process_job_should_update_image_error(status)
+
+    def test_process_job_should_update_image_none(self):
+        self._do_test_process_job_should_update_image_error(None)
 
 
 class MockNovaClient(object):
