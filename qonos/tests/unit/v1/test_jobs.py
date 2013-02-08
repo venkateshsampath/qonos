@@ -294,7 +294,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='PUT')
         body = {'status':
                 {
-                'status': 'processing',
+                'status': 'PROCESSING',
                 'timeout': str(timeout)
                 }
                 }
@@ -302,10 +302,17 @@ class TestJobsApi(test_utils.BaseTestCase):
         job = db_api.job_get_by_id(self.job_1['id'])
         actual_status = job['status']
         actual_timeout = job['timeout']
-        self.assertEqual(actual_status, body['status']['status'].upper())
+        self.assertEqual(actual_status, body['status']['status'])
         self.assertEqual(actual_timeout, timeout)
 
     def test_update_status_without_timeout(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        body = {'status': {'status': 'DONE'}}
+        self.controller.update_status(request, self.job_1['id'], body)
+        actual = db_api.job_get_by_id(self.job_1['id'])['status']
+        self.assertEqual(actual, body['status']['status'])
+
+    def test_update_status_uppercases_status(self):
         request = unit_utils.get_fake_request(method='PUT')
         body = {'status': {'status': 'done'}}
         self.controller.update_status(request, self.job_1['id'], body)
@@ -319,10 +326,10 @@ class TestJobsApi(test_utils.BaseTestCase):
                           self.controller.update_status,
                           request, unit_utils.JOB_UUID1, body)
 
-    def test_update_status_not_found(self):
+    def test_update_status_job_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
         job_id = str(uuid.uuid4())
-        body = {'status': {'status': 'queued'}}
+        body = {'status': {'status': 'QUEUED'}}
         self.assertRaises(webob.exc.HTTPNotFound,
                           self.controller.update_status,
                           request, job_id, body)

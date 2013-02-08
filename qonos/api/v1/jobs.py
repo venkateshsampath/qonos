@@ -139,18 +139,20 @@ class JobsController(object):
         return {'job': job}
 
     def _get_error_values(self, status, job):
+        api_utils.serialize_job_metadata(job)
+        job_metadata = job['metadata']
         values = {
             'job_id': job['id'],
             'action': job['action'],
             'schedule_id': job['schedule_id'],
             'tenant_id': job['tenant_id'],
             'worker_id': job['worker_id'] or 'UNASSIGNED',
-            'job_metadata': str(job['job_metadata']),
+            'job_metadata': str(job_metadata),
             }
         if 'error_message' in status:
             values['message'] = status['error_message']
         else:
-            values['message'] = 'No message supplied'
+            values['message'] = None
 
         return values
 

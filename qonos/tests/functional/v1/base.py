@@ -2,6 +2,7 @@ from operator import itemgetter
 import random
 
 from qonos.common import config
+import qonos.db
 from qonos.openstack.common import cfg
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
@@ -24,8 +25,10 @@ class TestApi(utils.BaseTestCase):
         CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
         self.port = random.randint(50000, 60000)
         self.service = wsgi.Service()
-        self.service.start(config.load_paste_app('qonos-api'), self.port)
+        app = config.load_paste_app('qonos-api')
+        self.service.start(app, self.port)
         self.client = client.Client("localhost", self.port)
+        self.db_api = qonos.db.get_api()
 
     def tearDown(self):
         super(TestApi, self).tearDown()
@@ -43,6 +46,7 @@ class TestApi(utils.BaseTestCase):
             self.client.delete_worker(worker['id'])
 
         self.service.stop()
+        self.db_api = None
 
     def test_workers_workflow(self):
         workers = self.client.list_workers()
@@ -392,19 +396,32 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(updated_job['timeout'], timeout)
 
         # update status with error
-        # hmmmm - how to check faults without direct db access?
+        error_message = 'ermagerd! errer!'
         self.client.update_job_status(job['id'], 'error',
-                                      error_message='ermagerd! errer!')
+                                      error_message=error_message)
         status = self.client.get_job_status(job['id'])['status']
         self.assertNotEqual(status, new_job['status'])
         self.assertEqual(status, 'ERROR')
+        job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])
+        self.assertIsNotNone(job_fault)
+        print "Job fault: %s" % str(job_fault)
+        self.assertEqual(job_fault['job_id'], job['id'])
+        self.assertEqual(job_fault['tenant_id'], job['tenant_id'])
+        self.assertEqual(job_fault['schedule_id'], job['schedule_id'])
+        self.assertEqual(job_fault['worker_id'],
+                         job['worker_id'] or 'UNASSIGNED')
+        self.assertEqual(job_fault['action'], job['action'])
+        self.assertIsNotNone(job_fault['job_metadata'])
+        self.assertEqual(job_fault['message'], error_message)
+        self.assertIsNotNone(job_fault['created_at'])
+        self.assertIsNotNone(job_fault['updated_at'])
+        self.assertIsNotNone(job_fault['id'])
 
         # delete job
         self.client.delete_job(job['id'])
 
         # make sure job no longer exists
-        self.assertRaises(client_exc.NotFound, self.client.get_job,
-                          job['id'])
+        self.assertRaises(client_exc.NotFound, self.client.get_job, job['id'])
 
     def test_pagination(self):
 
