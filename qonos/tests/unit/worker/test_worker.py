@@ -23,7 +23,7 @@ class TestWorker(test_utils.BaseTestCase):
         super(TestWorker, self).tearDown()
 
     def prepare_client_mock(self, job=fakes.JOB_NONE, empty_jobs=0):
-        self.client.create_worker(mox.IsA(str), mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str)).\
             AndReturn(fakes.WORKER)
         # Argh! Mox why you no have "Times(x)" function?!?!
         for i in range(empty_jobs):
@@ -40,7 +40,6 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.ReplayAll()
 
         self.config(job_poll_interval=5, group='worker')
-        self.config(worker_name=fakes.WORKER_NAME, group='worker')
         self.config(action_type='snapshot', group='worker')
 
         fake_sleep = lambda x: None
@@ -58,7 +57,6 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.ReplayAll()
 
         self.config(job_poll_interval=5, group='worker')
-        self.config(worker_name=fakes.WORKER_NAME, group='worker')
         self.config(action_type='snapshot', group='worker')
 
         fake_sleep = lambda x: None
@@ -76,7 +74,6 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.ReplayAll()
 
         self.config(job_poll_interval=5, group='worker')
-        self.config(worker_name=fakes.WORKER_NAME, group='worker')
         self.config(action_type='snapshot', group='worker')
 
         fake_sleep = lambda x: None
