@@ -440,11 +440,9 @@ class TestWorkersDBApi(test_utils.BaseTestCase):
     def _create_workers(self):
         fixture_1 = {'host': 'foo',
                      'id': unit_utils.WORKER_UUID1,
-                     'worker_name': 'worker_1',
                     }
         fixture_2 = {'host': 'bar',
                      'id': unit_utils.WORKER_UUID2,
-                     'worker_name': 'worker_2',
                     }
         self.worker_1 = self.db_api.worker_create(fixture_1)
         self.worker_2 = self.db_api.worker_create(fixture_2)
@@ -482,7 +480,7 @@ class TestWorkersDBApi(test_utils.BaseTestCase):
                           self.db_api.worker_get_by_id, worker_id)
 
     def test_worker_create(self):
-        fixture = {'host': 'i.am.cowman', 'worker_name': 'super_cow_powers'}
+        fixture = {'host': 'i.am.cowman'}
         worker = self.db_api.worker_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(worker['id']))
         self.assertEqual(worker['host'], fixture['host'])

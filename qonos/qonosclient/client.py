@@ -45,8 +45,8 @@ class Client(object):
             query += ('%s=%s&' % (param, params[param]))
         return self._do_request('GET', path % query)['workers']
 
-    def create_worker(self, host, worker_name):
-        body = {'worker': {'host': host, 'worker_name': worker_name}}
+    def create_worker(self, host):
+        body = {'worker': {'host': host}}
         return self._do_request('POST', '/v1/workers', body)['worker']
 
     def get_worker(self, worker_id):

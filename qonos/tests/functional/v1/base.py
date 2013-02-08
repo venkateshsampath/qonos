@@ -53,7 +53,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(workers), 0)
 
         # create worker
-        worker = self.client.create_worker('hostname', 'workername')
+        worker = self.client.create_worker('hostname')
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
 
@@ -449,10 +449,10 @@ class TestApi(utils.BaseTestCase):
         schedules = sorted(schedules, key=itemgetter('id'))
 
         # create worker
-        worker_1 = self.client.create_worker('hostname', 'workername1')
-        worker_2 = self.client.create_worker('hostname', 'workername2')
-        worker_3 = self.client.create_worker('hostname', 'workername3')
-        worker_4 = self.client.create_worker('hostname', 'workername4')
+        worker_1 = self.client.create_worker('hostname')
+        worker_2 = self.client.create_worker('hostname')
+        worker_3 = self.client.create_worker('hostname')
+        worker_4 = self.client.create_worker('hostname')
         workers = [worker_1, worker_2, worker_3, worker_4]
         workers = sorted(workers, key=itemgetter('id'))
 
