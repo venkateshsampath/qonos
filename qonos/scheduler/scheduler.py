@@ -22,9 +22,10 @@ CONF.register_opts(scheduler_opts, group='scheduler')
 
 
 class Scheduler(object):
-    def __init__(self, client_factory):
+    def __init__(self, client_factory, product_name='qonos'):
         self.client = client_factory(CONF.scheduler.api_endpoint,
                                      CONF.scheduler.api_port)
+        self.product_name = product_name
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
@@ -33,7 +34,7 @@ class Scheduler(object):
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = []
-            for handler in pylog.getLogger().handlers:
+            for handler in pylog.getLogger(self.product_name).handlers:
                 if (hasattr(handler, 'stream') and
                         hasattr(handler.stream, 'fileno')):
                     open_files.append(handler.stream)
@@ -78,10 +79,11 @@ class Scheduler(object):
         filter_args['next_run_after'] = previous_run or year_one
 
         schedules = self.client.list_schedules(filter_args=filter_args)
+
         response = schedules
         while response:
-            filter_args['marker'] = response[-1]
+            filter_args['marker'] = response[-1]['id']
             response = self.client.list_schedules(filter_args=filter_args)
-            schedules = schedules.append(response)
+            schedules.extend(response)
 
         return schedules

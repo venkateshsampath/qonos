@@ -1,5 +1,6 @@
 import httplib
 
+from qonos.openstack.common import log as logging
 from qonos.openstack.common import timeutils
 
 try:
@@ -9,6 +10,7 @@ except ImportError:
 
 from qonos.qonosclient import exception
 
+LOG = logging.getLogger(__name__)
 
 class Client(object):
 
@@ -18,7 +20,8 @@ class Client(object):
 
     def _do_request(self, method, url, body=None):
         conn = httplib.HTTPConnection(self.endpoint, self.port)
-        body = json.dumps(body)
+        if body:
+            body = json.dumps(body)
         conn.request(method, url, body=body,
                      headers={'Content-Type': 'application/json'})
         response = conn.getresponse()
@@ -67,7 +70,9 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        return self._do_request('GET', path % query)['schedules']
+        response = self._do_request('GET', path % query)
+        schedules = response.get('schedules')
+        return schedules
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)['schedule']

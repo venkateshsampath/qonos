@@ -16,7 +16,8 @@ class TestWorker(test_utils.BaseTestCase):
             return self.client
 
         self.processor = FakeProcessor()
-        self.worker = worker.Worker(client_factory, self.processor)
+        self.worker = worker.Worker(client_factory, product_name='qonos',
+                                    processor=self.processor)
 
     def tearDown(self):
         self.mox.UnsetStubs()

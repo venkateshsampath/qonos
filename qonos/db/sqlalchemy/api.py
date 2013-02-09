@@ -129,10 +129,12 @@ def configure_db():
     register the models.
     """
     global _ENGINE, sa_logger, _MAX_RETRIES, _RETRY_INTERVAL
+    LOG.debug("Initializing DB")
     if not _ENGINE:
         sql_connection = CONF.sql_connection
         _MAX_RETRIES = CONF.sql_max_retries
         _RETRY_INTERVAL = CONF.sql_retry_interval
+        LOG.debug("Conn: %s" % sql_connection)
         connection_dict = sqlalchemy.engine.url.make_url(sql_connection)
         engine_args = {'pool_recycle': CONF.sql_idle_timeout,
                        'echo': False,
@@ -140,6 +142,7 @@ def configure_db():
                        }
 
         try:
+            LOG.debug("Args: %s" % str(engine_args))
             _ENGINE = sqlalchemy.create_engine(sql_connection, **engine_args)
 
             if 'mysql' in connection_dict.drivername:
@@ -170,12 +173,17 @@ def reset():
     models.register_models(_ENGINE)
 
 
+def get_engine():
+    global _ENGINE
+    return _ENGINE
+
+
 def get_session(autocommit=True, expire_on_commit=False):
     """Helper method to grab session."""
     global _MAKER
     if not _MAKER:
-        assert _ENGINE
-        _MAKER = sa_orm.sessionmaker(bind=_ENGINE,
+        engine = get_engine()
+        _MAKER = sa_orm.sessionmaker(bind=engine,
                                      autocommit=autocommit,
                                      expire_on_commit=expire_on_commit)
     return _MAKER()
@@ -548,6 +556,7 @@ def job_create(job_values):
     session = get_session()
     job_ref = models.Job()
 
+    LOG.debug("Before Job values: %s" % str(values))
     if 'job_metadata' in values:
         metadata = values['job_metadata']
         _set_job_metadata(job_ref, metadata)
@@ -561,6 +570,7 @@ def job_create(job_values):
             datetime.timedelta(seconds=job_timeout_seconds)
     values['hard_timeout'] = now +\
         datetime.timedelta(seconds=job_timeout_seconds)
+    LOG.debug("After Job values: %s" % str(values))
     job_ref.update(values)
     job_ref.save(session=session)
 

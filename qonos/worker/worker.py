@@ -10,6 +10,7 @@ import qonos.openstack.common.log as logging
 
 LOG = logging.getLogger(__name__)
 
+# TODO(WORKER) action_type should be queried from the job processor
 worker_opts = [
     cfg.IntOpt('job_poll_interval', default=5,
                help=_('Interval to poll api for ready jobs in seconds')),
@@ -42,7 +43,7 @@ CONF.register_cli_opts(worker_cli_opts)
 
 
 class Worker(object):
-    def __init__(self, client_factory, processor=None):
+    def __init__(self, client_factory, product_name='qonos', processor=None):
         self.client = client_factory(CONF.worker.api_endpoint,
                                      CONF.worker.api_port)
         if not processor:
@@ -51,6 +52,7 @@ class Worker(object):
         self.processor = processor
         self.worker_id = None
         self.host = socket.gethostname()
+        self.product_name = product_name
         self.worker_name = CONF.worker.worker_name
         if CONF.worker_name:
             self.worker_name = CONF.worker_name
@@ -65,7 +67,7 @@ class Worker(object):
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = []
-            for handler in pylog.getLogger().handlers:
+            for handler in pylog.getLogger(self.product_name).handlers:
                 if (hasattr(handler, 'stream') and
                         hasattr(handler.stream, 'fileno')):
                     open_files.append(handler.stream)
