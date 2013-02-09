@@ -1,3 +1,19 @@
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+#    Copyright 2013 Rackspace
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 import logging as pylog
 import signal
 import socket
@@ -23,23 +39,13 @@ worker_opts = [
     cfg.StrOpt('action_type', default='None',
                help=_('A string identifying the type of action this '
                       'worker handles')),
-    cfg.StrOpt('worker_name', default=__name__,
-               help=_('A string to uniquely identify the instance of the '
-                      'worker on the host')),
     cfg.StrOpt('processor_class', default=None,
                help=_('The fully qualified class name of the processor '
                       'to use in this worker')),
 ]
 
-worker_cli_opts = [
-    cfg.StrOpt('worker_name', default=None,
-               help=_('A string to uniquely identify the instance of the '
-                      'worker on the host')),
-]
-
 CONF = cfg.CONF
 CONF.register_opts(worker_opts, group='worker')
-CONF.register_cli_opts(worker_cli_opts)
 
 
 class Worker(object):
@@ -53,9 +59,6 @@ class Worker(object):
         self.worker_id = None
         self.host = socket.gethostname()
         self.product_name = product_name
-        self.worker_name = CONF.worker.worker_name
-        if CONF.worker_name:
-            self.worker_name = CONF.worker_name
 
     def run(self, run_once=False, poll_once=False):
         LOG.debug(_('Starting qonos worker service'))
@@ -99,15 +102,14 @@ class Worker(object):
         self.processor.cleanup_processor()
 
     def _register_worker(self):
-        worker_name = self.worker_name
-        LOG.debug(_('Registering worker. Name: %s') % worker_name)
-        worker = self.client.create_worker(self.host, worker_name)
+        LOG.debug(_('Registering worker.'))
+        worker = self.client.create_worker(self.host)
+        LOG.debug(_('Worker has been registered with ID: %s') % worker['id'])
         return worker['id']
 
     def _unregister_worker(self):
-        worker_name = self.worker_name
-        LOG.debug(_('Unregistering worker. Name: %(name)s, ID: %(id)s') %
-                    {'name': worker_name, 'id': self.worker_id})
+        msg = _('Unregistering worker. ID: %s')
+        LOG.debug(msg % self.worker_id)
 
         self.client.delete_worker(self.worker_id)
 
@@ -126,13 +128,21 @@ class Worker(object):
 
         return job
 
-    def update_job(self, job_id, status, timeout=None):
-        LOG.debug(_("Worker: %(name)s [%(worker_id)d] updating "
-                    "job [%(job_id)d] Status: %(status)s Timeout: %(timeout)s")
-                    % {'worker_id': self.worker_name,
-                       'job_id': job_id,
-                       'status': status,
-                       'timeout': str(timeout)})
+    def update_job(self, job_id, status, timeout=None, error_message=None):
+        msg = (_("Worker: [%(worker_id)s] updating "
+               "job [%(job_id)d] Status: %(status)s") %
+                {'worker_id': self.worker_id,
+                 'job_id': job_id,
+                 'status': status})
+
+        if timeout:
+            msg += _("Timeout: %s") % str(timeout)
+
+        if error_message:
+            msg += _("Error message: %s") % error_message
+
+        LOG.debug(msg)
+        #TODO(WORKER) Pass error message when available in client
         self.client.update_job_status(job_id, status, timeout)
 
 
@@ -140,8 +150,9 @@ class JobProcessor(object):
     def __init__(self):
         self.worker = None
 
-    def update_job(self, job_id, status, timeout=None):
-        self.worker.update_job(job_id, status, timeout)
+    def update_job(self, job_id, status, timeout=None, error_message=None):
+        self.worker.update_job(job_id, status, timeout=timeout,
+                               error_message=error_message)
 
     def init_processor(self, worker):
         """

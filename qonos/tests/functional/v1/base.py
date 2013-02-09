@@ -1,3 +1,19 @@
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+#    Copyright 2013 Rackspace
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 from operator import itemgetter
 import random
 
@@ -53,7 +69,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(workers), 0)
 
         # create worker
-        worker = self.client.create_worker('hostname', 'workername')
+        worker = self.client.create_worker('hostname')
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
 
@@ -449,10 +465,10 @@ class TestApi(utils.BaseTestCase):
         schedules = sorted(schedules, key=itemgetter('id'))
 
         # create worker
-        worker_1 = self.client.create_worker('hostname', 'workername1')
-        worker_2 = self.client.create_worker('hostname', 'workername2')
-        worker_3 = self.client.create_worker('hostname', 'workername3')
-        worker_4 = self.client.create_worker('hostname', 'workername4')
+        worker_1 = self.client.create_worker('hostname')
+        worker_2 = self.client.create_worker('hostname')
+        worker_3 = self.client.create_worker('hostname')
+        worker_4 = self.client.create_worker('hostname')
         workers = [worker_1, worker_2, worker_3, worker_4]
         workers = sorted(workers, key=itemgetter('id'))
 

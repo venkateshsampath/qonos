@@ -1,3 +1,19 @@
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+#    Copyright 2013 Rackspace
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 import fakes
 import mox
 import time
@@ -24,7 +40,7 @@ class TestWorker(test_utils.BaseTestCase):
         super(TestWorker, self).tearDown()
 
     def prepare_client_mock(self, job=fakes.JOB_NONE, empty_jobs=0):
-        self.client.create_worker(mox.IsA(str), mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str)).\
             AndReturn(fakes.WORKER)
         # Argh! Mox why you no have "Times(x)" function?!?!
         for i in range(empty_jobs):
@@ -41,7 +57,6 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.ReplayAll()
 
         self.config(job_poll_interval=5, group='worker')
-        self.config(worker_name=fakes.WORKER_NAME, group='worker')
         self.config(action_type='snapshot', group='worker')
 
         fake_sleep = lambda x: None
@@ -59,7 +74,6 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.ReplayAll()
 
         self.config(job_poll_interval=5, group='worker')
-        self.config(worker_name=fakes.WORKER_NAME, group='worker')
         self.config(action_type='snapshot', group='worker')
 
         fake_sleep = lambda x: None
@@ -77,7 +91,6 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.ReplayAll()
 
         self.config(job_poll_interval=5, group='worker')
-        self.config(worker_name=fakes.WORKER_NAME, group='worker')
         self.config(action_type='snapshot', group='worker')
 
         fake_sleep = lambda x: None

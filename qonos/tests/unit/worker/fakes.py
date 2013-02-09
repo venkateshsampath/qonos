@@ -64,5 +64,4 @@ WORKER = {
     'created_at': BASE_TIME,
     'modified_at': BASE_TIME,
     'host': WORKER_HOST,
-    'worker_name': WORKER_NAME,
 }
