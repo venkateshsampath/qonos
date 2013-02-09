@@ -80,13 +80,13 @@ class SnapshotProcessor(worker.JobProcessor):
         job_id = job['id']
         self.update_job(job_id, 'PROCESSING')
         self.next_timeout = job['timeout']
-        self.next_update = timeutils.utcnow() + self.update_interval
+        self.next_update = self._get_utcnow() + self.update_interval
 
         nova_client = self._get_nova_client()
 
         instance_id = self._get_instance_id(job)
         image_id = nova_client.servers.create_image(
-            instance_id, ('Daily-' + str(datetime.datetime.utcnow())))
+            instance_id, ('Daily-' + str(self._get_utcnow())))
         LOG.debug("Created image: %s" % image_id)
 
         image_status = None
@@ -180,7 +180,8 @@ class SnapshotProcessor(worker.JobProcessor):
         self.update_job(job_id, 'ERROR', error_message=error_message)
 
     def _try_update(self, job_id, status):
-        now = timeutils.utcnow()
+        now = self._get_utcnow()
+        LOG.debug("Now: %s  Timeout: %s" % (str(now), str(self.next_timeout)))
         # Time for a timeout update?
         if now >= self.next_timeout:
             # Out of timeouts?
@@ -204,3 +205,7 @@ class SnapshotProcessor(worker.JobProcessor):
             if meta['key'] == 'instance_id':
                 return meta['value']
         return None
+
+    # Seam for testing
+    def _get_utcnow(self):
+        return timeutils.utcnow()
