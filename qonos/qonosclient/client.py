@@ -16,7 +16,6 @@
 
 import httplib
 
-from qonos.openstack.common import timeutils
 
 try:
     import json
@@ -139,15 +138,6 @@ class Client(object):
     def get_job(self, job_id):
         path = '/v1/jobs/%s' % job_id
         return self._do_request('GET', path)['job']
-
-    def get_job_heartbeat(self, job_id):
-        path = '/v1/jobs/%s/heartbeat' % job_id
-        return self._do_request('GET', path)
-
-    def job_heartbeat(self, job_id):
-        body = {'heartbeat': timeutils.isotime()}
-        path = '/v1/jobs/%s/heartbeat' % job_id
-        return self._do_request('PUT', path, body)
 
     def get_job_status(self, job_id):
         path = '/v1/jobs/%s/status' % job_id
