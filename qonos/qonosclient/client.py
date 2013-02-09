@@ -28,6 +28,7 @@ from qonos.qonosclient import exception
 
 LOG = logging.getLogger(__name__)
 
+
 class Client(object):
 
     def __init__(self, endpoint, port):

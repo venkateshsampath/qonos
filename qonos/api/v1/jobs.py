@@ -69,7 +69,7 @@ class JobsController(object):
         values['action'] = schedule['action']
         values['status'] = 'queued'
         values['job_metadata'] = [
-            {'key':metadata['key'],'value':metadata['value']} 
+            {'key':metadata['key'], 'value':metadata['value']}
             for metadata in schedule['schedule_metadata']]
 
         job = self.db_api.job_create(values)

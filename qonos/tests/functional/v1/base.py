@@ -38,7 +38,7 @@ class TestApi(utils.BaseTestCase):
 
     def setUp(self):
         super(TestApi, self).setUp()
-        CONF.paste_deploy.config_file = './etc/qonos-api-paste.ini'
+        CONF.paste_deploy.config_file = './etc/qonos/qonos-api-paste.ini'
         self.port = random.randint(50000, 60000)
         self.service = wsgi.Service()
         app = config.load_paste_app('qonos-api')
