@@ -1,6 +1,6 @@
 #/bin/sh
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-CONFIG_DIR="$DIR/etc"
+CONFIG_FILE="$DIR/etc/qonos/qonos-api.conf"
 
-$DIR/bin/qonos-api --config-dir=$CONFIG_DIR
+$DIR/bin/qonos-api --config-file=$CONFIG_FILE

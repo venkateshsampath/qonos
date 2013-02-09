@@ -6,7 +6,7 @@ db_api = 'qonos.db.sqlalchemy.api'
 # If none defaults to sqllite
 sql_connection = 'mysql://qonos:openstack@localhost/qonos'
 # Log file location
-log_file = /var/loq/qonos/qonos-api.log
+log_file = /var/log/qonos/qonos-api.log
 
 [api]
 # Indicates the API should start as a daemon
