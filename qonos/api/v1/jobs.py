@@ -92,36 +92,6 @@ class JobsController(object):
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-    def get_heartbeat(self, request, job_id):
-        try:
-            updated_at = self.db_api.job_updated_at_get_by_id(job_id)
-        except exception.NotFound:
-            msg = _('Job %s could not be found.') % job_id
-            raise webob.exc.HTTPNotFound(explanation=msg)
-
-        heartbeat = {'heartbeat': updated_at}
-        utils.serialize_datetimes(heartbeat)
-        return heartbeat
-
-    def update_heartbeat(self, request, job_id, body):
-        updated_at = body.get('heartbeat')
-        if not updated_at:
-            raise webob.exc.HTTPBadRequest()
-
-        try:
-            updated_at = timeutils.parse_isotime(updated_at)
-        except ValueError:
-            msg = _('Must supply a timestamp in valid format.')
-            raise webob.exc.HTTPBadRequest(explanation=msg)
-
-        updated_at = timeutils.normalize_time(updated_at)
-
-        try:
-            self.db_api.job_update(job_id, {'updated_at': updated_at})
-        except exception.NotFound:
-            msg = _('Job %s could not be found.') % job_id
-            raise webob.exc.HTTPNotFound(explanation=msg)
-
     def get_status(self, request, job_id):
         try:
             status = self.db_api.job_status_get_by_id(job_id)

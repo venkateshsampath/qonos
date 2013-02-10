@@ -103,16 +103,6 @@ class API(wsgi.Router):
                        action='delete',
                        conditions=dict(method=['DELETE']))
 
-        mapper.connect('/jobs/{job_id}/heartbeat',
-                       controller=jobs_resource,
-                       action='get_heartbeat',
-                       conditions=dict(method=['GET']))
-
-        mapper.connect('/jobs/{job_id}/heartbeat',
-                       controller=jobs_resource,
-                       action='update_heartbeat',
-                       conditions=dict(method=['PUT']))
-
         mapper.connect('/jobs/{job_id}/status',
                        controller=jobs_resource,
                        action='get_status',
