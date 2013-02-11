@@ -53,78 +53,12 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
         }
         self.schedule_2 = db_api.schedule_create(fixture)
 
-    def test_create_meta(self):
-        request = unit_utils.get_fake_request(method='POST')
-        key = 'key1'
-        fixture = {'meta': {key: 'value1'}}
-        meta = self.controller.create(request, self.schedule_1['id'], fixture)
-        self.assertTrue(key in meta['meta'])
-        self.assertEqual(meta['meta'][key], fixture['meta'][key])
-
-    def test_create_meta_duplicate(self):
-        request = unit_utils.get_fake_request(method='POST')
-        key = 'key1'
-        fixture = {'meta': {key: 'value1'}}
-        meta = self.controller.create(request, self.schedule_1['id'], fixture)
-        # Same schedule ID and key conflict
-        fixture = {'meta': {key: 'value2'}}
-        self.assertRaises(webob.exc.HTTPConflict, self.controller.create,
-                          request, self.schedule_1['id'], fixture)
-
     def test_list_meta(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key1': 'value1'}}
-        self.controller.create(request, self.schedule_1['id'], fixture)
-        fixture2 = {'meta': {'key2': 'value2'}}
-        self.controller.create(request, self.schedule_1['id'], fixture2)
-        request = unit_utils.get_fake_request(method='GET')
-        metadata = self.controller.list(request, self.schedule_1['id'])
-        self.assertEqual(2, len(metadata['metadata']))
-        self.assertMetaInList(metadata['metadata'], fixture['meta'])
-        self.assertMetaInList(metadata['metadata'], fixture2['meta'])
-
-    def test_get_meta(self):
-        request = unit_utils.get_fake_request(method='POST')
-        key = 'key1'
-        fixture = {'meta': {key: 'value1'}}
-        self.controller.create(request, self.schedule_1['id'], fixture)
-        request = unit_utils.get_fake_request(method='GET')
-        meta = self.controller.get(request, self.schedule_1['id'], 'key1')
-        self.assertEqual(1, len(meta['meta']))
-        self.assertTrue(key in meta['meta'])
-        self.assertEqual(meta['meta'][key], fixture['meta'][key])
-
-    def test_get_meta_schedule_not_found(self):
-        request = unit_utils.get_fake_request(method='GET')
-        schedule_id = uuid.uuid4()
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
-                          request, schedule_id, 'key1')
-
-    def test_get_meta_key_not_found(self):
-        request = unit_utils.get_fake_request(method='GET')
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
-                          request, self.schedule_1['id'], 'key1')
-
-    def test_delete_meta(self):
-        request = unit_utils.get_fake_request(method='POST')
-        fixture = {'meta': {'key1': 'value1'}}
-        self.controller.create(request, self.schedule_1['id'], fixture)
-        request = unit_utils.get_fake_request(method='DELETE')
-        self.controller.delete(request, self.schedule_1['id'], 'key1')
-        request = unit_utils.get_fake_request(method='GET')
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
-                          request, self.schedule_1['id'], 'key1')
-
-    def test_delete_meta_schedule_not_found(self):
-        request = unit_utils.get_fake_request(method='DELETE')
-        schedule_id = uuid.uuid4()
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.delete,
-                          request, schedule_id, 'key1')
-
-    def test_delete_meta_key_not_found(self):
-        request = unit_utils.get_fake_request(method='DELETE')
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.delete,
-                          request, self.schedule_1['id'], 'key1')
+        fixture = {'metadata': {'key1': 'value1', 'key2': 'value2'}}
+        actual = self.controller.update(request, self.schedule_1['id'],
+                                        fixture)
+        self.assertEqual(actual, fixture)
 
     def test_update_metadata(self):
         request = unit_utils.get_fake_request(method='PUT')
