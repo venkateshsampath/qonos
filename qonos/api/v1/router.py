@@ -110,11 +110,6 @@ class API(wsgi.Router):
                        action='update',
                        conditions=dict(method=['PUT']))
 
-        mapper.connect('/jobs/{job_id}/meta/{key}',
-                       controller=job_meta_resource,
-                       action='get',
-                       conditions=dict(method=['GET']))
-
         workers_resource = workers.create_resource()
 
         mapper.connect('/workers',

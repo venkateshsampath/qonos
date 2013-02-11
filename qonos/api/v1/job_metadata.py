@@ -31,14 +31,6 @@ class JobMetadataController(object):
         metadata = self.db_api.job_meta_get_all_by_job_id(job_id)
         return {'metadata': api_utils.serialize_metadata(metadata)}
 
-    def get(self, request, job_id, key):
-        try:
-            meta = self.db_api.job_meta_get(job_id, key)
-        except exception.NotFound, e:
-            raise webob.exc.HTTPNotFound(explanation=e)
-
-        return {'meta': api_utils.serialize_meta(meta)}
-
     def update(self, request, job_id, body):
         metadata = body['metadata']
         new_meta = api_utils.deserialize_metadata(metadata)

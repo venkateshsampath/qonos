@@ -155,10 +155,6 @@ class Client(object):
         path = '/v1/jobs/%s/metadata' % job_id
         return self._do_request('GET', path)['metadata']
 
-    def get_job_metadata(self, job_id, key):
-        path = '/v1/jobs/%s/meta/%s' % (job_id, key)
-        return self._do_request('GET', path)['meta'][key]
-
     def update_job_metadata(self, job_id, values):
         meta = {'metadata': values}
         path = '/v1/jobs/%s/metadata' % job_id

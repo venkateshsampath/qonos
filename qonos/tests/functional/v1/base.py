@@ -374,9 +374,17 @@ class TestApi(utils.BaseTestCase):
         self.assertMetadataInList(metadata, meta_fixture1)
         self.assertMetadataInList(metadata, meta_fixture2)
 
-        # get job metadata
-        meta_value = self.client.get_job_metadata(new_job['id'], meta1['key'])
-        self.assertEqual(meta_value, meta1['value'])
+        # update job metadata
+        new_meta = {'foo': 'bar'}
+        new_meta.update(meta_fixture1)
+        metadata = self.client.update_job_metadata(new_job['id'], new_meta)
+        self.assertMetadataInList(metadata, meta_fixture1)
+        self.assertMetadataInList(metadata, new_meta)
+
+        # list job metadata
+        metadata = self.client.list_job_metadata(new_job['id'])
+        self.assertMetadataInList(metadata, meta_fixture1)
+        self.assertMetadataInList(metadata, new_meta)
 
         # get status
         status = self.client.get_job_status(job['id'])['status']
