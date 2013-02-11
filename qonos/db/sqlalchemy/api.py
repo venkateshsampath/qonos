@@ -407,7 +407,7 @@ def _schedule_metadata_update_in_place(schedule, metadata):
     to_delete = []
     for meta in schedule.schedule_metadata:
         if not meta['key'] in new_meta:
-            to_delete = meta
+            to_delete.append(meta)
         else:
             meta['value'] = new_meta[meta['key']]
             del new_meta[meta['key']]
@@ -493,23 +493,10 @@ def _schedule_meta_update(schedule_id, key, values):
 @force_dict
 def schedule_metadata_update(schedule_id, values):
     session = get_session()
-    _schedule_get_by_id(schedule_id, session)
-    original_meta_ref = schedule_meta_get_all(schedule_id)
+    schedule = _schedule_get_by_id(schedule_id, session)
+    _schedule_metadata_update_in_place(schedule, values)
 
-    original_meta = {}
-    for item in original_meta_ref:
-        original_meta[item['key']] = item
-
-    for item in values:
-        if item['key'] in original_meta:
-            if item['value'] != original_meta[item['key']]['value']:
-                _schedule_meta_update(schedule_id, item['key'], item)
-        else:
-            schedule_meta_create(schedule_id, item)
-
-    for key in original_meta:
-        if key not in [value['key'] for value in values]:
-            schedule_meta_delete(schedule_id, key)
+    schedule.save(session=session)
 
     return schedule_meta_get_all(schedule_id)
 

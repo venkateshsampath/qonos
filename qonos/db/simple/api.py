@@ -197,7 +197,7 @@ def schedule_update(schedule_id, schedule_values):
     if schedule_id not in DATA['schedules']:
         raise exception.NotFound()
 
-    metadata = []
+    metadata = None
     if 'schedule_metadata' in values:
         metadata = values['schedule_metadata']
         del values['schedule_metadata']
@@ -207,7 +207,7 @@ def schedule_update(schedule_id, schedule_values):
         schedule['updated_at'] = timeutils.utcnow()
         schedule.update(values)
 
-    if len(metadata) > 0:
+    if metadata is not None:
         DATA['schedule_metadata'][schedule_id] = {}
         for metadatum in metadata:
             schedule_meta_create(schedule_id, metadatum)
