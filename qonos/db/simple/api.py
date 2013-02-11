@@ -280,20 +280,10 @@ def schedule_metadata_update(schedule_id, values):
         msg = _('Schedule %s could not be found') % schedule_id
         raise exception.NotFound(message=msg)
 
-    current_metadata = DATA['schedule_metadata'][schedule_id]
     DATA['schedule_metadata'][schedule_id] = {}
+    for metadatum in values:
+        schedule_meta_create(schedule_id, metadatum)
 
-    for item in values:
-        if item['key'] in current_metadata:
-            meta = current_metadata[item['key']]
-        else:
-            meta = {}
-            meta.update(_gen_base_attributes())
-            meta['schedule_id'] = schedule_id
-
-        meta.update(item)
-
-        DATA['schedule_metadata'][schedule_id][item['key']] = meta
     return copy.deepcopy(DATA['schedule_metadata'][schedule_id].values())
 
 
