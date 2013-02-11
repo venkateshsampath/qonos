@@ -274,24 +274,6 @@ def schedule_meta_get_all(schedule_id):
     return DATA['schedule_metadata'][schedule_id].values()
 
 
-def schedule_meta_get(schedule_id, key):
-    _check_meta_exists(schedule_id, key)
-
-    return DATA['schedule_metadata'][schedule_id][key]
-
-
-def schedule_meta_update(schedule_id, key, values):
-    global DATA
-    _check_meta_exists(schedule_id, key)
-
-    meta = DATA['schedule_metadata'][schedule_id][key]
-    meta.update(values)
-    meta['updated_at'] = timeutils.utcnow()
-    DATA['schedule_metadata'][schedule_id][key] = meta
-
-    return copy.deepcopy(meta)
-
-
 def schedule_metadata_update(schedule_id, values):
     global DATA
     if DATA['schedules'].get(schedule_id) is None:

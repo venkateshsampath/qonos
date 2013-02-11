@@ -481,13 +481,7 @@ def _schedule_meta_get(schedule_id, key, session=None):
     return meta
 
 
-@force_dict
-def schedule_meta_get(schedule_id, key):
-    return _schedule_meta_get(schedule_id, key)
-
-
-@force_dict
-def schedule_meta_update(schedule_id, key, values):
+def _schedule_meta_update(schedule_id, key, values):
     session = get_session()
     _schedule_get_by_id(schedule_id, session)
     meta_ref = _schedule_meta_get(schedule_id, key, session)
@@ -509,7 +503,7 @@ def schedule_metadata_update(schedule_id, values):
     for item in values:
         if item['key'] in original_meta:
             if item['value'] != original_meta[item['key']]['value']:
-                schedule_meta_update(schedule_id, item['key'], item)
+                _schedule_meta_update(schedule_id, item['key'], item)
         else:
             schedule_meta_create(schedule_id, item)
 
