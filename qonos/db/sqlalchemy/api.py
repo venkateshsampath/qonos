@@ -85,6 +85,8 @@ def force_dict(func):
         if (isinstance(object, models.ModelBase) or
                 isinstance(object, tuple)):
             to_return = dict(object)
+        elif (isinstance(object, dict)):
+            to_return = object
         else:
             raise ValueError()
 
@@ -492,6 +494,30 @@ def schedule_meta_update(schedule_id, key, values):
     meta_ref.update(values)
     meta_ref.save(session=session)
     return meta_ref
+
+
+@force_dict
+def schedule_metadata_update(schedule_id, values):
+    session = get_session()
+    _schedule_get_by_id(schedule_id, session)
+    original_meta_ref = schedule_meta_get_all(schedule_id)
+
+    original_meta = {}
+    for item in original_meta_ref:
+        original_meta[item['key']] = item
+
+    for item in values:
+        if item['key'] in original_meta:
+            if item['value'] != original_meta[item['key']]['value']:
+                schedule_meta_update(schedule_id, item)
+        else:
+            schedule_meta_create(schedule_id, item)
+
+    for key in original_meta:
+        if key not in [value['key'] for value in values]:
+            schedule_meta_delete(schedule_id, key)
+
+    return schedule_meta_get_all(schedule_id)
 
 
 def schedule_meta_delete(schedule_id, key):
