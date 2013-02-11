@@ -1,5 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
+# Copyright 2012 Rackspace
 # Copyright 2011 OpenStack LLC.
 # All Rights Reserved.
 #
@@ -30,7 +31,7 @@ PERFECT_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
 
 def isotime(at=None):
-    """Stringify time in ISO 8601 format"""
+    """Stringify time in ISO 8601 format."""
     if not at:
         at = utcnow()
     str = at.strftime(TIME_FORMAT)
@@ -40,7 +41,7 @@ def isotime(at=None):
 
 
 def parse_isotime(timestr):
-    """Parse time from ISO 8601 format"""
+    """Parse time from ISO 8601 format."""
     try:
         return iso8601.parse_date(timestr)
     except iso8601.ParseError as e:
@@ -62,7 +63,7 @@ def parse_strtime(timestr, fmt=PERFECT_TIME_FORMAT):
 
 
 def normalize_time(timestamp):
-    """Normalize time in arbitrary timezone to UTC naive object"""
+    """Normalize time in arbitrary timezone to UTC naive object."""
     offset = timestamp.utcoffset()
     if offset is None:
         return timestamp
@@ -86,23 +87,39 @@ def utcnow_ts():
 
 def utcnow():
     """Overridable version of utils.utcnow."""
-    if utcnow.override_time:
-        return utcnow.override_time
+    if utcnow.override_time_seq:
+        return _utcnow_override_time()
     return datetime.datetime.utcnow()
 
 
-utcnow.override_time = None
+def _utcnow_override_time():
+    if len(utcnow.override_time_seq) > 1:
+        now = utcnow.override_time_seq[0]
+        del utcnow.override_time_seq[0]
+        return now
+    return utcnow.override_time_seq[0]
+
+
+utcnow.override_time_seq = None
 
 
 def set_time_override(override_time=datetime.datetime.utcnow()):
     """Override utils.utcnow to return a constant time."""
-    utcnow.override_time = override_time
+    set_time_override_seq([override_time])
+
+
+def set_time_override_seq(override_time_seq=[datetime.datetime.utcnow()]):
+    """
+    Override utils.utcnow to return a sequence of times.
+    When the list is exhausted, keep returning the last one.
+    """
+    utcnow.override_time_seq = override_time_seq
 
 
 def advance_time_delta(timedelta):
     """Advance overridden time using a datetime.timedelta."""
-    assert(not utcnow.override_time is None)
-    utcnow.override_time += timedelta
+    assert(utcnow.override_time_seq)
+    utcnow.override_time_seq[0] += timedelta
 
 
 def advance_time_seconds(seconds):
@@ -112,7 +129,7 @@ def advance_time_seconds(seconds):
 
 def clear_time_override():
     """Remove the overridden time."""
-    utcnow.override_time = None
+    utcnow.override_time_seq = None
 
 
 def marshall_now(now=None):
