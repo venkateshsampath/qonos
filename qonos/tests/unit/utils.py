@@ -61,11 +61,10 @@ def get_schedule(id=None, tenant_id=TENANT1, job_type=None, schedule=None,
     return schedule
 
 
-def get_job(id=None, schedule_id=SCHEDULE_UUID1, status=None, heartbeat=None):
+def get_job(id=None, schedule_id=SCHEDULE_UUID1, status=None):
     job = {'job': {
         'id': id,
         'schedule_id': schedule_id,
-        'status': status,
-        'heartbeat': heartbeat
+        'status': status
     }}
     return job

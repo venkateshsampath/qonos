@@ -11,30 +11,13 @@ routes
 webob==1.0.8
 wsgiref
 argparse
-boto==2.1.1
-sqlalchemy-migrate>=0.7
-httplib2
-kombu
-pycrypto>=2.1.0alpha1
 iso8601>=0.1.4
 croniter
 
-
-# For Swift storage backend.
-#python-swiftclient>=1.2,<2
-
 # For snapshot worker to contact Nova
+httplib2
 python-novaclient==2.10.0
 
-# Note you will need gcc buildtools installed and must
-# have installed libxml headers for lxml to be successfully
-# installed using pip, therefore you will need to install the
-# libxml2-dev and libxslt-dev Ubuntu packages.
-lxml
-
-# For paste.util.template used in keystone.common.template
 Paste
 
-passlib
-jsonschema
 python-daemon

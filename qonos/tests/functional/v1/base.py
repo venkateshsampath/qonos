@@ -20,7 +20,6 @@ import random
 from qonos.common import config
 import qonos.db
 from qonos.openstack.common import cfg
-from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 from qonos.qonosclient import client
 from qonos.qonosclient import exception as client_exc
@@ -379,18 +378,6 @@ class TestApi(utils.BaseTestCase):
         # get job metadata
         meta_value = self.client.get_job_metadata(new_job['id'], meta1['key'])
         self.assertEqual(meta_value, meta1['value'])
-
-        # get heartbeat
-        heartbeat = self.client.get_job_heartbeat(job['id'])['heartbeat']
-        self.assertIsNotNone(heartbeat)
-
-        # heartbeat
-        timeutils.set_time_override()
-        timeutils.advance_time_seconds(30)
-        self.client.job_heartbeat(job['id'])
-        new_heartbeat = self.client.get_job_heartbeat(job['id'])['heartbeat']
-        self.assertNotEqual(new_heartbeat, heartbeat)
-        timeutils.clear_time_override()
 
         # get status
         status = self.client.get_job_status(job['id'])['status']
