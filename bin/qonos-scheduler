@@ -30,7 +30,7 @@ def fail(returncode, e):
 
 if __name__ == '__main__':
     try:
-        product_name = 'qonos'
+        product_name = 'qonos-scheduler'
         config.parse_args()
         log.setup(product_name)
         app = scheduler.Scheduler(client.create_client,

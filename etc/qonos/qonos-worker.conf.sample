@@ -4,8 +4,6 @@ debug = True
 log_file = /home/eddie/qonos/worker.log
 
 [worker]
-# worker_name can be set on the command line, this is the fallback value if not
-worker_name = 'snapshot-worker'
 # Indicates the worker should start as a daemon
 daemonized = True
 # The type of action that this worker handles

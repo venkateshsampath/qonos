@@ -4,9 +4,10 @@ db_auto_create = True
 db_api = 'qonos.db.sqlalchemy.api'
 # Sqlalchemy database connection string
 # If none defaults to sqllite
-sql_connection = 'mysql://qonos:openstack@localhost/qonos'
+# sql_connection = 'mysql://qonos:openstack@localhost/qonos'
+sql_connection = sqlite:///glance.sqlite
 # Log file location
-log_file = /var/log/qonos/qonos-api.log
+# log_file = /var/log/qonos/qonos-api.log
 
 [api]
 # Indicates the API should start as a daemon

@@ -420,7 +420,6 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(status, 'ERROR')
         job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])
         self.assertIsNotNone(job_fault)
-        print "Job fault: %s" % str(job_fault)
         self.assertEqual(job_fault['job_id'], job['id'])
         self.assertEqual(job_fault['tenant_id'], job['tenant_id'])
         self.assertEqual(job_fault['schedule_id'], job['schedule_id'])
