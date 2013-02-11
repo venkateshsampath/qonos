@@ -30,8 +30,9 @@ def fail(returncode, e):
 if __name__ == '__main__':
     try:
         config.parse_args()
-        log.setup("qonos")
-        app = api.API(config.load_paste_app())
+        product_name = 'qonos-api'
+        log.setup(product_name)
+        app = api.API(config.load_paste_app(), product_name=product_name)
         app.run()
     except RuntimeError, e:
         fail(1, e)

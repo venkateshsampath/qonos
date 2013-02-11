@@ -15,6 +15,9 @@ sdist
 develop-eggs
 .installed.cfg
 
+# Installation specific confs
+etc/qonos/*.conf
+
 # Installer logs
 pip-log.txt
 

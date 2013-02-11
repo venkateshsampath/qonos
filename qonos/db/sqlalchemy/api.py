@@ -145,6 +145,7 @@ def configure_db():
     register the models.
     """
     global _ENGINE, sa_logger, _MAX_RETRIES, _RETRY_INTERVAL
+    LOG.debug("Initializing DB")
     if not _ENGINE:
         sql_connection = CONF.sql_connection
         _MAX_RETRIES = CONF.sql_max_retries
