@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+from operator import itemgetter
 import time
 
 from novaclient.v1_1 import client
@@ -85,8 +86,12 @@ class SnapshotProcessor(worker.JobProcessor):
         nova_client = self._get_nova_client()
 
         instance_id = self._get_instance_id(job)
+        metadata = {
+            "org.openstack__1__created-by": "scheduled_images_service"
+            }
         image_id = nova_client.servers.create_image(
-            instance_id, ('Daily-' + str(datetime.datetime.utcnow())))
+            instance_id, ('Daily-' + str(datetime.datetime.utcnow())),
+            metadata)
         LOG.debug("Created image: %s" % image_id)
 
         image_status = None
@@ -111,6 +116,9 @@ class SnapshotProcessor(worker.JobProcessor):
         if (not active) and (not retry):
             self._job_timed_out(job_id)
 
+        if active:
+            self._process_retention(nova_client, instance_id)
+
         LOG.debug("Snapshot complete")
 
     def cleanup_processor(self):
@@ -120,6 +128,44 @@ class SnapshotProcessor(worker.JobProcessor):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def _process_retention(self, nova_client, instance_id):
+        retention = self._get_retention(nova_client, instance_id)
+
+        if retention > 0:
+            scheduled_images = self._find_scheduled_images_for_server(
+                nova_client, instance_id)
+
+            if len(scheduled_images) > retention:
+                to_delete = scheduled_images[retention:]
+                LOG.warn(_('Removing %(remove)d images for a retention '
+                           'of %(retention)d') % {'remove': len(to_delete),
+                                                 'retention': retention})
+                for image in to_delete:
+                    image_id = image.get('id')
+                    nova_client.images.delete(image_id)
+                    LOG.warn(_('Removed image %s') % image_id)
+
+    def _get_retention(self, nova_client, instance_id):
+        server = nova_client.servers.get(instance_id)
+        ret_str = server.metadata.get("org.openstack__1__retention")
+        retention = int(ret_str or 0)
+
+        return retention
+
+    def _find_scheduled_images_for_server(self, nova_client, instance_id):
+        images = nova_client.images.list(detailed=True)
+        scheduled_images = []
+        for image in images:
+            metadata = image.get('metadata')
+            if (metadata.get("org.openstack__1__created_by")
+                == "scheduled_images_service" and
+                metadata.get("instance_uuid") == instance_id):
+                scheduled_images.append(image)
+                scheduled_images = sorted(scheduled_images,
+                                          key=itemgetter('created'),
+                                          reverse=True)
+        return scheduled_images
 
     def _is_error_status(self, status):
         job_status = status['job_status']
@@ -199,8 +245,5 @@ class SnapshotProcessor(worker.JobProcessor):
         return True
 
     def _get_instance_id(self, job):
-        metadata = job['job_metadata']
-        for meta in metadata:
-            if meta['key'] == 'instance_id':
-                return meta['value']
-        return None
+        metadata = job['metadata']
+        return metadata.get('instance_id')
