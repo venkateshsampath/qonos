@@ -126,33 +126,25 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.delete,
                           request, self.schedule_1['id'], 'key1')
 
-    def test_update_meta(self):
-        request = unit_utils.get_fake_request(method='POST')
-        key = 'key1'
-        fixture = {'meta': {key: 'value1'}}
-        self.controller.create(request, self.schedule_1['id'], fixture)
+    def test_update_metadata(self):
         request = unit_utils.get_fake_request(method='PUT')
-        update_fixture = {'meta': {key: 'value2'}}
+        expected = {'metadata': {'key1': 'value1'}}
+        actual = self.controller.update(request, self.schedule_1['id'],
+                                        expected)
 
-        self.controller.update(request, self.schedule_1['id'], 'key1',
-                               update_fixture)
-        meta = self.controller.get(request, self.schedule_1['id'], 'key1')
-        self.assertTrue(key in meta['meta'])
-        self.assertEqual(meta['meta'][key],
-                         update_fixture['meta'][key])
-        self.assertNotEqual(meta['meta'][key],
-                            fixture['meta'][key])
+        self.assertEqual(expected, actual)
+
+    def test_update_metadata_empty(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        expected = {'metadata': {}}
+        actual = self.controller.update(request, self.schedule_1['id'],
+                                        expected)
+
+        self.assertEqual(expected, actual)
 
     def test_update_meta_schedule_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
         schedule_id = uuid.uuid4()
-        fixture = {'meta': {'key1': 'value1'}}
+        fixture = {'metadata': {'key1': 'value1'}}
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.update,
-                          request, schedule_id, 'key1', fixture)
-
-    def test_update_meta_bad_request(self):
-        request = unit_utils.get_fake_request(method='PUT')
-        fixture = {'meta': {'key1': 'value1'}}
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.update,
-                          request, self.schedule_1['id'], 'key11',
-                          fixture)
+                          request, schedule_id, fixture)

@@ -71,7 +71,7 @@ class API(wsgi.Router):
                        action='get',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/schedules/{schedule_id}/meta/{key}',
+        mapper.connect('/schedules/{schedule_id}/metadata',
                        controller=schedule_meta_resource,
                        action='update',
                        conditions=dict(method=['PUT']))

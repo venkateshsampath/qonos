@@ -55,15 +55,15 @@ class ScheduleMetadataController(object):
         except exception.NotFound, e:
             raise webob.exc.HTTPNotFound(explanation=e)
 
-    def update(self, request, schedule_id, key, body):
-        meta = body['meta']
-        new_meta = api_utils.deserialize_meta(meta)
+    def update(self, request, schedule_id, body):
+        metadata = body['metadata']
+        new_meta = api_utils.deserialize_metadata(metadata)
         try:
-            updated_meta = self.db_api.schedule_meta_update(schedule_id,
-                                                            key, new_meta)
+            updated_meta = self.db_api.schedule_metadata_update(schedule_id,
+                                                                new_meta)
         except exception.NotFound, e:
             raise webob.exc.HTTPNotFound(explanation=e)
-        return {'meta': api_utils.serialize_meta(updated_meta)}
+        return {'metadata': api_utils.serialize_metadata(updated_meta)}
 
 
 def create_resource():

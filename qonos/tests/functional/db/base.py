@@ -404,9 +404,23 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def test_metadata_update(self):
         schedule = self._create_basic_schedule()
         fixture = [{'key': 'foo', 'value': 'bar'}]
-        db_api.schedule_metadata_update(schedule['id'], fixture)
+        actual = db_api.schedule_metadata_update(schedule['id'], fixture)
 
-        actual = db_api.schedule_meta_get_all(schedule['id'])
+        self.assertEqual(actual[0]['key'], fixture[0]['key'])
+        self.assertEqual(actual[0]['value'], fixture[0]['value'])
+        self.assertEqual(actual[0]['schedule_id'], schedule['id'])
+        self.assertTrue(actual[0]['created_at'])
+        self.assertTrue(actual[0]['updated_at'])
+        self.assertTrue(actual[0]['id'])
+
+    def test_metadata_update_no_change(self):
+        schedule = self._create_basic_schedule()
+        fixture = [{'key': 'foo', 'value': 'bar'}]
+        actual = db_api.schedule_metadata_update(schedule['id'], fixture)
+
+        fixture = [{'key': 'foo', 'value': 'bar'}]
+        actual = db_api.schedule_metadata_update(schedule['id'], fixture)
+
         self.assertEqual(actual[0]['key'], fixture[0]['key'])
         self.assertEqual(actual[0]['value'], fixture[0]['value'])
         self.assertEqual(actual[0]['schedule_id'], schedule['id'])

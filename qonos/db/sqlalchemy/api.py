@@ -509,7 +509,7 @@ def schedule_metadata_update(schedule_id, values):
     for item in values:
         if item['key'] in original_meta:
             if item['value'] != original_meta[item['key']]['value']:
-                schedule_meta_update(schedule_id, item)
+                schedule_meta_update(schedule_id, item['key'], item)
         else:
             schedule_meta_create(schedule_id, item)
 

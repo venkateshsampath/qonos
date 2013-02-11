@@ -303,9 +303,9 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(value, 'value1')
 
         #update schedule
-        updated_value = self.client.update_schedule_meta(schedule['id'],
-                                                         'key1', 'value2')
-        self.assertEqual(updated_value, 'value2')
+        updated_value = self.client.update_schedule_metadata(schedule['id'],
+                                                         {'key1': 'value2'})
+        self.assertEqual(updated_value, {'key1': 'value2'})
 
         # get meta after update
         old_value = value
