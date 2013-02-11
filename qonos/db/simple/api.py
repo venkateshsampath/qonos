@@ -197,7 +197,7 @@ def schedule_update(schedule_id, schedule_values):
     if schedule_id not in DATA['schedules']:
         raise exception.NotFound()
 
-    metadata = []
+    metadata = None
     if 'schedule_metadata' in values:
         metadata = values['schedule_metadata']
         del values['schedule_metadata']
@@ -207,7 +207,7 @@ def schedule_update(schedule_id, schedule_values):
         schedule['updated_at'] = timeutils.utcnow()
         schedule.update(values)
 
-    if len(metadata) > 0:
+    if metadata is not None:
         DATA['schedule_metadata'][schedule_id] = {}
         for metadatum in metadata:
             schedule_meta_create(schedule_id, metadatum)
@@ -274,22 +274,17 @@ def schedule_meta_get_all(schedule_id):
     return DATA['schedule_metadata'][schedule_id].values()
 
 
-def schedule_meta_get(schedule_id, key):
-    _check_meta_exists(schedule_id, key)
-
-    return DATA['schedule_metadata'][schedule_id][key]
-
-
-def schedule_meta_update(schedule_id, key, values):
+def schedule_metadata_update(schedule_id, values):
     global DATA
-    _check_meta_exists(schedule_id, key)
+    if DATA['schedules'].get(schedule_id) is None:
+        msg = _('Schedule %s could not be found') % schedule_id
+        raise exception.NotFound(message=msg)
 
-    meta = DATA['schedule_metadata'][schedule_id][key]
-    meta.update(values)
-    meta['updated_at'] = timeutils.utcnow()
-    DATA['schedule_metadata'][schedule_id][key] = meta
+    DATA['schedule_metadata'][schedule_id] = {}
+    for metadatum in values:
+        schedule_meta_create(schedule_id, metadatum)
 
-    return copy.deepcopy(meta)
+    return copy.deepcopy(DATA['schedule_metadata'][schedule_id].values())
 
 
 def _delete_schedule_meta(schedule_id, key):

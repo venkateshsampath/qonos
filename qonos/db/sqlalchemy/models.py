@@ -112,7 +112,8 @@ class ScheduleMetadata(BASE, ModelBase):
     key = Column(String(255), nullable=False)
     value = Column(Text, nullable=False)
     parent = relationship(Schedule, backref=backref('schedule_metadata',
-                                                    cascade='all,delete'))
+                                                    cascade='all,delete,'
+                                                            'delete-orphan'))
 
 
 class Worker(BASE, ModelBase):

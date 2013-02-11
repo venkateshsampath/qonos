@@ -278,47 +278,46 @@ class TestApi(utils.BaseTestCase):
         }
         schedule = self.client.create_schedule(request)
 
-        # create meta
-        meta = self.client.create_schedule_meta(schedule['id'], 'key1',
-                                                'value1')
-        self.assertEqual(1, len(meta))
-        self.assertTrue('key1' in meta)
-        self.assertEqual(meta['key1'], 'value1')
+        metadata_fixture = {'key1': 'value1'}
 
-        # make sure duplicate metadata can't be created
-        self.assertRaises(client_exc.Duplicate,
-                          self.client.create_schedule_meta,
-                          schedule['id'],
-                          'key1',
-                          'value1')
+        #update schedule metadata
+        updated_value = self.client.update_schedule_metadata(schedule['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
 
-        # list meta
-        metadata = self.client.list_schedule_meta(schedule['id'])
-        self.assertEqual(len(metadata), 1)
-        self.assertTrue('key1' in metadata)
-        self.assertEqual(metadata['key1'], 'value1')
+        #list schedule metadata
+        updated_value = self.client.list_schedule_metadata(schedule['id'])
+        self.assertEqual(updated_value, metadata_fixture)
 
-        # get meta
-        value = self.client.get_schedule_meta(schedule['id'], 'key1')
-        self.assertEqual(value, 'value1')
+        #update schedule metadata value
+        metadata_fixture = {'key1': 'value2'}
+        updated_value = self.client.update_schedule_metadata(schedule['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
 
-        #update schedule
-        updated_value = self.client.update_schedule_meta(schedule['id'],
-                                                         'key1', 'value2')
-        self.assertEqual(updated_value, 'value2')
+        #list schedule metadata
+        updated_value = self.client.list_schedule_metadata(schedule['id'])
+        self.assertEqual(updated_value, metadata_fixture)
 
-        # get meta after update
-        old_value = value
-        value = self.client.get_schedule_meta(schedule['id'], 'key1')
-        self.assertNotEqual(value, old_value)
-        self.assertEqual(value, 'value2')
+        #add schedule metadata
+        metadata_fixture = {'key1': 'value2', 'key2': 'value2'}
+        updated_value = self.client.update_schedule_metadata(schedule['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
 
-        # delete meta
-        self.client.delete_schedule_meta(schedule['id'], 'key1')
+        #list schedule metadata
+        updated_value = self.client.list_schedule_metadata(schedule['id'])
+        self.assertEqual(updated_value, metadata_fixture)
 
-        # make sure metadata no longer exists
-        self.assertRaises(client_exc.NotFound, self.client.get_schedule_meta,
-                          schedule['id'], 'key1')
+        #remove schedule metadata item
+        metadata_fixture = {'key2': 'value2'}
+        updated_value = self.client.update_schedule_metadata(schedule['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #list schedule metadata
+        updated_value = self.client.list_schedule_metadata(schedule['id'])
+        self.assertEqual(updated_value, metadata_fixture)
 
     def test_job_workflow(self):
 

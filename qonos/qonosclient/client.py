@@ -106,27 +106,14 @@ class Client(object):
 
     ######## schedule metadata
 
-    def list_schedule_meta(self, schedule_id):
-        path = '/v1/schedules/%s/meta' % schedule_id
+    def list_schedule_metadata(self, schedule_id):
+        path = '/v1/schedules/%s/metadata' % schedule_id
         return self._do_request('GET', path)['metadata']
 
-    def create_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {key: value}}
-        path = '/v1/schedules/%s/meta' % schedule_id
-        return self._do_request('POST', path, meta)['meta']
-
-    def get_schedule_meta(self, schedule_id, key):
-        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('GET', path)['meta'][key]
-
-    def update_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {key: value}}
-        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('PUT', path, meta)['meta'][key]
-
-    def delete_schedule_meta(self, schedule_id, key):
-        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('DELETE', path)
+    def update_schedule_metadata(self, schedule_id, values):
+        meta = {'metadata': values}
+        path = '/v1/schedules/%s/metadata' % schedule_id
+        return self._do_request('PUT', path, meta)['metadata']
 
     ######## jobs
 
