@@ -100,7 +100,7 @@ class API(wsgi.Router):
 
         job_meta_resource = job_metadata.create_resource()
 
-        mapper.connect('/jobs/{job_id}/meta',
+        mapper.connect('/jobs/{job_id}/metadata',
                        controller=job_meta_resource,
                        action='list',
                        conditions=dict(method=['GET']))
