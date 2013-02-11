@@ -159,6 +159,10 @@ class Client(object):
         path = '/v1/jobs/%s/meta/%s' % (job_id, key)
         return self._do_request('GET', path)['meta'][key]
 
+    def update_job_metadata(self, job_id):
+        path = '/v1/jobs/%s/metadata' % job_id
+        return self._do_request('PUT', path)['metadata']
+
 
 def create_client(endpoint, port):
     return Client(endpoint, port)

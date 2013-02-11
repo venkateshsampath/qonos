@@ -39,6 +39,15 @@ class JobMetadataController(object):
 
         return {'meta': api_utils.serialize_meta(meta)}
 
+    def update(self, request, job_id, body):
+        metadata = body['metadata']
+        new_meta = api_utils.deserialize_metadata(metadata)
+        try:
+            updated_meta = self.db_api.job_metadata_update(job_id, new_meta)
+        except exception.NotFound, e:
+            raise webob.exc.HTTPNotFound(explanation=e)
+        return {'metadata': api_utils.serialize_metadata(updated_meta)}
+
 
 def create_resource():
     """QonoS resource factory method."""

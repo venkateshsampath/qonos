@@ -73,3 +73,26 @@ class TestJobMetadataApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='GET')
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
                           request, self.job_1['id'], 'key3')
+
+    def test_update_metadata(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        expected = {'metadata': {'key1': 'value1'}}
+        actual = self.controller.update(request, self.job_1['id'],
+                                        expected)
+
+        self.assertEqual(expected, actual)
+
+    def test_update_metadata_empty(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        expected = {'metadata': {}}
+        actual = self.controller.update(request, self.job_1['id'],
+                                        expected)
+
+        self.assertEqual(expected, actual)
+
+    def test_update_meta_job_not_found(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        job_id = uuid.uuid4()
+        fixture = {'metadata': {'key1': 'value1'}}
+        self.assertRaises(webob.exc.HTTPNotFound, self.controller.update,
+                          request, job_id, fixture)
