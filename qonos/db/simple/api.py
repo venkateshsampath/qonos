@@ -312,7 +312,7 @@ def schedule_metadata_update(schedule_id, values):
         meta.update(item)
 
         DATA['schedule_metadata'][schedule_id][item['key']] = meta
-    return copy.deepcopy(DATA['schedule_metadata'][schedule_id])
+    return copy.deepcopy(DATA['schedule_metadata'][schedule_id].values())
 
 
 def _delete_schedule_meta(schedule_id, key):
