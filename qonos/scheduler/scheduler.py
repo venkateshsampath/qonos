@@ -90,7 +90,6 @@ class Scheduler(object):
     def get_schedules(self, previous_run=None, current_run=None):
         filter_args = {'next_run_before': current_run}
 
-        # TODO(ameade): change api to not require both query params
         year_one = timeutils.isotime(datetime.datetime(1970, 1, 1))
         filter_args['next_run_after'] = previous_run or year_one
 
