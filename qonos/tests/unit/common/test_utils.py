@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+import logging as pylog
 
 from qonos.common import utils
 from qonos.openstack.common import timeutils
@@ -25,6 +26,10 @@ class TestUtils(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestUtils, self).setUp()
+
+    def tearDown(self):
+        super(TestUtils, self).tearDown()
+        self.stubs.UnsetAll()
 
     def test_serialize_datetimes(self):
         date_1 = datetime.datetime(2012, 5, 16, 15, 27, 36, 325355)
@@ -86,3 +91,31 @@ class TestUtils(test_utils.BaseTestCase):
         expected = datetime.datetime(1900, 5, 16, 5, 30, 0, 0)
 
         self.assertTrue(next_run == expected)
+
+    def test_get_qonos_open_file_log_handlers(self):
+
+        class FakeStream(object):
+            pass
+
+        fake_stream = FakeStream()
+        fake_stream.fileno = ''
+
+        class FakeHandler(object):
+            pass
+
+        fake_handler = FakeHandler()
+        fake_handler.stream = fake_stream
+
+        class FakeLogger(object):
+            pass
+
+        fake_logger = FakeLogger()
+        fake_logger.handlers = [None, fake_handler, FakeHandler()]
+
+        def fake_get_logger(name):
+            self.assertEqual(name, 'qonos')
+            return fake_logger
+
+        self.stubs.Set(pylog, 'getLogger', fake_get_logger)
+        open_files = utils.get_qonos_open_file_log_handlers()
+        self.assertEqual(open_files, [fake_stream])

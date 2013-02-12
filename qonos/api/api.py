@@ -14,8 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging as pylog
-
+from qonos.common import utils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
@@ -33,9 +32,8 @@ CONF.register_opts(api_opts, group='api')
 
 
 class API(object):
-    def __init__(self, app, product_name='qonos'):
+    def __init__(self, app):
         self.app = app
-        self.product_name = product_name
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos-api service'))
@@ -43,12 +41,7 @@ class API(object):
         if CONF.api.daemonized:
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
-            open_files = []
-            for handler in pylog.getLogger(self.product_name).handlers:
-                if (hasattr(handler, 'stream') and
-                        hasattr(handler.stream, 'fileno')):
-                    open_files.append(handler.stream)
-            LOG.debug(_('Open files: %s') % str(open_files))
+            open_files = utils.get_qonos_open_file_log_handlers()
             with daemon.DaemonContext(files_preserve=open_files):
                 wsgi.run_server(self.app, CONF.api.port)
         else:
