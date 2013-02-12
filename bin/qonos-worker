@@ -30,10 +30,9 @@ def fail(returncode, e):
 
 if __name__ == '__main__':
     try:
-        product_name = 'qonos-worker'
         config.parse_args()
-        log.setup(product_name)
-        app = worker.Worker(client.create_client, product_name=product_name)
+        log.setup('qonos')
+        app = worker.Worker(client.create_client)
         app.run()
     except RuntimeError, e:
         fail(1, e)
