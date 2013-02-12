@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from qonos.common import utils
+
 
 def serialize_metadata(metadata):
     return {meta['key']: meta['value'] for meta in metadata}
@@ -44,3 +46,14 @@ def deserialize_job_metadata(job):
     if 'metadata' in job:
         metadata = job.pop('metadata')
         job['job_metadata'] = deserialize_metadata(metadata)
+
+
+def schedule_to_next_run(schedule):
+    minute = schedule.get('minute', '*')
+    hour = schedule.get('hour', '*')
+    day_of_month = schedule.get('day_of_month', '*')
+    month = schedule.get('month', '*')
+    day_of_week = schedule.get('day_of_week', '*')
+    return utils.cron_string_to_next_datetime(minute, hour, day_of_month,
+                                              month, day_of_week,
+                                              schedule.get('last_scheduled'))

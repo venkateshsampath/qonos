@@ -354,6 +354,10 @@ class TestApi(utils.BaseTestCase):
         self.assertMetadataInList(new_job['metadata'], meta_fixture1)
         self.assertMetadataInList(new_job['metadata'], meta_fixture2)
 
+        # ensure schedule was updated
+        updated_schedule = self.client.get_schedule(schedule['id'])
+        self.assertTrue(updated_schedule.get('last_scheduled'))
+
         # list jobs
         jobs = self.client.list_jobs()
         self.assertEqual(len(jobs), 1)

@@ -63,6 +63,14 @@ class JobsController(object):
         except exception.NotFound:
             raise webob.exc.HTTPNotFound()
 
+        # Update schedule last_scheduled and next_run
+        values = {}
+        values['next_run'] = api_utils.schedule_to_next_run(schedule)
+        print values['next_run']
+        values['last_scheduled'] = timeutils.utcnow()
+        self.db_api.schedule_update(schedule['id'], values)
+
+        # Create job
         values = {}
         values.update(job)
         values['tenant_id'] = schedule['tenant_id']
