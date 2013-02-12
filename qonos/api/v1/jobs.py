@@ -108,15 +108,6 @@ class JobsController(object):
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-    def get_status(self, request, job_id):
-        try:
-            status = self.db_api.job_status_get_by_id(job_id)
-        except exception.NotFound:
-            msg = _('Job %s could not be found.') % job_id
-            raise webob.exc.HTTPNotFound(explanation=msg)
-
-        return {'status': status}
-
     def update_status(self, request, job_id, body):
         status = body.get('status')
         if not status:
@@ -138,7 +129,8 @@ class JobsController(object):
             values = self._get_error_values(status, job)
             self.db_api.job_fault_create(values)
 
-        return {'job': job}
+        return {'status': {'status': job['status'],
+                           'timeout': job['timeout']}}
 
     def _get_error_values(self, status, job):
         api_utils.serialize_job_metadata(job)

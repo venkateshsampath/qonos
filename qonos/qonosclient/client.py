@@ -132,10 +132,6 @@ class Client(object):
         path = '/v1/jobs/%s' % job_id
         return self._do_request('GET', path)['job']
 
-    def get_job_status(self, job_id):
-        path = '/v1/jobs/%s/status' % job_id
-        return self._do_request('GET', path)
-
     def update_job_status(self, job_id, status, timeout=None,
                           error_message=None):
         body = {'status': {'status': status}}
@@ -145,7 +141,7 @@ class Client(object):
             body['status']['error_message'] = error_message
 
         path = '/v1/jobs/%s/status' % job_id
-        return self._do_request('PUT', path, body)
+        return self._do_request('PUT', path, body)['status']
 
     def delete_job(self, job_id):
         path = '/v1/jobs/%s' % job_id
