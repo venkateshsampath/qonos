@@ -766,15 +766,6 @@ class TestJobsDBApi(test_utils.BaseTestCase):
                           self.db_api.job_updated_at_get_by_id,
                           str(uuid.uuid4))
 
-    def test_job_status_get_by_id(self):
-        expected = self.job_1['status']
-        actual = self.db_api.job_status_get_by_id(self.job_1['id'])
-        self.assertEqual(actual, expected)
-
-    def test_job_status_get_by_id_job_not_found(self):
-        self.assertRaises(exception.NotFound,
-                          self.db_api.job_status_get_by_id, str(uuid.uuid4))
-
     def test_job_update(self):
         fixture = {
             'status': 'error',

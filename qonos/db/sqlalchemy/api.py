@@ -607,10 +607,6 @@ def job_updated_at_get_by_id(job_id):
     return _job_get_by_id(job_id)['updated_at']
 
 
-def job_status_get_by_id(job_id):
-    return _job_get_by_id(job_id)['status']
-
-
 @force_dict
 def job_get_and_assign_next_by_action(action, worker_id, max_retry):
     """Get the next available job for the given action and assign it
