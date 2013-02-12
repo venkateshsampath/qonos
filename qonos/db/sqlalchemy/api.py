@@ -554,7 +554,6 @@ def worker_delete(worker_id):
 def job_create(job_values):
     db_utils.validate_job_values(job_values)
     values = job_values.copy()
-    LOG.debug("Values: %s" % str(values))
     session = get_session()
     job_ref = models.Job()
 

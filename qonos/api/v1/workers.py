@@ -91,10 +91,10 @@ class WorkersController(object):
         return {'job': job}
 
     def _job_get_max_retry(self, action):
-        group = 'action-' + action
-        if action not in CONF:
-            action = 'action-default'
-        return CONF.get(action).max_retry
+        group = 'action_' + action
+        if group not in CONF:
+            group = 'action_default'
+        return CONF.get(group).max_retry
 
 
 def create_resource():

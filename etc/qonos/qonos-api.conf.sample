@@ -4,9 +4,9 @@ db_auto_create = True
 db_api = 'qonos.db.sqlalchemy.api'
 
 # Sqlalchemy database connection string
-# If none defaults to sqllite
+# If none defaults to sqlite
 # sql_connection = 'mysql://qonos:openstack@localhost/qonos'
-sql_connection = sqlite:///glance.sqlite
+sql_connection = sqlite:///qonos.sqlite
 
 # Log file location
 log_file = /var/log/qonos/qonos-api.log
@@ -17,11 +17,11 @@ daemonized = False
 
 # Any actions that need overridden values for retry 
 # and / or timeout should be listed here and a section
-# provided below named [action-<action name>]
+# provided below named [action_<action name>]
 action_overrides = snapshot
 
 # Default settings for actions if not otherwise specified below
-[action-default]
+[action_default]
 # The number of times a job may be reassigned when it is detected
 # that a worker has stopped working on it.
 max_retry = 3
@@ -31,7 +31,7 @@ max_retry = 3
 timeout_seconds = 3600
 
 # Settings for the 'snapshot' action
-[action-snapshot]
+[action_snapshot]
 max_retry = 2
 timeout_seconds = 14400
 

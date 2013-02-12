@@ -164,10 +164,10 @@ class JobsController(object):
         return values
 
     def _job_get_timeout(self, action):
-        group = 'action-' + action
-        if action not in CONF:
-            action = 'action-default'
-        return CONF.get(action).timeout_seconds
+        group = 'action_' + action
+        if group not in CONF:
+            group = 'action_default'
+        return CONF.get(group).timeout_seconds
 
 
 def create_resource():
