@@ -471,7 +471,7 @@ def job_update(job_id, job_values):
     if job_id not in DATA['jobs']:
         raise exception.NotFound()
 
-    metadata = []
+    metadata = None
     if 'job_metadata' in values:
         metadata = values['job_metadata']
         del values['job_metadata']
@@ -483,7 +483,7 @@ def job_update(job_id, job_values):
         job['updated_at'] = timeutils.utcnow()
         job.update(values)
 
-    if len(metadata) > 0:
+    if metadata is not None:
         DATA['job_metadata'][job_id] = {}
         for metadatum in metadata:
             job_meta_create(job_id, metadatum)
@@ -544,28 +544,15 @@ def job_meta_get_all_by_job_id(job_id):
     return copy.deepcopy(DATA['job_metadata'][job_id].values())
 
 
-def job_meta_get(job_id, key):
-    _check_job_exists(job_id)
-    _check_job_meta_exists(job_id, key)
-    return DATA['job_metadata'][job_id][key]
-
-
-def job_meta_update(job_id, key, values):
+def job_metadata_update(job_id, values):
     global DATA
-    _check_job_meta_exists(job_id, key)
+    _check_job_exists(job_id)
 
-    meta = DATA['job_metadata'][job_id][key]
-    meta.update(values)
-    meta['updated_at'] = timeutils.utcnow()
-    DATA['job_metadata'][job_id][key] = meta
+    DATA['job_metadata'][job_id] = {}
+    for metadatum in values:
+        job_meta_create(job_id, metadatum)
 
-    return copy.deepcopy(meta)
-
-
-def job_meta_delete(job_id, key):
-    _check_job_meta_exists(job_id, key)
-
-    del DATA['job_metadata'][job_id][key]
+    return copy.deepcopy(DATA['job_metadata'][job_id].values())
 
 
 def _job_faults_get_sorted():

@@ -374,9 +374,17 @@ class TestApi(utils.BaseTestCase):
         self.assertMetadataInList(metadata, meta_fixture1)
         self.assertMetadataInList(metadata, meta_fixture2)
 
-        # get job metadata
-        meta_value = self.client.get_job_metadata(new_job['id'], meta1['key'])
-        self.assertEqual(meta_value, meta1['value'])
+        # update job metadata
+        new_meta = {'foo': 'bar'}
+        new_meta.update(meta_fixture1)
+        metadata = self.client.update_job_metadata(new_job['id'], new_meta)
+        self.assertMetadataInList(metadata, meta_fixture1)
+        self.assertMetadataInList(metadata, new_meta)
+
+        # list job metadata
+        metadata = self.client.list_job_metadata(new_job['id'])
+        self.assertMetadataInList(metadata, meta_fixture1)
+        self.assertMetadataInList(metadata, new_meta)
 
         # get status
         status = self.client.get_job_status(job['id'])['status']
@@ -423,6 +431,72 @@ class TestApi(utils.BaseTestCase):
 
         # make sure job no longer exists
         self.assertRaises(client_exc.NotFound, self.client.get_job, job['id'])
+
+    def test_job_meta_workflow(self):
+
+        # (setup) create job
+        request = {
+            'schedule':
+            {
+                'tenant_id': TENANT1,
+                'action': 'snapshot',
+                'minute': '30',
+                'hour': '12'
+            }
+        }
+        schedule = self.client.create_schedule(request)
+        # create job
+
+        job = self.client.create_job(schedule['id'])
+        self.assertIsNotNone(job.get('id'))
+        self.assertEqual(job['schedule_id'], schedule['id'])
+        self.assertEqual(job['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(job['action'], schedule['action'])
+        self.assertEqual(job['status'], 'queued')
+        self.assertIsNone(job['worker_id'])
+        self.assertIsNotNone(job.get('timeout'))
+        self.assertIsNotNone(job.get('hard_timeout'))
+
+        metadata_fixture = {'key1': 'value1'}
+
+        #update job metadata
+        updated_value = self.client.update_job_metadata(job['id'],
+                                                        metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #list job metadata
+        updated_value = self.client.list_job_metadata(job['id'])
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #update job metadata value
+        metadata_fixture = {'key1': 'value2'}
+        updated_value = self.client.update_job_metadata(job['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #list job metadata
+        updated_value = self.client.list_job_metadata(job['id'])
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #add job metadata
+        metadata_fixture = {'key1': 'value2', 'key2': 'value2'}
+        updated_value = self.client.update_job_metadata(job['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #list job metadata
+        updated_value = self.client.list_job_metadata(job['id'])
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #remove job metadata item
+        metadata_fixture = {'key2': 'value2'}
+        updated_value = self.client.update_job_metadata(job['id'],
+                                                             metadata_fixture)
+        self.assertEqual(updated_value, metadata_fixture)
+
+        #list job metadata
+        updated_value = self.client.list_job_metadata(job['id'])
+        self.assertEqual(updated_value, metadata_fixture)
 
     def test_pagination(self):
 
