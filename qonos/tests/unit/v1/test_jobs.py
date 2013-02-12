@@ -257,10 +257,11 @@ class TestJobsApi(test_utils.BaseTestCase):
                 'timeout': str(timeout)
                 }
                 }
-        self.controller.update_status(request, self.job_1['id'], body)
-        job = db_api.job_get_by_id(self.job_1['id'])
-        actual_status = job['status']
-        actual_timeout = job['timeout']
+        job_status = self.controller.update_status(request,
+                                                   self.job_1['id'],
+                                                   body)
+        actual_status = job_status['status']
+        actual_timeout = job_status['timeout']
         self.assertEqual(actual_status, body['status']['status'])
         self.assertEqual(actual_timeout, timeout)
 
