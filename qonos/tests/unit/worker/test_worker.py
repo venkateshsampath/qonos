@@ -32,7 +32,8 @@ class TestWorker(test_utils.BaseTestCase):
             return self.client
 
         self.processor = FakeProcessor()
-        self.worker = worker.Worker(client_factory, self.processor)
+        self.worker = worker.Worker(client_factory, product_name='qonos',
+                                    processor=self.processor)
 
     def tearDown(self):
         self.mox.UnsetStubs()
@@ -43,7 +44,6 @@ class TestWorker(test_utils.BaseTestCase):
             AndReturn(fakes.WORKER)
         # Argh! Mox why you no have "Times(x)" function?!?!
         for i in range(empty_jobs):
-            print "Adding empty return call..."
             self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
                 AndReturn(fakes.JOB_NONE)
 

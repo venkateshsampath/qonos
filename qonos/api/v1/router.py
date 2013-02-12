@@ -56,30 +56,15 @@ class API(wsgi.Router):
 
         schedule_meta_resource = schedule_metadata.create_resource()
 
-        mapper.connect('/schedules/{schedule_id}/meta',
+        mapper.connect('/schedules/{schedule_id}/metadata',
                        controller=schedule_meta_resource,
                        action='list',
                        conditions=dict(method=['GET']))
 
-        mapper.connect('/schedules/{schedule_id}/meta',
-                       controller=schedule_meta_resource,
-                       action='create',
-                       conditions=dict(method=['POST']))
-
-        mapper.connect('/schedules/{schedule_id}/meta/{key}',
-                       controller=schedule_meta_resource,
-                       action='get',
-                       conditions=dict(method=['GET']))
-
-        mapper.connect('/schedules/{schedule_id}/meta/{key}',
+        mapper.connect('/schedules/{schedule_id}/metadata',
                        controller=schedule_meta_resource,
                        action='update',
                        conditions=dict(method=['PUT']))
-
-        mapper.connect('/schedules/{schedule_id}/meta/{key}',
-                       controller=schedule_meta_resource,
-                       action='delete',
-                       conditions=dict(method=['DELETE']))
 
         jobs_resource = jobs.create_resource()
 

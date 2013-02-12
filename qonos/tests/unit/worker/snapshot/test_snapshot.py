@@ -18,7 +18,7 @@ import copy
 import datetime
 import mox
 
-from qonos.openstack.common import timeutils
+from qonos.common import timeutils
 from qonos.openstack.common import uuidutils
 from qonos.tests.unit.worker import fakes
 from qonos.tests import utils as test_utils
@@ -125,6 +125,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             base_time,
             base_time + datetime.timedelta(seconds=305),
             base_time + datetime.timedelta(seconds=605),
+            base_time + datetime.timedelta(seconds=905),
             ]
         timeutils.set_time_override_seq(time_seq)
 
@@ -143,6 +144,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('ACTIVE'))
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(
             MockServer())
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                               error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
                                error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
@@ -211,12 +214,13 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         time_seq = [
             base_time,
             base_time,
-            base_time + datetime.timedelta(seconds=305),
+            base_time + datetime.timedelta(minutes=5, seconds=5),
             base_time + datetime.timedelta(minutes=60, seconds=5),
             base_time + datetime.timedelta(minutes=120, seconds=5),
             base_time + datetime.timedelta(minutes=180, seconds=5),
             base_time + datetime.timedelta(minutes=240, seconds=5),
             ]
+        print "Time_seq: %s" % str(time_seq)
         timeutils.set_time_override_seq(time_seq)
 
         job = copy.deepcopy(fakes.JOB['job'])
@@ -431,3 +435,8 @@ class TestableSnapshotProcessor(snapshot.SnapshotProcessor):
 
     def _get_nova_client(self):
         return self.nova_client
+
+    def _get_utcnow(self):
+        now = timeutils.utcnow()
+        print "Returning NOW: %s" % str(now)
+        return now

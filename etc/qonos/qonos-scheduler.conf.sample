@@ -1,0 +1,9 @@
+[DEFAULT]
+debug = True
+# Log file location
+log_file = /var/log/qonos/qonos-scheduler.log
+
+[scheduler]
+# Indicates the scheduler should start as a daemon
+daemonized = True
+

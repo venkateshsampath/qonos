@@ -85,6 +85,8 @@ def force_dict(func):
         if (isinstance(object, models.ModelBase) or
                 isinstance(object, tuple)):
             to_return = dict(object)
+        elif (isinstance(object, dict)):
+            to_return = object
         else:
             raise ValueError()
 
@@ -145,6 +147,7 @@ def configure_db():
     register the models.
     """
     global _ENGINE, sa_logger, _MAX_RETRIES, _RETRY_INTERVAL
+    LOG.debug("Initializing DB")
     if not _ENGINE:
         sql_connection = CONF.sql_connection
         _MAX_RETRIES = CONF.sql_max_retries
@@ -405,7 +408,7 @@ def _schedule_metadata_update_in_place(schedule, metadata):
     to_delete = []
     for meta in schedule.schedule_metadata:
         if not meta['key'] in new_meta:
-            to_delete = meta
+            to_delete.append(meta)
         else:
             meta['value'] = new_meta[meta['key']]
             del new_meta[meta['key']]
@@ -479,19 +482,24 @@ def _schedule_meta_get(schedule_id, key, session=None):
     return meta
 
 
-@force_dict
-def schedule_meta_get(schedule_id, key):
-    return _schedule_meta_get(schedule_id, key)
-
-
-@force_dict
-def schedule_meta_update(schedule_id, key, values):
+def _schedule_meta_update(schedule_id, key, values):
     session = get_session()
     _schedule_get_by_id(schedule_id, session)
     meta_ref = _schedule_meta_get(schedule_id, key, session)
     meta_ref.update(values)
     meta_ref.save(session=session)
     return meta_ref
+
+
+@force_dict
+def schedule_metadata_update(schedule_id, values):
+    session = get_session()
+    schedule = _schedule_get_by_id(schedule_id, session)
+    _schedule_metadata_update_in_place(schedule, values)
+
+    schedule.save(session=session)
+
+    return schedule_meta_get_all(schedule_id)
 
 
 def schedule_meta_delete(schedule_id, key):

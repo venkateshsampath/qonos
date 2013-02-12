@@ -16,6 +16,7 @@
 
 import httplib
 
+from qonos.openstack.common import log as logging
 
 try:
     import json
@@ -23,6 +24,8 @@ except ImportError:
     import simplejson as json
 
 from qonos.qonosclient import exception
+
+LOG = logging.getLogger(__name__)
 
 
 class Client(object):
@@ -33,7 +36,8 @@ class Client(object):
 
     def _do_request(self, method, url, body=None):
         conn = httplib.HTTPConnection(self.endpoint, self.port)
-        body = json.dumps(body)
+        if body:
+            body = json.dumps(body)
         conn.request(method, url, body=body,
                      headers={'Content-Type': 'application/json'})
         response = conn.getresponse()
@@ -82,7 +86,9 @@ class Client(object):
         query = '?'
         for key in filter_args:
             query += ('%s=%s&' % (key, filter_args[key]))
-        return self._do_request('GET', path % query)['schedules']
+        response = self._do_request('GET', path % query)
+        schedules = response.get('schedules')
+        return schedules
 
     def create_schedule(self, schedule):
         return self._do_request('POST', '/v1/schedules', schedule)['schedule']
@@ -100,27 +106,14 @@ class Client(object):
 
     ######## schedule metadata
 
-    def list_schedule_meta(self, schedule_id):
-        path = '/v1/schedules/%s/meta' % schedule_id
+    def list_schedule_metadata(self, schedule_id):
+        path = '/v1/schedules/%s/metadata' % schedule_id
         return self._do_request('GET', path)['metadata']
 
-    def create_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {key: value}}
-        path = '/v1/schedules/%s/meta' % schedule_id
-        return self._do_request('POST', path, meta)['meta']
-
-    def get_schedule_meta(self, schedule_id, key):
-        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('GET', path)['meta'][key]
-
-    def update_schedule_meta(self, schedule_id, key, value):
-        meta = {'meta': {key: value}}
-        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('PUT', path, meta)['meta'][key]
-
-    def delete_schedule_meta(self, schedule_id, key):
-        path = '/v1/schedules/%s/meta/%s' % (schedule_id, key)
-        return self._do_request('DELETE', path)
+    def update_schedule_metadata(self, schedule_id, values):
+        meta = {'metadata': values}
+        path = '/v1/schedules/%s/metadata' % schedule_id
+        return self._do_request('PUT', path, meta)['metadata']
 
     ######## jobs
 
