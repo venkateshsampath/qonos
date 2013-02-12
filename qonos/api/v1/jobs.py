@@ -121,7 +121,8 @@ class JobsController(object):
             values = self._get_error_values(status, job)
             self.db_api.job_fault_create(values)
 
-        return {'status': job['status'], 'timeout': job['timeout']}
+        return {'status': {'status': job['status'],
+                           'timeout': job['timeout']}}
 
     def _get_error_values(self, status, job):
         api_utils.serialize_job_metadata(job)

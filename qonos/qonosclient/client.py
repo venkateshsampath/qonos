@@ -141,7 +141,7 @@ class Client(object):
             body['status']['error_message'] = error_message
 
         path = '/v1/jobs/%s/status' % job_id
-        return self._do_request('PUT', path, body)
+        return self._do_request('PUT', path, body)['status']
 
     def delete_job(self, job_id):
         path = '/v1/jobs/%s' % job_id

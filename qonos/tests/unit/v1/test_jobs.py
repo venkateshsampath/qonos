@@ -259,7 +259,7 @@ class TestJobsApi(test_utils.BaseTestCase):
                 }
         job_status = self.controller.update_status(request,
                                                    self.job_1['id'],
-                                                   body)
+                                                   body)['status']
         actual_status = job_status['status']
         actual_timeout = job_status['timeout']
         self.assertEqual(actual_status, body['status']['status'])
@@ -268,9 +268,10 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_update_status_without_timeout(self):
         request = unit_utils.get_fake_request(method='PUT')
         body = {'status': {'status': 'DONE'}}
-        self.controller.update_status(request, self.job_1['id'], body)
-        actual = db_api.job_get_by_id(self.job_1['id'])['status']
-        self.assertEqual(actual, body['status']['status'])
+        actual = self.controller.update_status(request,
+                                               self.job_1['id'],
+                                               body)['status']
+        self.assertEqual(actual['status'], body['status']['status'])
 
     def test_update_status_uppercases_status(self):
         request = unit_utils.get_fake_request(method='PUT')
