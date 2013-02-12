@@ -75,15 +75,6 @@ class SchedulesController(object):
         links = [{'rel': 'next', 'href': next_page}]
         return {'schedules': schedules, 'schedules_links': links}
 
-    def _schedule_to_next_run(self, schedule):
-        minute = schedule.get('minute', '*')
-        hour = schedule.get('hour', '*')
-        day_of_month = schedule.get('day_of_month', '*')
-        month = schedule.get('month', '*')
-        day_of_week = schedule.get('day_of_week', '*')
-        return utils.cron_string_to_next_datetime(minute, hour, day_of_month,
-                                                  month, day_of_week)
-
     def create(self, request, body=None):
         if (body is None or type(body).__name__ != 'dict' or
             body.get('schedule') is None):
@@ -92,7 +83,7 @@ class SchedulesController(object):
         api_utils.deserialize_schedule_metadata(body['schedule'])
         values = {}
         values.update(body['schedule'])
-        values['next_run'] = self._schedule_to_next_run(body['schedule'])
+        values['next_run'] = api_utils.schedule_to_next_run(body['schedule'])
         schedule = self.db_api.schedule_create(values)
 
         utils.serialize_datetimes(schedule)
@@ -124,7 +115,6 @@ class SchedulesController(object):
             api_utils.deserialize_schedule_metadata(body['schedule'])
             values = {}
             values.update(body['schedule'])
-            values['next_run'] = self._schedule_to_next_run(body['schedule'])
             schedule = self.db_api.schedule_update(schedule_id,
                                                    values)
             utils.serialize_datetimes(schedule)

@@ -40,14 +40,15 @@ def serialize_datetimes(data):
 
 
 def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
-                                 month="*", day_of_week="*"):
+                                 month="*", day_of_week="*", start_time=None):
+    start_time = start_time or timeutils.utcnow()
     cron_string = ("%s %s %s %s %s" %
                   (minute or '*',
                    hour or '*',
                    day_of_month or '*',
                    month or '*',
                    day_of_week or '*'))
-    iter = croniter(cron_string, timeutils.utcnow())
+    iter = croniter(cron_string, start_time)
     return iter.get_next(datetime.datetime)
 
 

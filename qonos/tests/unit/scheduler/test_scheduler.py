@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
 import mox
 import time
 
@@ -41,9 +40,12 @@ class TestScheduler(test_utils.BaseTestCase):
 
     def test_run_loop(self):
         self.config(job_schedule_interval=5, group='scheduler')
+        timeutils.set_time_override()
+        current_time = timeutils.isotime()
         called = {'enqueue_jobs': False}
 
-        def fake(*args, **kwargs):
+        def fake(end_time=None):  # assert only end_time kwarg is passed
+            self.assertEqual(end_time, current_time)
             called['enqueue_jobs'] = True
 
         self.stubs.Set(self.scheduler, 'enqueue_jobs', fake)
@@ -89,24 +91,22 @@ class TestScheduler(test_utils.BaseTestCase):
 
     def test_get_schedules(self):
         timeutils.set_time_override()
-        previous_run = timeutils.isotime()
+        start_time = timeutils.isotime()
         timeutils.advance_time_seconds(30)
-        current_run = timeutils.isotime()
+        end_time = timeutils.isotime()
 
-        filter_args = {'next_run_after': previous_run,
-                       'next_run_before': current_run}
+        filter_args = {'next_run_after': start_time,
+                       'next_run_before': end_time}
         self.client.list_schedules(filter_args=filter_args).AndReturn([])
         self.mox.ReplayAll()
-        self.scheduler.get_schedules(previous_run, current_run)
+        self.scheduler.get_schedules(start_time, end_time)
         self.mox.VerifyAll()
 
     def test_get_schedules_no_previous_run(self):
-        current_run = timeutils.isotime()
+        end_time = timeutils.isotime()
 
-        epoch = timeutils.isotime(datetime.datetime(1970, 1, 1))
-        filter_args = {'next_run_after': epoch,
-                       'next_run_before': current_run}
+        filter_args = {'next_run_before': end_time}
         self.client.list_schedules(filter_args=filter_args).AndReturn([])
         self.mox.ReplayAll()
-        self.scheduler.get_schedules(current_run=current_run)
+        self.scheduler.get_schedules(end_time=end_time)
         self.mox.VerifyAll()

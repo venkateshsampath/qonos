@@ -193,6 +193,12 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['status'], 'queued')
         self.assertEqual(len(job['metadata']), 0)
 
+        schedule = db_api.schedule_get_by_id(self.schedule_1['id'])
+        self.assertNotEqual(schedule['next_run'], self.schedule_1['next_run'])
+        self.assertNotEqual(schedule['last_scheduled'],
+                            self.schedule_1.get('last_scheduled'))
+        self.assertTrue(schedule.get('last_scheduled'))
+
     def test_create_with_metadata(self):
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_2['id'],
