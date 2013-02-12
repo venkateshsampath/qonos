@@ -36,7 +36,7 @@ class Client(object):
 
     def _do_request(self, method, url, body=None):
         conn = httplib.HTTPConnection(self.endpoint, self.port)
-        if body:
+        if body and isinstance(body, dict):
             body = json.dumps(body)
         conn.request(method, url, body=body,
                      headers={'Content-Type': 'application/json'})

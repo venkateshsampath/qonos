@@ -3,18 +3,31 @@
 Qonos.
 
 Usage:
-    qonos [--host=<url>] [--port=<port>] <command> [<args>...]
+    qonos [options] <command> [<args>...]
     qonos [--help]
 
 The most commonly used qonos commands are:
+    get-schedule <schedule-id>
     list-schedules
+    create-schedule
+    delete-schedule
+
+    get-job <job-id>
     list-jobs
+    create-job <schedule-id>
+    delete-job
+
+    get-worker <worker-id>
     list-workers
+    create-worker
+    delete-worker
 
 Options:
     --version   Show version.
     --host=<url>      Api endpoint.
+    --port=<port>     Api port.
 """
+import inspect
 import os
 import sys
 
@@ -30,14 +43,27 @@ if os.path.exists(os.path.join(possible_topdir, 'qonos', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
 from docopt import docopt
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 from qonos.qonosclient import client
+
+
+def _get_kwargs(args):
+    kwarg_list = [arg for arg in args if arg.startswith("--")]
+    kwargs = {}
+    for kwarg in kwarg_list:
+        key, value = kwarg[2:].split("=")
+        kwargs[key] = value
+    return kwargs
 
 
 def do_command(args):
     host = args.get('--host') or os.environ.get('QONOS_HOST', 'http://localhost')
     port = args.get('--port') or os.environ.get('QONOS_PORT', 8080)
-    qonosclient = client.Client(host, port)
+    qonosclient = client.create_client(host, port)
 
     cmd = args['<command>']
     command = cmd.replace('-', '_')
@@ -49,7 +75,13 @@ def do_command(args):
         exit("%r is not a qonos command. See 'qonos help'." % cmd)
 
     #call cmd
-    function(*args['<args>'])
+    function_args = [arg for arg in args['<args>'] if not arg.startswith("--")]
+    function_kwargs = _get_kwargs(args['<args>'])
+    if function_args and function_args[0] == 'help':
+        print("This command has the following arguments:")
+        print(inspect.getargspec(function).args[1:])
+    else:
+        print json.dumps(function(*function_args, **function_kwargs), indent=4)
 
 
 if __name__ == '__main__':
