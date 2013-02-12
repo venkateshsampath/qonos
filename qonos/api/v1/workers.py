@@ -16,6 +16,7 @@
 
 import webob.exc
 
+from qonos.api import api
 from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
@@ -23,19 +24,7 @@ import qonos.db
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import wsgi
 
-# TODO(CONFIG): Move to config
-JOB_TYPES = {
-    'default':
-    {
-        'max_retry': 3,
-        'timeout_seconds': 60,
-    },
-    'snapshot':
-    {
-        'max_retry': 2,
-        'timeout_seconds': 30,
-    }
-}
+CONF = api.CONF
 
 
 class WorkersController(object):
@@ -102,9 +91,10 @@ class WorkersController(object):
         return {'job': job}
 
     def _job_get_max_retry(self, action):
-        if not action in JOB_TYPES:
-            action = 'default'
-        return JOB_TYPES[action]['max_retry']
+        group = 'action-' + action
+        if action not in CONF:
+            action = 'action-default'
+        return CONF.get(action).max_retry
 
 
 def create_resource():

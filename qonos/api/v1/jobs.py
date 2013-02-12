@@ -17,6 +17,7 @@
 import datetime
 import webob.exc
 
+from qonos.api import api
 from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
@@ -25,20 +26,7 @@ from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 
-
-# TODO(CONFIG): Move to config
-JOB_TYPES = {
-    'default':
-    {
-        'max_retry': 3,
-        'timeout_seconds': 60,
-    },
-    'snapshot':
-    {
-        'max_retry': 2,
-        'timeout_seconds': 30,
-    }
-}
+CONF = api.CONF
 
 
 class JobsController(object):
@@ -184,9 +172,10 @@ class JobsController(object):
         return values
 
     def _job_get_timeout(self, action):
-        if not action in JOB_TYPES:
-            action = 'default'
-        return JOB_TYPES[action]['timeout_seconds']
+        group = 'action-' + action
+        if action not in CONF:
+            action = 'action-default'
+        return CONF.get(action).timeout_seconds
 
 
 def create_resource():

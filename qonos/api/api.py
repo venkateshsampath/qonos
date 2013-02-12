@@ -26,10 +26,17 @@ LOG = logging.getLogger(__name__)
 api_opts = [
     cfg.BoolOpt('daemonized', default=False),
     cfg.IntOpt('port', default=8080),
+    cfg.MultiStrOpt('action_overrides', default=[]),
+]
+
+action_opts = [
+    cfg.IntOpt('max_retry', default=1),
+    cfg.IntOpt('timeout_seconds', default=60),
 ]
 
 CONF = cfg.CONF
 CONF.register_opts(api_opts, group='api')
+CONF.register_opts(action_opts, group='action-default')
 
 
 class API(object):
@@ -39,6 +46,9 @@ class API(object):
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos-api service'))
+        # This must be done after the 'well-known' config options are loaded
+        # so the list of action_overrides can be read
+        self.load_action_override_configs()
 
         if CONF.api.daemonized:
             import daemon
@@ -53,3 +63,12 @@ class API(object):
                 wsgi.run_server(self.app, CONF.api.port)
         else:
             wsgi.run_server(self.app, CONF.api.port)
+
+    def load_action_override_configs(self):
+        for action in CONF.api.action_overrides:
+            group = 'action-' + action
+            action_opts = [
+                cfg.IntOpt('max_retry', default=1),
+                cfg.IntOpt('timeout_seconds', default=60),
+                ]
+            CONF.register_opts(action_opts, group=group)
