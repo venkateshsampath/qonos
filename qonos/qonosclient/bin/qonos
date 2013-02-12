@@ -1,0 +1,59 @@
+#! /usr/bin/env python
+"""
+Qonos.
+
+Usage:
+    qonos [--host=<url>] [--port=<port>] <command> [<args>...]
+    qonos [--help]
+
+The most commonly used qonos commands are:
+    list-schedules
+    list-jobs
+    list-workers
+
+Options:
+    --version   Show version.
+    --host=<url>      Api endpoint.
+"""
+import os
+import sys
+
+#TODO(ameade): find better way to add to sys.path
+# If ../../../qonos/__init__.py exists, add ../../../../ to Python search path, so that
+# it will override what happens to be installed in /usr/(local/)lib/python...
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+                                   os.pardir,
+                                   os.pardir,
+                                   os.pardir,
+                                   os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'qonos', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from docopt import docopt
+
+from qonos.qonosclient import client
+
+
+def do_command(args):
+    host = args.get('--host') or os.environ.get('QONOS_HOST', 'http://localhost')
+    port = args.get('--port') or os.environ.get('QONOS_PORT', 8080)
+    qonosclient = client.Client(host, port)
+
+    cmd = args['<command>']
+    command = cmd.replace('-', '_')
+    if hasattr(qonosclient, command):
+        function = getattr(qonosclient, command)
+    elif cmd == 'help':
+        exit(__doc__)
+    else:
+        exit("%r is not a qonos command. See 'qonos help'." % cmd)
+
+    #call cmd
+    function(*args['<args>'])
+
+
+if __name__ == '__main__':
+    args = docopt(__doc__,
+                  version='Qonos 0.1',
+                  options_first=True)
+    do_command(args)
