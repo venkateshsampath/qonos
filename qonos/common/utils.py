@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+import logging as pylog
 
 from croniter.croniter import croniter
 
@@ -70,3 +71,13 @@ def get_pagination_limit(params):
         limit = min(CONF.api_limit_max, limit)
         params['limit'] = limit
         return params
+
+
+def get_qonos_open_file_log_handlers():
+    """Returns a list of all open file log handlers."""
+    open_files = []
+    for handler in pylog.getLogger('qonos').handlers:
+        if (hasattr(handler, 'stream') and
+                hasattr(handler.stream, 'fileno')):
+            open_files.append(handler.stream)
+    return open_files

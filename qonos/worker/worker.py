@@ -14,11 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging as pylog
 import signal
 import socket
 import time
 
+from qonos.common import utils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
@@ -49,7 +49,7 @@ CONF.register_opts(worker_opts, group='worker')
 
 
 class Worker(object):
-    def __init__(self, client_factory, product_name='qonos', processor=None):
+    def __init__(self, client_factory, processor=None):
         self.client = client_factory(CONF.worker.api_endpoint,
                                      CONF.worker.api_port)
         if not processor:
@@ -58,7 +58,6 @@ class Worker(object):
         self.processor = processor
         self.worker_id = None
         self.host = socket.gethostname()
-        self.product_name = product_name
 
     def run(self, run_once=False, poll_once=False):
         LOG.debug(_('Starting qonos worker service'))
@@ -69,11 +68,7 @@ class Worker(object):
         if CONF.worker.daemonized:
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
-            open_files = []
-            for handler in pylog.getLogger(self.product_name).handlers:
-                if (hasattr(handler, 'stream') and
-                        hasattr(handler.stream, 'fileno')):
-                    open_files.append(handler.stream)
+            open_files = utils.get_qonos_open_file_log_handlers()
             signal_map = self._signal_map()
             with daemon.DaemonContext(files_preserve=open_files,
                                       signal_map=signal_map):
