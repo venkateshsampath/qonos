@@ -23,6 +23,20 @@ import qonos.db
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import wsgi
 
+# TODO(CONFIG): Move to config
+JOB_TYPES = {
+    'default':
+    {
+        'max_retry': 3,
+        'timeout_seconds': 60,
+    },
+    'snapshot':
+    {
+        'max_retry': 2,
+        'timeout_seconds': 30,
+    }
+}
+
 
 class WorkersController(object):
 
@@ -78,12 +92,19 @@ class WorkersController(object):
             msg = _('Worker %s could not be found.') % worker_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-        job = self.db_api.job_get_and_assign_next_by_action(action,
-                                                            worker_id)
+        max_retry = self._job_get_max_retry(action)
+
+        job = self.db_api.job_get_and_assign_next_by_action(
+            action, worker_id, max_retry)
         if job:
             utils.serialize_datetimes(job)
             api_utils.serialize_job_metadata(job)
         return {'job': job}
+
+    def _job_get_max_retry(self, action):
+        if not action in JOB_TYPES:
+            action = 'default'
+        return JOB_TYPES[action]['max_retry']
 
 
 def create_resource():

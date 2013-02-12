@@ -18,7 +18,6 @@
 Defines interface for DB access
 """
 
-import datetime
 import functools
 import logging
 import time
@@ -53,20 +52,6 @@ db_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(db_opts)
-
-# TODO(CONFIG): Move to config
-JOB_TYPES = {
-    'default':
-    {
-        'max_retry': 3,
-        'timeout_seconds': 60,
-    },
-    'snapshot':
-    {
-        'max_retry': 2,
-        'timeout_seconds': 30,
-    }
-}
 
 
 def force_dict(func):
@@ -569,6 +554,7 @@ def worker_delete(worker_id):
 def job_create(job_values):
     db_utils.validate_job_values(job_values)
     values = job_values.copy()
+    LOG.debug("Values: %s" % str(values))
     session = get_session()
     job_ref = models.Job()
 
@@ -577,14 +563,6 @@ def job_create(job_values):
         _set_job_metadata(job_ref, metadata)
         del values['job_metadata']
 
-    now = timeutils.utcnow()
-
-    job_timeout_seconds = _job_get_timeout(values['action'])
-    if not 'timeout' in values:
-        values['timeout'] = now +\
-            datetime.timedelta(seconds=job_timeout_seconds)
-    values['hard_timeout'] = now +\
-        datetime.timedelta(seconds=job_timeout_seconds)
     job_ref.update(values)
     job_ref.save(session=session)
 
@@ -634,7 +612,7 @@ def job_status_get_by_id(job_id):
 
 
 @force_dict
-def job_get_and_assign_next_by_action(action, worker_id):
+def job_get_and_assign_next_by_action(action, worker_id, max_retry):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
@@ -642,7 +620,7 @@ def job_get_and_assign_next_by_action(action, worker_id):
     session = get_session()
     job_id = None
     try:
-        job_ref = _job_get_next_by_action(session, now, action)
+        job_ref = _job_get_next_by_action(session, now, action, max_retry)
 
         if job_ref is None:
             return None
@@ -657,8 +635,7 @@ def job_get_and_assign_next_by_action(action, worker_id):
     return _job_get_by_id(job_id)
 
 
-def _job_get_next_by_action(session, now, action):
-    max_retry = _job_get_max_retry(action)
+def _job_get_next_by_action(session, now, action, max_retry):
     job_ref = session.query(models.Job)\
         .options(sa_orm.subqueryload('job_metadata'))\
         .filter_by(action=action)\
@@ -670,18 +647,6 @@ def _job_get_next_by_action(session, now, action):
         .order_by(models.Job.created_at.asc())\
         .first()
     return job_ref
-
-
-def _job_get_max_retry(action):
-    if not action in JOB_TYPES:
-        action = 'default'
-    return JOB_TYPES[action]['max_retry']
-
-
-def _job_get_timeout(action):
-    if not action in JOB_TYPES:
-        action = 'default'
-    return JOB_TYPES[action]['timeout_seconds']
 
 
 def _jobs_cleanup_hard_timed_out():

@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import webob.exc
 
 from qonos.api.v1 import api_utils
@@ -23,6 +24,21 @@ import qonos.db
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
+
+
+# TODO(CONFIG): Move to config
+JOB_TYPES = {
+    'default':
+    {
+        'max_retry': 3,
+        'timeout_seconds': 60,
+    },
+    'snapshot':
+    {
+        'max_retry': 2,
+        'timeout_seconds': 30,
+    }
+}
 
 
 class JobsController(object):
@@ -85,6 +101,15 @@ class JobsController(object):
                     })
 
         values['job_metadata'] = job_metadata
+
+        now = timeutils.utcnow()
+
+        job_timeout_seconds = self._job_get_timeout(values['action'])
+        if not 'timeout' in values:
+            values['timeout'] = now +\
+                datetime.timedelta(seconds=job_timeout_seconds)
+        values['hard_timeout'] = now +\
+            datetime.timedelta(seconds=job_timeout_seconds)
 
         job = self.db_api.job_create(values)
         utils.serialize_datetimes(job)
@@ -157,6 +182,11 @@ class JobsController(object):
             values['message'] = None
 
         return values
+
+    def _job_get_timeout(self, action):
+        if not action in JOB_TYPES:
+            action = 'default'
+        return JOB_TYPES[action]['timeout_seconds']
 
 
 def create_resource():
