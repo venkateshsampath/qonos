@@ -32,7 +32,7 @@ class TestWorker(test_utils.BaseTestCase):
             return self.client
 
         self.processor = FakeProcessor()
-        self.worker = worker.Worker(client_factory, product_name='qonos',
+        self.worker = worker.Worker(client_factory,
                                     processor=self.processor)
 
     def tearDown(self):
