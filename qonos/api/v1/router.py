@@ -90,11 +90,6 @@ class API(wsgi.Router):
 
         mapper.connect('/jobs/{job_id}/status',
                        controller=jobs_resource,
-                       action='get_status',
-                       conditions=dict(method=['GET']))
-
-        mapper.connect('/jobs/{job_id}/status',
-                       controller=jobs_resource,
                        action='update_status',
                        conditions=dict(method=['PUT']))
 

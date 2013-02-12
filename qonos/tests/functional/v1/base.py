@@ -386,13 +386,9 @@ class TestApi(utils.BaseTestCase):
         self.assertMetadataInList(metadata, meta_fixture1)
         self.assertMetadataInList(metadata, new_meta)
 
-        # get status
-        status = self.client.get_job_status(job['id'])['status']
-        self.assertEqual(status, new_job['status'])
-
         # update status without timeout
         self.client.update_job_status(job['id'], 'processing')
-        status = self.client.get_job_status(job['id'])['status']
+        status = self.client.get_job(job['id'])['status']
         self.assertNotEqual(status, new_job['status'])
         self.assertEqual(status, 'PROCESSING')
 
@@ -409,7 +405,7 @@ class TestApi(utils.BaseTestCase):
         error_message = 'ermagerd! errer!'
         self.client.update_job_status(job['id'], 'error',
                                       error_message=error_message)
-        status = self.client.get_job_status(job['id'])['status']
+        status = self.client.get_job(job['id'])['status']
         self.assertNotEqual(status, new_job['status'])
         self.assertEqual(status, 'ERROR')
         job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])

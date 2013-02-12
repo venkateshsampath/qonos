@@ -248,18 +248,6 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPNotFound,
                           self.controller.delete, request, job_id)
 
-    def test_get_status(self):
-        request = unit_utils.get_fake_request(method='GET')
-        response = self.controller.get_status(request, self.job_1['id'])
-        status = response.get('status')
-        self.assertEqual(status, self.job_1['status'])
-
-    def test_get_status_not_found(self):
-        request = unit_utils.get_fake_request(method='GET')
-        job_id = str(uuid.uuid4())
-        self.assertRaises(webob.exc.HTTPNotFound,
-                          self.controller.get_status, request, job_id)
-
     def test_update_status(self):
         timeout = datetime.datetime(2012, 11, 16, 22, 0)
         request = unit_utils.get_fake_request(method='PUT')
