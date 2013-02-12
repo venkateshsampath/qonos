@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-"""
-Qonos.
+"""Qonos.
 
 Usage:
     qonos [options] <command> [<args>...]
@@ -9,17 +8,17 @@ Usage:
 The most commonly used qonos commands are:
     get-schedule <schedule-id>
     list-schedules
-    create-schedule
+    create-schedule <request-body>
     delete-schedule
 
     get-job <job-id>
     list-jobs
-    create-job <schedule-id>
+    create-job <request-body>
     delete-job
 
     get-worker <worker-id>
     list-workers
-    create-worker
+    create-worker <request-body>
     delete-worker
 
 Options:
@@ -27,6 +26,16 @@ Options:
     --host=<url>      Api endpoint.
     --port=<port>     Api port.
 """
+
+"""
+This script is meant to be a *very* lightweight cli interface into the
+qonosclient and should not have deep working knowledge of the system.
+
+It works by calling the function of the client with the same name as <command> and
+passing all arguments giving as arguments and options following the command as
+kwargs to the function.
+"""
+
 import inspect
 import os
 import sys
@@ -52,6 +61,7 @@ from qonos.qonosclient import client
 
 
 def _get_kwargs(args):
+    """Parse the keyword arguments out of the command options."""
     kwarg_list = [arg for arg in args if arg.startswith("--")]
     kwargs = {}
     for kwarg in kwarg_list:
@@ -65,6 +75,8 @@ def do_command(args):
     port = args.get('--port') or os.environ.get('QONOS_PORT', 8080)
     qonosclient = client.create_client(host, port)
 
+
+    #Find the function to call
     cmd = args['<command>']
     command = cmd.replace('-', '_')
     if hasattr(qonosclient, command):
@@ -74,14 +86,15 @@ def do_command(args):
     else:
         exit("%r is not a qonos command. See 'qonos help'." % cmd)
 
-    #call cmd
+    #call the function
     function_args = [arg for arg in args['<args>'] if not arg.startswith("--")]
     function_kwargs = _get_kwargs(args['<args>'])
     if function_args and function_args[0] == 'help':
         print("This command has the following arguments:")
         print(inspect.getargspec(function).args[1:])
     else:
-        print json.dumps(function(*function_args, **function_kwargs), indent=4)
+        results = function(*function_args, **function_kwargs)
+        print json.dumps(results, indent=4)
 
 
 if __name__ == '__main__':
