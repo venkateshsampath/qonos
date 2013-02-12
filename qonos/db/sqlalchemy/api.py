@@ -804,21 +804,6 @@ def job_meta_get_all_by_job_id(job_id):
 
 
 @force_dict
-def job_meta_get(job_id, key):
-    return _job_meta_get(job_id, key)
-
-
-@force_dict
-def job_meta_update(job_id, key, values):
-    _job_get_by_id(job_id)
-    session = get_session()
-    meta_ref = _job_meta_get(job_id, key)
-    meta_ref.update(values)
-    meta_ref.save(session=session)
-    return meta_ref
-
-
-@force_dict
 def job_metadata_update(job_id, values):
     session = get_session()
     job = _job_get_by_id(job_id, session)
@@ -827,13 +812,6 @@ def job_metadata_update(job_id, values):
     job.save(session=session)
 
     return job_meta_get_all_by_job_id(job_id)
-
-
-def job_meta_delete(job_id, key):
-    job_get_by_id(job_id)
-    session = get_session()
-    meta_ref = _job_meta_get(job_id, key)
-    meta_ref.delete(session=session)
 
 
 ##################### Job fault methods

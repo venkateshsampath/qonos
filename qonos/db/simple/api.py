@@ -544,24 +544,6 @@ def job_meta_get_all_by_job_id(job_id):
     return copy.deepcopy(DATA['job_metadata'][job_id].values())
 
 
-def job_meta_get(job_id, key):
-    _check_job_exists(job_id)
-    _check_job_meta_exists(job_id, key)
-    return DATA['job_metadata'][job_id][key]
-
-
-def job_meta_update(job_id, key, values):
-    global DATA
-    _check_job_meta_exists(job_id, key)
-
-    meta = DATA['job_metadata'][job_id][key]
-    meta.update(values)
-    meta['updated_at'] = timeutils.utcnow()
-    DATA['job_metadata'][job_id][key] = meta
-
-    return copy.deepcopy(meta)
-
-
 def job_metadata_update(job_id, values):
     global DATA
     _check_job_exists(job_id)
@@ -571,12 +553,6 @@ def job_metadata_update(job_id, values):
         job_meta_create(job_id, metadatum)
 
     return copy.deepcopy(DATA['job_metadata'][job_id].values())
-
-
-def job_meta_delete(job_id, key):
-    _check_job_meta_exists(job_id, key)
-
-    del DATA['job_metadata'][job_id][key]
 
 
 def _job_faults_get_sorted():
