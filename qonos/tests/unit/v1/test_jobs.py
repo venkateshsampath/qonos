@@ -193,6 +193,12 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['status'], 'queued')
         self.assertEqual(len(job['metadata']), 0)
 
+        schedule = db_api.schedule_get_by_id(self.schedule_1['id'])
+        self.assertNotEqual(schedule['next_run'], self.schedule_1['next_run'])
+        self.assertNotEqual(schedule['last_scheduled'],
+                            self.schedule_1.get('last_scheduled'))
+        self.assertTrue(schedule.get('last_scheduled'))
+
     def test_create_with_metadata(self):
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_2['id'],
@@ -248,18 +254,6 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPNotFound,
                           self.controller.delete, request, job_id)
 
-    def test_get_status(self):
-        request = unit_utils.get_fake_request(method='GET')
-        response = self.controller.get_status(request, self.job_1['id'])
-        status = response.get('status')
-        self.assertEqual(status, self.job_1['status'])
-
-    def test_get_status_not_found(self):
-        request = unit_utils.get_fake_request(method='GET')
-        job_id = str(uuid.uuid4())
-        self.assertRaises(webob.exc.HTTPNotFound,
-                          self.controller.get_status, request, job_id)
-
     def test_update_status(self):
         timeout = datetime.datetime(2012, 11, 16, 22, 0)
         request = unit_utils.get_fake_request(method='PUT')
@@ -269,19 +263,21 @@ class TestJobsApi(test_utils.BaseTestCase):
                 'timeout': str(timeout)
                 }
                 }
-        self.controller.update_status(request, self.job_1['id'], body)
-        job = db_api.job_get_by_id(self.job_1['id'])
-        actual_status = job['status']
-        actual_timeout = job['timeout']
+        job_status = self.controller.update_status(request,
+                                                   self.job_1['id'],
+                                                   body)['status']
+        actual_status = job_status['status']
+        actual_timeout = job_status['timeout']
         self.assertEqual(actual_status, body['status']['status'])
         self.assertEqual(actual_timeout, timeout)
 
     def test_update_status_without_timeout(self):
         request = unit_utils.get_fake_request(method='PUT')
         body = {'status': {'status': 'DONE'}}
-        self.controller.update_status(request, self.job_1['id'], body)
-        actual = db_api.job_get_by_id(self.job_1['id'])['status']
-        self.assertEqual(actual, body['status']['status'])
+        actual = self.controller.update_status(request,
+                                               self.job_1['id'],
+                                               body)['status']
+        self.assertEqual(actual['status'], body['status']['status'])
 
     def test_update_status_uppercases_status(self):
         request = unit_utils.get_fake_request(method='PUT')

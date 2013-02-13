@@ -14,6 +14,9 @@ argparse
 iso8601>=0.1.4
 croniter
 
+#Client only reqs
+docopt==0.6.1
+
 # For snapshot worker to contact Nova
 httplib2
 python-novaclient==2.10.0

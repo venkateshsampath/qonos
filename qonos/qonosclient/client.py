@@ -37,7 +37,7 @@ class Client(object):
 
     def _do_request(self, method, url, body=None):
         conn = httplib.HTTPConnection(self.endpoint, self.port)
-        if body:
+        if body and isinstance(body, dict):
             body = json.dumps(body)
         conn.request(method, url, body=body,
                      headers={'Content-Type': 'application/json'})
@@ -133,10 +133,6 @@ class Client(object):
         path = '/v1/jobs/%s' % job_id
         return self._do_request('GET', path)['job']
 
-    def get_job_status(self, job_id):
-        path = '/v1/jobs/%s/status' % job_id
-        return self._do_request('GET', path)
-
     def update_job_status(self, job_id, status, timeout=None,
                           error_message=None):
         body = {'status': {'status': status}}
@@ -148,19 +144,20 @@ class Client(object):
             utils.serialize_datetimes(body)
 
         path = '/v1/jobs/%s/status' % job_id
-        return self._do_request('PUT', path, body)
+        return self._do_request('PUT', path, body)['status']
 
     def delete_job(self, job_id):
         path = '/v1/jobs/%s' % job_id
         return self._do_request('DELETE', path)
 
     def list_job_metadata(self, job_id):
-        path = '/v1/jobs/%s/meta' % job_id
+        path = '/v1/jobs/%s/metadata' % job_id
         return self._do_request('GET', path)['metadata']
 
-    def get_job_metadata(self, job_id, key):
-        path = '/v1/jobs/%s/meta/%s' % (job_id, key)
-        return self._do_request('GET', path)['meta'][key]
+    def update_job_metadata(self, job_id, values):
+        meta = {'metadata': values}
+        path = '/v1/jobs/%s/metadata' % job_id
+        return self._do_request('PUT', path, meta)['metadata']
 
 
 def create_client(endpoint, port):

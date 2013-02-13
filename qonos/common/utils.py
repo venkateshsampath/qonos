@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+import logging as pylog
 
 from croniter.croniter import croniter
 
@@ -40,14 +41,15 @@ def serialize_datetimes(data):
 
 
 def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
-                                 month="*", day_of_week="*"):
+                                 month="*", day_of_week="*", start_time=None):
+    start_time = start_time or timeutils.utcnow()
     cron_string = ("%s %s %s %s %s" %
                   (minute or '*',
                    hour or '*',
                    day_of_month or '*',
                    month or '*',
                    day_of_week or '*'))
-    iter = croniter(cron_string, timeutils.utcnow())
+    iter = croniter(cron_string, start_time)
     return iter.get_next(datetime.datetime)
 
 
@@ -69,3 +71,13 @@ def get_pagination_limit(params):
         limit = min(CONF.api_limit_max, limit)
         params['limit'] = limit
         return params
+
+
+def get_qonos_open_file_log_handlers():
+    """Returns a list of all open file log handlers."""
+    open_files = []
+    for handler in pylog.getLogger('qonos').handlers:
+        if (hasattr(handler, 'stream') and
+                hasattr(handler.stream, 'fileno')):
+            open_files.append(handler.stream)
+    return open_files

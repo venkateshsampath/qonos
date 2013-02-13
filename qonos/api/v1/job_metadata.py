@@ -31,13 +31,14 @@ class JobMetadataController(object):
         metadata = self.db_api.job_meta_get_all_by_job_id(job_id)
         return {'metadata': api_utils.serialize_metadata(metadata)}
 
-    def get(self, request, job_id, key):
+    def update(self, request, job_id, body):
+        metadata = body['metadata']
+        new_meta = api_utils.deserialize_metadata(metadata)
         try:
-            meta = self.db_api.job_meta_get(job_id, key)
+            updated_meta = self.db_api.job_metadata_update(job_id, new_meta)
         except exception.NotFound, e:
             raise webob.exc.HTTPNotFound(explanation=e)
-
-        return {'meta': api_utils.serialize_meta(meta)}
+        return {'metadata': api_utils.serialize_metadata(updated_meta)}
 
 
 def create_resource():

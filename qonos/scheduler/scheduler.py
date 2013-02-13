@@ -14,10 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
-import logging as pylog
 import time
 
+from qonos.common import utils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
@@ -38,10 +37,9 @@ CONF.register_opts(scheduler_opts, group='scheduler')
 
 
 class Scheduler(object):
-    def __init__(self, client_factory, product_name='qonos'):
+    def __init__(self, client_factory):
         self.client = client_factory(CONF.scheduler.api_endpoint,
                                      CONF.scheduler.api_port)
-        self.product_name = product_name
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
@@ -49,11 +47,7 @@ class Scheduler(object):
         if CONF.scheduler.daemonized:
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
-            open_files = []
-            for handler in pylog.getLogger(self.product_name).handlers:
-                if (hasattr(handler, 'stream') and
-                        hasattr(handler.stream, 'fileno')):
-                    open_files.append(handler.stream)
+            open_files = utils.get_qonos_open_file_log_handlers()
             with daemon.DaemonContext(files_preserve=open_files):
                 self._run_loop(run_once)
         else:
@@ -64,12 +58,11 @@ class Scheduler(object):
         current_run = None
 
         while True:
-            prev_run = current_run
             current_run = timeutils.isotime()
             next_run = time.time() + CONF.scheduler.job_schedule_interval
 
             # do work
-            self.enqueue_jobs(prev_run, current_run)
+            self.enqueue_jobs(end_time=current_run)
 
             # do nothing until next run
             seconds = next_run - time.time()
@@ -81,18 +74,17 @@ class Scheduler(object):
             if run_once:
                 break
 
-    def enqueue_jobs(self, previous_run=None, current_run=None):
+    def enqueue_jobs(self, start_time=None, end_time=None):
         LOG.debug(_('Creating new jobs'))
-        schedules = self.get_schedules(previous_run, current_run)
+        schedules = self.get_schedules(start_time, end_time)
         for schedule in schedules:
             self.client.create_job(schedule['id'])
 
-    def get_schedules(self, previous_run=None, current_run=None):
-        filter_args = {'next_run_before': current_run}
+    def get_schedules(self, start_time=None, end_time=None):
+        filter_args = {'next_run_before': end_time}
 
-        # TODO(ameade): change api to not require both query params
-        year_one = timeutils.isotime(datetime.datetime(1970, 1, 1))
-        filter_args['next_run_after'] = previous_run or year_one
+        if start_time:
+            filter_args['next_run_after'] = start_time
 
         schedules = self.client.list_schedules(filter_args=filter_args)
 

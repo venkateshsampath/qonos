@@ -146,7 +146,8 @@ class JobMetadata(BASE, ModelBase):
     key = Column(String(255), nullable=False)
     value = Column(Text, nullable=False)
     parent = relationship(Job, backref=backref('job_metadata',
-                                               cascade='all,delete'))
+                                               cascade='all,delete,'
+                                                       'delete-orphan'))
 
 
 class JobFault(BASE, ModelBase):

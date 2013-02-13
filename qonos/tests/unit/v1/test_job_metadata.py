@@ -56,20 +56,25 @@ class TestJobMetadataApi(test_utils.BaseTestCase):
         self.assertMetaInList(metadata['metadata'],
                               {self.meta_2['key']: self.meta_2['value']})
 
-    def test_get_meta(self):
-        request = unit_utils.get_fake_request(method='GET')
-        meta = self.controller.get(request, self.job_1['id'], 'key1')
-        self.assertEqual(1, len(meta['meta']))
-        self.assertTrue('key1' in meta['meta'])
-        self.assertEqual(meta['meta']['key1'], self.meta_1['value'])
+    def test_update_metadata(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        expected = {'metadata': {'key1': 'value1'}}
+        actual = self.controller.update(request, self.job_1['id'],
+                                        expected)
 
-    def test_get_meta_schedule_not_found(self):
-        request = unit_utils.get_fake_request(method='GET')
-        schedule_id = uuid.uuid4()
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
-                          request, schedule_id, 'key1')
+        self.assertEqual(expected, actual)
 
-    def test_get_meta_key_not_found(self):
-        request = unit_utils.get_fake_request(method='GET')
-        self.assertRaises(webob.exc.HTTPNotFound, self.controller.get,
-                          request, self.job_1['id'], 'key3')
+    def test_update_metadata_empty(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        expected = {'metadata': {}}
+        actual = self.controller.update(request, self.job_1['id'],
+                                        expected)
+
+        self.assertEqual(expected, actual)
+
+    def test_update_meta_job_not_found(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        job_id = uuid.uuid4()
+        fixture = {'metadata': {'key1': 'value1'}}
+        self.assertRaises(webob.exc.HTTPNotFound, self.controller.update,
+                          request, job_id, fixture)

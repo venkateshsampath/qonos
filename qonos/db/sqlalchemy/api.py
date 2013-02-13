@@ -607,8 +607,8 @@ def job_get_all(params={}):
     return query.all()
 
 
-def _job_get_by_id(job_id):
-    session = get_session()
+def _job_get_by_id(job_id, session=None):
+    session = session or get_session()
     try:
         job = session.query(models.Job)\
                      .options(sa_orm.subqueryload('job_metadata'))\
@@ -627,10 +627,6 @@ def job_get_by_id(job_id):
 
 def job_updated_at_get_by_id(job_id):
     return _job_get_by_id(job_id)['updated_at']
-
-
-def job_status_get_by_id(job_id):
-    return _job_get_by_id(job_id)['status']
 
 
 @force_dict
@@ -702,19 +698,35 @@ def job_update(job_id, job_values):
     # without affecting the caller
     values = job_values.copy()
     session = get_session()
-    job_ref = _job_get_by_id(job_id)
+    job_ref = _job_get_by_id(job_id, session)
 
     if 'job_metadata' in values:
-        for metadata_ref in job_ref.job_metadata:
-            job_ref.job_metadata.remove(metadata_ref)
-
-        metadata = values['job_metadata']
-        _set_job_metadata(job_ref, metadata)
-        del values['job_metadata']
+        metadata = values.pop('job_metadata')
+        _job_metadata_update_in_place(job_ref, metadata)
 
     job_ref.update(values)
     job_ref.save(session=session)
     return _job_get_by_id(job_id)
+
+
+def _job_metadata_update_in_place(job, metadata):
+    new_meta = {meta['key']: meta['value'] for meta in metadata}
+    to_delete = []
+    for meta in job.job_metadata:
+        if not meta['key'] in new_meta:
+            to_delete.append(meta)
+        else:
+            meta['value'] = new_meta[meta['key']]
+            del new_meta[meta['key']]
+
+    for key, value in new_meta.iteritems():
+        meta_ref = models.JobMetadata()
+        meta_ref.key = key
+        meta_ref.value = value
+        job.job_metadata.append(meta_ref)
+
+    for meta in to_delete:
+        job['job_metadata'].remove(meta)
 
 
 def job_delete(job_id):
@@ -788,25 +800,14 @@ def job_meta_get_all_by_job_id(job_id):
 
 
 @force_dict
-def job_meta_get(job_id, key):
-    return _job_meta_get(job_id, key)
-
-
-@force_dict
-def job_meta_update(job_id, key, values):
-    _job_get_by_id(job_id)
+def job_metadata_update(job_id, values):
     session = get_session()
-    meta_ref = _job_meta_get(job_id, key)
-    meta_ref.update(values)
-    meta_ref.save(session=session)
-    return meta_ref
+    job = _job_get_by_id(job_id, session)
+    _job_metadata_update_in_place(job, values)
 
+    job.save(session=session)
 
-def job_meta_delete(job_id, key):
-    job_get_by_id(job_id)
-    session = get_session()
-    meta_ref = _job_meta_get(job_id, key)
-    meta_ref.delete(session=session)
+    return job_meta_get_all_by_job_id(job_id)
 
 
 ##################### Job fault methods
