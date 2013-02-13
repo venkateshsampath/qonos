@@ -112,26 +112,15 @@ def schedule_get_all(filter_args={}):
 
     schedules_mutate = copy.deepcopy(schedules)
 
-    if 'next_run_after' in filter_args and 'next_run_before' in filter_args:
+    if 'next_run_before' in filter_args:
         for schedule in schedules:
-            if not((schedule['next_run'] > filter_args['next_run_after'] and
-                    schedule['next_run'] < filter_args['next_run_before']) or
-                    schedule['next_run'] == filter_args['next_run_after']):
+            if not schedule['next_run'] <= filter_args['next_run_before']:
                 if schedule in schedules_mutate:
                     del schedules_mutate[schedules_mutate.index(schedule)]
 
-    if ('next_run_after' not in filter_args and
-        'next_run_before' in filter_args):
+    if 'next_run_after' in filter_args:
         for schedule in schedules:
-            if not (schedule['next_run'] < filter_args['next_run_before']):
-                if schedule in schedules_mutate:
-                    del schedules_mutate[schedules_mutate.index(schedule)]
-
-    if ('next_run_after' in filter_args and
-        'next_run_before' not in filter_args):
-        for schedule in schedules:
-            if not(schedule['next_run'] > filter_args['next_run_after'] or
-                   schedule['next_run'] == filter_args['next_run_after']):
+            if not schedule['next_run'] >= filter_args['next_run_after']:
                 if schedule in schedules_mutate:
                     del schedules_mutate[schedules_mutate.index(schedule)]
 

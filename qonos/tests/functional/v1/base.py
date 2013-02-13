@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 from operator import itemgetter
 import random
 
 from qonos.common import config
+from qonos.common import timeutils
 import qonos.db
 from qonos.openstack.common import cfg
 from qonos.openstack.common import wsgi
@@ -191,8 +193,10 @@ class TestApi(utils.BaseTestCase):
         schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
-        filter['next_run_after'] = '2010-11-30T15:23:00Z'
-        filter['next_run_before'] = '2011-11-30T15:23:00Z'
+        filter['next_run_after'] = schedule['next_run']
+        filter['next_run_before'] = timeutils.isotime(
+            timeutils.parse_isotime(schedule['next_run'])
+            - datetime.timedelta(seconds=1))
         schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 0)
 
@@ -200,7 +204,8 @@ class TestApi(utils.BaseTestCase):
         filter = {}
         filter['next_run_before'] = schedule['next_run']
         schedules = self.client.list_schedules(filter_args=filter)
-        self.assertEqual(len(schedules), 0)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
 
         #list schedules, next_run_after filter
         filter = {}
