@@ -16,6 +16,7 @@
 
 import httplib
 
+from qonos.common import utils
 from qonos.openstack.common import log as logging
 
 try:
@@ -139,10 +140,12 @@ class Client(object):
     def update_job_status(self, job_id, status, timeout=None,
                           error_message=None):
         body = {'status': {'status': status}}
-        if timeout:
-            body['status']['timeout'] = timeout
+
         if status.upper() == 'ERROR' and error_message:
             body['status']['error_message'] = error_message
+        if timeout:
+            body['status']['timeout'] = timeout
+            utils.serialize_datetimes(body)
 
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('PUT', path, body)

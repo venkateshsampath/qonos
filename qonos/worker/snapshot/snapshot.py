@@ -17,6 +17,7 @@
 import datetime
 from operator import itemgetter
 import time
+import uuid
 
 from novaclient.v1_1 import client
 from qonos.openstack.common import cfg
@@ -79,18 +80,19 @@ class SnapshotProcessor(worker.JobProcessor):
         self.current_job = job
 
         job_id = job['id']
-        self.update_job(job_id, 'PROCESSING')
-        self.next_timeout = job['timeout']
+        now = self._get_utcnow()
+        self.next_timeout = now + self.timeout_increment
+        self.update_job(job_id, 'PROCESSING', timeout=self.next_timeout)
         self.next_update = self._get_utcnow() + self.update_interval
 
         nova_client = self._get_nova_client()
-
         instance_id = self._get_instance_id(job)
         metadata = {
             "org.openstack__1__created-by": "scheduled_images_service"
             }
         image_id = nova_client.servers.create_image(
             instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
+
         LOG.debug("Created image: %s" % image_id)
 
         image_status = None
@@ -205,14 +207,14 @@ class SnapshotProcessor(worker.JobProcessor):
         password = CONF.snapshot_worker.nova_admin_password
         debug = CONF.snapshot_worker.http_log_debug
 
-        tenant_id = job['tenant_id']
+        tenant_id = self.current_job['tenant_id']
 
         nova_client = client.Client(user,
                                     password,
                                     project_id=tenant_id,
                                     auth_url=auth_url,
                                     insecure=False,
-                                    http_log_debug=debug)
+                                    http_log_debug=False)
         return nova_client
 
     def _job_succeeded(self, job_id):
