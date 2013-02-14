@@ -14,8 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import webob.exc
 
+from qonos.api import api
 from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
@@ -24,6 +26,9 @@ from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
+
+
+CONF = api.CONF
 
 
 class JobsController(object):
@@ -86,6 +91,15 @@ class JobsController(object):
                     })
 
         values['job_metadata'] = job_metadata
+
+        now = timeutils.utcnow()
+
+        job_timeout_seconds = self._job_get_timeout(values['action'])
+        if not 'timeout' in values:
+            values['timeout'] = now +\
+                datetime.timedelta(seconds=job_timeout_seconds)
+        values['hard_timeout'] = now +\
+            datetime.timedelta(seconds=job_timeout_seconds)
 
         job = self.db_api.job_create(values)
         utils.serialize_datetimes(job)
@@ -150,6 +164,12 @@ class JobsController(object):
             values['message'] = None
 
         return values
+
+    def _job_get_timeout(self, action):
+        group = 'action_' + action
+        if group not in CONF:
+            group = 'action_default'
+        return CONF.get(group).timeout_seconds
 
 
 def create_resource():

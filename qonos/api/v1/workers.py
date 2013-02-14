@@ -16,12 +16,16 @@
 
 import webob.exc
 
+from qonos.api import api
 from qonos.api.v1 import api_utils
 from qonos.common import exception
 from qonos.common import utils
 import qonos.db
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import wsgi
+
+
+CONF = api.CONF
 
 
 class WorkersController(object):
@@ -78,12 +82,20 @@ class WorkersController(object):
             msg = _('Worker %s could not be found.') % worker_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-        job = self.db_api.job_get_and_assign_next_by_action(action,
-                                                            worker_id)
+        max_retry = self._job_get_max_retry(action)
+
+        job = self.db_api.job_get_and_assign_next_by_action(
+            action, worker_id, max_retry)
         if job:
             utils.serialize_datetimes(job)
             api_utils.serialize_job_metadata(job)
         return {'job': job}
+
+    def _job_get_max_retry(self, action):
+        group = 'action_' + action
+        if group not in CONF:
+            group = 'action_default'
+        return CONF.get(group).max_retry
 
 
 def create_resource():

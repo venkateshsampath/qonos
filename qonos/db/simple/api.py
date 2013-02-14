@@ -36,21 +36,6 @@ DATA = {
 }
 
 
-# TODO(CONFIG): Move to config
-JOB_TYPES = {
-    'default':
-    {
-        'max_retry': 3,
-        'timeout_seconds': 60,
-    },
-    'snapshot':
-    {
-        'max_retry': 2,
-        'timeout_seconds': 30,
-    }
-}
-
-
 def configure_db():
     pass
 
@@ -342,14 +327,6 @@ def job_create(job_values):
         values['retry_count'] = 0
     job['worker_id'] = None
 
-    now = timeutils.utcnow()
-
-    job_timeout_seconds = _job_get_timeout(values['action'])
-    if not 'timeout' in values:
-        values['timeout'] = now +\
-            datetime.timedelta(seconds=job_timeout_seconds)
-    values['hard_timeout'] = now +\
-        datetime.timedelta(seconds=job_timeout_seconds)
     job.update(values)
     item_id = values.get('id')
     job.update(_gen_base_attributes(item_id=item_id))
@@ -393,14 +370,13 @@ def job_updated_at_get_by_id(job_id):
     return job['updated_at']
 
 
-def job_get_and_assign_next_by_action(action, worker_id):
+def job_get_and_assign_next_by_action(action, worker_id, max_retry):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
     job_ref = None
     now = timeutils.utcnow()
     jobs = _jobs_get_sorted()
-    max_retry = _job_get_max_retry(action)
     for job in jobs:
         if job['action'] == action and \
                 job['retry_count'] < max_retry and \
@@ -429,18 +405,6 @@ def _jobs_get_sorted():
 
     sorted_jobs = sorted(sorted_jobs, key=operator.itemgetter('created_at'))
     return sorted_jobs
-
-
-def _job_get_max_retry(action):
-    if not action in JOB_TYPES:
-        action = 'default'
-    return JOB_TYPES[action]['max_retry']
-
-
-def _job_get_timeout(action):
-    if not action in JOB_TYPES:
-        action = 'default'
-    return JOB_TYPES[action]['timeout_seconds']
 
 
 def _jobs_cleanup_hard_timed_out():
