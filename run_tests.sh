@@ -74,7 +74,7 @@ function run_pep8 {
   srcfiles+=" setup.py"
 
   # Until all these issues get fixed, ignore.
-  ignore='--ignore=E12,E711,E721,E712,H302,H403,H404'
+  ignore='--ignore=E125,E126,E12,E711,E721,E712,H302,H403,H404'
 
   echo "Running hacking.py self test"
   ${wrapper} python tools/hacking.py --doctest
