@@ -43,12 +43,9 @@ JOB = {
         'retry_count': 3,
         'timeout': TIMEOUT,
         'hard_timeout': HARD_TIMEOUT,
-        'job_metadata': [
-            {
-                'key': 'instance_id',
-                'value': INSTANCE_ID,
+        'metadata': {
+            'instance_id': INSTANCE_ID,
             },
-        ],
     }
 }
 

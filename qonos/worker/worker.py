@@ -125,7 +125,7 @@ class Worker(object):
 
     def update_job(self, job_id, status, timeout=None, error_message=None):
         msg = (_("Worker: [%(worker_id)s] updating "
-               "job [%(job_id)d] Status: %(status)s") %
+               "job [%(job_id)s] Status: %(status)s") %
                 {'worker_id': self.worker_id,
                  'job_id': job_id,
                  'status': status})
@@ -137,8 +137,7 @@ class Worker(object):
             msg += _("Error message: %s") % error_message
 
         LOG.debug(msg)
-        #TODO(WORKER) Pass error message when available in client
-        self.client.update_job_status(job_id, status, timeout)
+        self.client.update_job_status(job_id, status, timeout, error_message)
 
 
 class JobProcessor(object):

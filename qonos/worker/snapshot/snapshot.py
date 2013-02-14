@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+from operator import attrgetter
 import time
 
 from novaclient.v1_1 import client
@@ -23,6 +24,7 @@ from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 import qonos.openstack.common.timeutils as timeutils
 from qonos.worker import worker
+
 
 LOG = logging.getLogger(__name__)
 
@@ -78,15 +80,19 @@ class SnapshotProcessor(worker.JobProcessor):
         self.current_job = job
 
         job_id = job['id']
-        self.update_job(job_id, 'PROCESSING')
-        self.next_timeout = job['timeout']
+        now = self._get_utcnow()
+        self.next_timeout = now + self.timeout_increment
+        self.update_job(job_id, 'PROCESSING', timeout=self.next_timeout)
         self.next_update = self._get_utcnow() + self.update_interval
 
         nova_client = self._get_nova_client()
-
         instance_id = self._get_instance_id(job)
+        metadata = {
+            "org.openstack__1__created-by": "scheduled_images_service"
+            }
         image_id = nova_client.servers.create_image(
-            instance_id, ('Daily-' + str(self._get_utcnow())))
+            instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
+
         LOG.debug("Created image: %s" % image_id)
 
         image_status = None
@@ -96,7 +102,6 @@ class SnapshotProcessor(worker.JobProcessor):
         status = None
         while retry and not active:
             status = self._get_image_status(nova_client, image_id)
-            LOG.debug("Status: %s" % status)
             if self._is_error_status(status):
                 break
 
@@ -106,10 +111,14 @@ class SnapshotProcessor(worker.JobProcessor):
             else:
                 retry = self._try_update(job_id, status['job_status'])
 
-            time.sleep(self.image_poll_interval)
+            if not active:
+                time.sleep(self.image_poll_interval)
 
         if (not active) and (not retry):
             self._job_timed_out(job_id)
+
+        if active:
+            self._process_retention(nova_client, instance_id)
 
         LOG.debug("Snapshot complete")
 
@@ -120,6 +129,47 @@ class SnapshotProcessor(worker.JobProcessor):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def _process_retention(self, nova_client, instance_id):
+        LOG.debug(_("Processing retention."))
+        retention = self._get_retention(nova_client, instance_id)
+
+        if retention > 0:
+            scheduled_images = self._find_scheduled_images_for_server(
+                nova_client, instance_id)
+
+            if len(scheduled_images) > retention:
+                to_delete = scheduled_images[retention:]
+                LOG.warn(_('Removing %(remove)d images for a retention '
+                           'of %(retention)d') % {'remove': len(to_delete),
+                                                 'retention': retention})
+                for image in to_delete:
+                    image_id = image.id
+                    nova_client.images.delete(image_id)
+                    LOG.warn(_('Removed image %s') % image_id)
+
+    def _get_retention(self, nova_client, instance_id):
+        server = nova_client.servers.get(instance_id)
+        ret_str = server.metadata.get("org.openstack__1__retention")
+        retention = int(ret_str or 0)
+
+        return retention
+
+    def _find_scheduled_images_for_server(self, nova_client, instance_id):
+        images = nova_client.images.list(detailed=True)
+        scheduled_images = []
+        for image in images:
+            metadata = image.metadata
+            if (metadata.get("org.openstack__1__created_by")
+                == "scheduled_images_service" and
+                metadata.get("instance_uuid") == instance_id):
+                scheduled_images.append(image)
+
+        scheduled_images = sorted(scheduled_images,
+                                  key=attrgetter('created'),
+                                  reverse=True)
+
+        return scheduled_images
 
     def _is_error_status(self, status):
         job_status = status['job_status']
@@ -160,14 +210,14 @@ class SnapshotProcessor(worker.JobProcessor):
         password = CONF.snapshot_worker.nova_admin_password
         debug = CONF.snapshot_worker.http_log_debug
 
-        tenant_id = job['tenant_id']
+        tenant_id = self.current_job['tenant_id']
 
         nova_client = client.Client(user,
                                     password,
                                     project_id=tenant_id,
                                     auth_url=auth_url,
                                     insecure=False,
-                                    http_log_debug=debug)
+                                    http_log_debug=False)
         return nova_client
 
     def _job_succeeded(self, job_id):
@@ -181,7 +231,6 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def _try_update(self, job_id, status):
         now = self._get_utcnow()
-        LOG.debug("Now: %s  Timeout: %s" % (str(now), str(self.next_timeout)))
         # Time for a timeout update?
         if now >= self.next_timeout:
             # Out of timeouts?
@@ -200,11 +249,8 @@ class SnapshotProcessor(worker.JobProcessor):
         return True
 
     def _get_instance_id(self, job):
-        metadata = job['job_metadata']
-        for meta in metadata:
-            if meta['key'] == 'instance_id':
-                return meta['value']
-        return None
+        metadata = job['metadata']
+        return metadata.get('instance_id')
 
     # Seam for testing
     def _get_utcnow(self):
