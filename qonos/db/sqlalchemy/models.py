@@ -128,7 +128,7 @@ class Job(BASE, ModelBase):
     __tablename__ = 'jobs'
 
     schedule_id = Column(String(36))
-    tenant = Column(String(36), nullable=False)
+    tenant = Column(String(255), nullable=False)
     worker_id = Column(String(36), nullable=True)
     status = Column(String(255), nullable=True)
     action = Column(String(255), nullable=False)
@@ -156,7 +156,7 @@ class JobFault(BASE, ModelBase):
 
     job_id = Column(String(36), nullable=False)
     schedule_id = Column(String(36), nullable=False)
-    tenant = Column(String(36), nullable=False)
+    tenant = Column(String(255), nullable=False)
     worker_id = Column(String(36), nullable=False)
     action = Column(String(255), nullable=False)
     message = Column(String(255), nullable=True)
