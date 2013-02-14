@@ -21,6 +21,7 @@ import webob.exc
 from qonos.api.v1 import jobs
 from qonos.common import exception
 import qonos.db.simple.api as db_api
+from qonos.openstack.common import timeutils
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
 
@@ -64,6 +65,11 @@ class TestJobsApi(test_utils.BaseTestCase):
             ],
         }
         self.schedule_2 = db_api.schedule_create(fixture)
+
+        now = timeutils.utcnow()
+        timeout = now + datetime.timedelta(hours=1)
+        hard_timeout = now + datetime.timedelta(hours=4)
+
         fixture = {
             'id': unit_utils.JOB_UUID1,
             'schedule_id': self.schedule_1['id'],
@@ -71,6 +77,8 @@ class TestJobsApi(test_utils.BaseTestCase):
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'queued',
+            'timeout': timeout,
+            'hard_timeout': hard_timeout,
             'retry_count': 0,
         }
         self.job_1 = db_api.job_create(fixture)
@@ -81,6 +89,8 @@ class TestJobsApi(test_utils.BaseTestCase):
             'worker_id': unit_utils.WORKER_UUID2,
             'action': 'snapshot',
             'status': 'error',
+            'timeout': timeout,
+            'hard_timeout': hard_timeout,
             'retry_count': 1,
             'job_metadata': [
                     {
@@ -97,6 +107,8 @@ class TestJobsApi(test_utils.BaseTestCase):
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'queued',
+            'timeout': timeout,
+            'hard_timeout': hard_timeout,
             'retry_count': 0,
         }
         self.job_3 = db_api.job_create(fixture)
@@ -107,6 +119,8 @@ class TestJobsApi(test_utils.BaseTestCase):
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'queued',
+            'timeout': timeout,
+            'hard_timeout': hard_timeout,
             'retry_count': 0,
         }
         self.job_4 = db_api.job_create(fixture)
