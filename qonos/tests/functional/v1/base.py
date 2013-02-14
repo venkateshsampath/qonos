@@ -82,11 +82,11 @@ class TestApi(utils.BaseTestCase):
         # list workers
         workers = self.client.list_workers()
         self.assertEqual(len(workers), 1)
-        self.assertDictEqual(workers[0], worker)
+        self.assertEqual(workers[0], worker)
 
         # get job for worker no jobs for action
         job = self.client.get_next_job(worker['id'], 'snapshot')
-        self.assertIsNone(job['job'])
+        self.assertEqual(job['job'], None)
 
         # (setup) create schedule
         meta1 = {'key': 'key1', 'value': 'value1'}
@@ -113,7 +113,7 @@ class TestApi(utils.BaseTestCase):
 
         job = self.client.get_next_job(worker['id'], 'snapshot')
         next_job = job['job']
-        self.assertIsNotNone(next_job.get('id'))
+        self.assertNotEqual(next_job.get('id'), None)
         self.assertEqual(next_job['schedule_id'], schedule['id'])
         self.assertEqual(next_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(next_job['action'], schedule['action'])
@@ -123,7 +123,7 @@ class TestApi(utils.BaseTestCase):
 
         # get job for worker no jobs left for action
         job = self.client.get_next_job(worker['id'], 'snapshot')
-        self.assertIsNone(job['job'])
+        self.assertEqual(job['job'], None)
 
         # delete worker
         self.client.delete_worker(worker['id'])
@@ -184,7 +184,7 @@ class TestApi(utils.BaseTestCase):
         #list schedules
         schedules = self.client.list_schedules()
         self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
+        self.assertEqual(schedules[0], schedule)
 
         #list schedules, next_run filters
         filters = {}
@@ -192,7 +192,7 @@ class TestApi(utils.BaseTestCase):
         filters['next_run_before'] = schedule['next_run']
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
+        self.assertEqual(schedules[0], schedule)
 
         filters['next_run_after'] = schedule['next_run']
         after_datetime = timeutils.parse_isotime(schedule['next_run'])
@@ -206,21 +206,21 @@ class TestApi(utils.BaseTestCase):
         filters['next_run_before'] = schedule['next_run']
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
+        self.assertEqual(schedules[0], schedule)
 
         #list schedules, next_run_after filters
         filters = {}
         filters['next_run_after'] = schedule['next_run']
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
+        self.assertEqual(schedules[0], schedule)
 
         #list schedules, tenant_id filters
         filters = {}
         filters['tenant_id'] = TENANT1
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
+        self.assertEqual(schedules[0], schedule)
         filters['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 0)
@@ -230,7 +230,7 @@ class TestApi(utils.BaseTestCase):
         filters['instance_id'] = 'my_instance_1'
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
+        self.assertEqual(schedules[0], schedule)
         filters['instance_id'] = 'aaaa-bbbb-cccc-dddd'
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 0)
@@ -349,14 +349,14 @@ class TestApi(utils.BaseTestCase):
         # create job
 
         new_job = self.client.create_job(schedule['id'])
-        self.assertIsNotNone(new_job.get('id'))
+        self.assertNotEqual(new_job.get('id'), None)
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(new_job['action'], schedule['action'])
         self.assertEqual(new_job['status'], 'queued')
-        self.assertIsNone(new_job['worker_id'])
-        self.assertIsNotNone(new_job.get('timeout'))
-        self.assertIsNotNone(new_job.get('hard_timeout'))
+        self.assertEqual(new_job['worker_id'], None)
+        self.assertNotEqual(new_job.get('timeout'), None)
+        self.assertNotEqual(new_job.get('hard_timeout'), None)
         self.assertMetadataInList(new_job['metadata'], meta_fixture1)
         self.assertMetadataInList(new_job['metadata'], meta_fixture2)
 
@@ -419,18 +419,18 @@ class TestApi(utils.BaseTestCase):
         self.assertNotEqual(status, new_job['status'])
         self.assertEqual(status, 'ERROR')
         job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])
-        self.assertIsNotNone(job_fault)
+        self.assertNotEqual(job_fault, None)
         self.assertEqual(job_fault['job_id'], job['id'])
         self.assertEqual(job_fault['tenant_id'], job['tenant_id'])
         self.assertEqual(job_fault['schedule_id'], job['schedule_id'])
         self.assertEqual(job_fault['worker_id'],
                          job['worker_id'] or 'UNASSIGNED')
         self.assertEqual(job_fault['action'], job['action'])
-        self.assertIsNotNone(job_fault['job_metadata'])
+        self.assertNotEqual(job_fault['job_metadata'], None)
         self.assertEqual(job_fault['message'], error_message)
-        self.assertIsNotNone(job_fault['created_at'])
-        self.assertIsNotNone(job_fault['updated_at'])
-        self.assertIsNotNone(job_fault['id'])
+        self.assertNotEqual(job_fault['created_at'], None)
+        self.assertNotEqual(job_fault['updated_at'], None)
+        self.assertNotEqual(job_fault['id'], None)
 
         # delete job
         self.client.delete_job(job['id'])
@@ -454,14 +454,14 @@ class TestApi(utils.BaseTestCase):
         # create job
 
         job = self.client.create_job(schedule['id'])
-        self.assertIsNotNone(job.get('id'))
+        self.assertNotEqual(job.get('id'), None)
         self.assertEqual(job['schedule_id'], schedule['id'])
         self.assertEqual(job['tenant_id'], schedule['tenant_id'])
         self.assertEqual(job['action'], schedule['action'])
         self.assertEqual(job['status'], 'queued')
-        self.assertIsNone(job['worker_id'])
-        self.assertIsNotNone(job.get('timeout'))
-        self.assertIsNotNone(job.get('hard_timeout'))
+        self.assertEqual(job['worker_id'], None)
+        self.assertNotEqual(job.get('timeout'), None)
+        self.assertNotEqual(job.get('hard_timeout'), None)
 
         metadata_fixture = {'key1': 'value1'}
 

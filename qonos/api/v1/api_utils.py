@@ -18,7 +18,10 @@ from qonos.common import utils
 
 
 def serialize_metadata(metadata):
-    return {meta['key']: meta['value'] for meta in metadata}
+    to_return = {}
+    for item in metadata:
+        to_return[item['key']] = item['value']
+    return to_return
 
 
 def deserialize_metadata(metadata):

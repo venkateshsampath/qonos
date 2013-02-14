@@ -233,10 +233,10 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
         actual = self.controller.create(request, fixture)['schedule']
 
-        self.assertIsNotNone(actual.get('id'))
-        self.assertIsNotNone(actual.get('created_at'))
-        self.assertIsNotNone(actual.get('updated_at'))
-        self.assertIsNotNone(actual.get('next_run'))
+        self.assertNotEqual(actual.get('id'), None)
+        self.assertNotEqual(actual.get('created_at'), None)
+        self.assertNotEqual(actual.get('updated_at'), None)
+        self.assertNotEqual(actual.get('next_run'), None)
         self.assertEqual(expected['tenant_id'], actual['tenant_id'])
         self.assertEqual(expected['action'], actual['action'])
         self.assertEqual(expected['minute'], actual['minute'])
@@ -280,8 +280,8 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         updated = self.controller.update(request, self.schedule_1['id'],
                                          update_fixture)['schedule']
 
-        self.assertIsNotNone(updated.get('created_at'))
-        self.assertIsNotNone(updated.get('updated_at'))
+        self.assertNotEqual(updated.get('created_at'), None)
+        self.assertNotEqual(updated.get('updated_at'), None)
         self.assertEqual(self.schedule_1['tenant_id'], updated['tenant_id'])
         self.assertEqual(self.schedule_1['action'], updated['action'])
         self.assertEqual(self.schedule_1['minute'], updated['minute'])

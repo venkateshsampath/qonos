@@ -70,15 +70,9 @@ class BaseTestCase(unittest.TestCase):
 
     def assertDbMetaInList(self, metadata, meta):
         found = False
-        test_meta = {item['key']: item['value'] for item in metadata}
-        found = meta['key'] in test_meta
-        if found:
-            self.assertEqual(test_meta[meta['key']], meta['value'])
-        self.assertTrue(found)
-
-    def assertDbMetaInList(self, metadata, meta):
-        found = False
-        test_meta = {item['key']: item['value'] for item in metadata}
+        test_meta = {}
+        for item in metadata:
+            test_meta[item['key']] = item['value']
         found = meta['key'] in test_meta
         if found:
             self.assertEqual(test_meta[meta['key']], meta['value'])

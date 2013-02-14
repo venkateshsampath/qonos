@@ -199,8 +199,8 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
                             'id': unit_utils.JOB_UUID5}}
         job = self.controller.create(request, fixture).get('job')
-        self.assertIsNotNone(job)
-        self.assertIsNotNone(job.get('id'))
+        self.assertNotEqual(job, None)
+        self.assertNotEqual(job.get('id'), None)
         self.assertEqual(job['schedule_id'], self.schedule_1['id'])
         self.assertEqual(job['tenant_id'], self.schedule_1['tenant_id'])
         self.assertEqual(job['action'], self.schedule_1['action'])
@@ -218,8 +218,8 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {'job': {'schedule_id': self.schedule_2['id'],
                            'id': unit_utils.JOB_UUID5}}
         job = self.controller.create(request, fixture).get('job')
-        self.assertIsNotNone(job)
-        self.assertIsNotNone(job.get('id'))
+        self.assertNotEqual(job, None)
+        self.assertNotEqual(job.get('id'), None)
         self.assertEqual(job['schedule_id'], self.schedule_2['id'])
         self.assertEqual(job['tenant_id'], self.schedule_2['tenant_id'])
         self.assertEqual(job['action'], self.schedule_2['action'])
