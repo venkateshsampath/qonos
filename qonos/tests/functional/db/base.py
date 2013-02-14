@@ -386,9 +386,9 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         self.assertEqual(meta['schedule_id'], schedule['id'])
         self.assertEqual(meta['key'], fixture['key'])
         self.assertEqual(meta['value'], fixture['value'])
-        self.assertIsNotNone(meta['created_at'])
-        self.assertIsNotNone(meta['updated_at'])
-        self.assertIsNotNone(meta['id'])
+        self.assertNotEqual(meta['created_at'], None)
+        self.assertNotEqual(meta['updated_at'], None)
+        self.assertNotEqual(meta['id'], None)
 
     def test_metadata_create_duplicate(self):
         schedule = self._create_basic_schedule()
@@ -408,10 +408,10 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         metadata = db_api.schedule_meta_get_all(schedule['id'])
         self.assertEqual(len(metadata), 2)
         for element in metadata:
-            self.assertIsNotNone(element['id'])
+            self.assertNotEqual(element['id'], None)
             self.assertEqual(element['schedule_id'], schedule['id'])
-            self.assertIsNotNone(element['created_at'])
-            self.assertIsNotNone(element['updated_at'])
+            self.assertNotEqual(element['created_at'], None)
+            self.assertNotEqual(element['updated_at'], None)
             self.assertEqual(element['schedule_id'], schedule['id'])
 
         self.assertDbMetaInList(metadata, fixture1)
@@ -862,9 +862,9 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         self.assertEqual(meta['job_id'], job['id'])
         self.assertEqual(meta['key'], fixture['key'])
         self.assertEqual(meta['value'], fixture['value'])
-        self.assertIsNotNone(meta['created_at'])
-        self.assertIsNotNone(meta['updated_at'])
-        self.assertIsNotNone(meta['id'])
+        self.assertNotEqual(meta['created_at'], None)
+        self.assertNotEqual(meta['updated_at'], None)
+        self.assertNotEqual(meta['id'], None)
 
     def test_metadata_create_duplicate(self):
         job = self._create_basic_job()

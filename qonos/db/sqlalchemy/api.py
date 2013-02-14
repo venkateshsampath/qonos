@@ -383,7 +383,9 @@ def schedule_update(schedule_id, schedule_values):
 
 
 def _schedule_metadata_update_in_place(schedule, metadata):
-    new_meta = {meta['key']: meta['value'] for meta in metadata}
+    new_meta = {}
+    for item in metadata:
+        new_meta[item['key']] = item['value']
     to_delete = []
     for meta in schedule.schedule_metadata:
         if not meta['key'] in new_meta:
@@ -668,7 +670,9 @@ def job_update(job_id, job_values):
 
 
 def _job_metadata_update_in_place(job, metadata):
-    new_meta = {meta['key']: meta['value'] for meta in metadata}
+    new_meta = {}
+    for item in metadata:
+        new_meta[item['key']] = item['value']
     to_delete = []
     for meta in job.job_metadata:
         if not meta['key'] in new_meta:

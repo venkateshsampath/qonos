@@ -285,7 +285,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         job = self.controller.get_next_job(request,
                                            self.worker_1['id'],
                                            fixture)
-        self.assertIsNone(job['job'])
+        self.assertEqual(job['job'], None)
 
     def test_get_next_job_for_action(self):
         request = unit_utils.get_fake_request(method='POST')
