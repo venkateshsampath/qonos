@@ -28,7 +28,7 @@ from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
 
 
-SCHEDULE_ATTRS = ['id', 'tenant_id', 'action',
+SCHEDULE_ATTRS = ['id', 'tenant', 'action',
                   'minute', 'hour']
 
 
@@ -49,7 +49,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
     def _create_schedules(self):
         fixture = {
             'id': unit_utils.SCHEDULE_UUID1,
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -58,7 +58,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID2,
-            'tenant_id': unit_utils.TENANT2,
+            'tenant': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
             'hour': '3',
@@ -67,7 +67,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.schedule_2 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID3,
-            'tenant_id': unit_utils.TENANT3,
+            'tenant': unit_utils.TENANT3,
             'action': 'snapshot',
             'minute': '30',
             'hour': '4',
@@ -76,7 +76,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.schedule_3 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID4,
-            'tenant_id': unit_utils.TENANT4,
+            'tenant': unit_utils.TENANT4,
             'action': 'snapshot',
             'minute': '30',
             'hour': '5',
@@ -223,7 +223,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
     def test_create(self):
         fixture = {'schedule': {
             'id': unit_utils.SCHEDULE_UUID5,
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -237,7 +237,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertNotEqual(actual.get('created_at'), None)
         self.assertNotEqual(actual.get('updated_at'), None)
         self.assertNotEqual(actual.get('next_run'), None)
-        self.assertEqual(expected['tenant_id'], actual['tenant_id'])
+        self.assertEqual(expected['tenant'], actual['tenant'])
         self.assertEqual(expected['action'], actual['action'])
         self.assertEqual(expected['minute'], actual['minute'])
         self.assertEqual(expected['hour'], actual['hour'])
@@ -282,7 +282,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
         self.assertNotEqual(updated.get('created_at'), None)
         self.assertNotEqual(updated.get('updated_at'), None)
-        self.assertEqual(self.schedule_1['tenant_id'], updated['tenant_id'])
+        self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
         self.assertEqual(self.schedule_1['action'], updated['action'])
         self.assertEqual(self.schedule_1['minute'], updated['minute'])
         self.assertEqual(update_fixture['schedule']['hour'],

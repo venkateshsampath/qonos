@@ -58,7 +58,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
     def _create_schedules(self):
         fixture = {
             'id': unit_utils.SCHEDULE_UUID1,
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -67,7 +67,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID2,
-            'tenant_id': unit_utils.TENANT2,
+            'tenant': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -82,7 +82,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         self.schedule_2 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID3,
-            'tenant_id': unit_utils.TENANT3,
+            'tenant': unit_utils.TENANT3,
             'action': 'snapshot',
             'minute': '30',
             'hour': '4',
@@ -91,7 +91,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         self.schedule_3 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID4,
-            'tenant_id': unit_utils.TENANT4,
+            'tenant': unit_utils.TENANT4,
             'action': 'snapshot',
             'minute': '30',
             'hour': '5',
@@ -107,7 +107,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID1,
             'schedule_id': self.schedule_1['id'],
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'worker_id': None,
             'action': 'snapshot',
             'status': None,
@@ -119,7 +119,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID2,
             'schedule_id': self.schedule_2['id'],
-            'tenant_id': unit_utils.TENANT2,
+            'tenant': unit_utils.TENANT2,
             'worker_id': unit_utils.WORKER_UUID2,
             'action': 'snapshot',
             'status': None,
@@ -137,7 +137,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID3,
             'schedule_id': self.schedule_3['id'],
-            'tenant_id': unit_utils.TENANT3,
+            'tenant': unit_utils.TENANT3,
             'worker_id': unit_utils.WORKER_UUID2,
             'action': 'snapshot',
             'status': None,
@@ -155,7 +155,7 @@ class TestWorkersApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID4,
             'schedule_id': self.schedule_4['id'],
-            'tenant_id': unit_utils.TENANT4,
+            'tenant': unit_utils.TENANT4,
             'worker_id': unit_utils.WORKER_UUID2,
             'action': 'snapshot',
             'status': None,

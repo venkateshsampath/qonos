@@ -328,9 +328,9 @@ def schedule_get_all(filter_args={}):
         query = query.filter(
             models.Schedule.next_run <= filter_args['next_run_before'])
 
-    if filter_args.get('tenant_id') is not None:
+    if filter_args.get('tenant') is not None:
         query = query.filter(
-                models.Schedule.tenant_id == filter_args['tenant_id'])
+                models.Schedule.tenant == filter_args['tenant'])
 
     if filter_args.get('instance_id') is not None:
         query = query.filter(models.Schedule.schedule_metadata.any(

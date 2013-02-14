@@ -43,7 +43,7 @@ class TestJobsApi(test_utils.BaseTestCase):
     def _create_jobs(self):
         fixture = {
             'id': unit_utils.SCHEDULE_UUID1,
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -52,7 +52,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID2,
-            'tenant_id': unit_utils.TENANT2,
+            'tenant': unit_utils.TENANT2,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -73,7 +73,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID1,
             'schedule_id': self.schedule_1['id'],
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'queued',
@@ -85,7 +85,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID2,
             'schedule_id': self.schedule_2['id'],
-            'tenant_id': unit_utils.TENANT2,
+            'tenant': unit_utils.TENANT2,
             'worker_id': unit_utils.WORKER_UUID2,
             'action': 'snapshot',
             'status': 'error',
@@ -103,7 +103,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID3,
             'schedule_id': self.schedule_1['id'],
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'queued',
@@ -115,7 +115,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID4,
             'schedule_id': self.schedule_1['id'],
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'queued',
@@ -202,7 +202,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
         self.assertEqual(job['schedule_id'], self.schedule_1['id'])
-        self.assertEqual(job['tenant_id'], self.schedule_1['tenant_id'])
+        self.assertEqual(job['tenant'], self.schedule_1['tenant'])
         self.assertEqual(job['action'], self.schedule_1['action'])
         self.assertEqual(job['status'], 'queued')
         self.assertEqual(len(job['metadata']), 0)
@@ -221,7 +221,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
         self.assertEqual(job['schedule_id'], self.schedule_2['id'])
-        self.assertEqual(job['tenant_id'], self.schedule_2['tenant_id'])
+        self.assertEqual(job['tenant'], self.schedule_2['tenant'])
         self.assertEqual(job['action'], self.schedule_2['action'])
         self.assertEqual(job['status'], 'queued')
         self.assertEqual(len(job['metadata']), 1)

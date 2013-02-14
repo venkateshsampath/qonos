@@ -49,11 +49,11 @@ def get_fake_request(path='', method='GET'):
     return req
 
 
-def get_schedule(id=None, tenant_id=TENANT1, job_type=None, schedule=None,
+def get_schedule(id=None, tenant=TENANT1, job_type=None, schedule=None,
                  metadata=None):
     schedule = {'schedule': {
         'id': id,
-        'tenant_id': tenant_id,
+        'tenant': tenant,
         'job_type': job_type,
         'schedule': schedule,
         'metadata': metadata
