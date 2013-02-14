@@ -320,19 +320,13 @@ def schedule_get_all(filter_args={}):
                    .options(sa_orm.joinedload_all(
                             models.Schedule.schedule_metadata))
 
-    if 'next_run_after' in filter_args and 'next_run_before' in filter_args:
-        query = query.filter(
-            models.Schedule.next_run.between(filter_args['next_run_after'],
-                                             filter_args['next_run_before']))
-    if ('next_run_after' in filter_args and
-        'next_run_before' not in filter_args):
+    if 'next_run_after' in filter_args:
         query = query.filter(
             models.Schedule.next_run >= filter_args['next_run_after'])
 
-    if ('next_run_after' not in filter_args and
-        'next_run_before' in filter_args):
+    if 'next_run_before' in filter_args:
         query = query.filter(
-            models.Schedule.next_run < filter_args['next_run_before'])
+            models.Schedule.next_run <= filter_args['next_run_before'])
 
     if filter_args.get('tenant_id') is not None:
         query = query.filter(

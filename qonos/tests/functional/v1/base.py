@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 from operator import itemgetter
 import random
 
 from qonos.common import config
+from qonos.common import timeutils
 import qonos.db
 from qonos.openstack.common import cfg
 from qonos.openstack.common import wsgi
@@ -184,49 +186,53 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
 
-        #list schedules, next_run filter
-        filter = {}
-        filter['next_run_after'] = schedule['next_run']
-        filter['next_run_before'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)
+        #list schedules, next_run filters
+        filters = {}
+        filters['next_run_after'] = schedule['next_run']
+        filters['next_run_before'] = schedule['next_run']
+        schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
-        filter['next_run_after'] = '2010-11-30T15:23:00Z'
-        filter['next_run_before'] = '2011-11-30T15:23:00Z'
-        schedules = self.client.list_schedules(filter_args=filter)
+
+        filters['next_run_after'] = schedule['next_run']
+        after_datetime = timeutils.parse_isotime(schedule['next_run'])
+        before_datetime = (after_datetime - datetime.timedelta(seconds=1))
+        filters['next_run_before'] = timeutils.isotime(before_datetime)
+        schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 0)
 
-        #list schedules, next_run_before filter
-        filter = {}
-        filter['next_run_before'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)
+        #list schedules, next_run_before filters
+        filters = {}
+        filters['next_run_before'] = schedule['next_run']
+        schedules = self.client.list_schedules(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+
+        #list schedules, next_run_after filters
+        filters = {}
+        filters['next_run_after'] = schedule['next_run']
+        schedules = self.client.list_schedules(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+
+        #list schedules, tenant_id filters
+        filters = {}
+        filters['tenant_id'] = TENANT1
+        schedules = self.client.list_schedules(filter_args=filters)
+        self.assertEqual(len(schedules), 1)
+        self.assertDictEqual(schedules[0], schedule)
+        filters['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
+        schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 0)
 
-        #list schedules, next_run_after filter
-        filter = {}
-        filter['next_run_after'] = schedule['next_run']
-        schedules = self.client.list_schedules(filter_args=filter)
+        #list schedules, instance_id filters
+        filters = {}
+        filters['instance_id'] = 'my_instance_1'
+        schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertDictEqual(schedules[0], schedule)
-
-        #list schedules, tenant_id filter
-        filter = {}
-        filter['tenant_id'] = TENANT1
-        schedules = self.client.list_schedules(filter_args=filter)
-        self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
-        filter['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
-        schedules = self.client.list_schedules(filter_args=filter)
-        self.assertEqual(len(schedules), 0)
-
-        #list schedules, instance_id filter
-        filter = {}
-        filter['instance_id'] = 'my_instance_1'
-        schedules = self.client.list_schedules(filter_args=filter)
-        self.assertEqual(len(schedules), 1)
-        self.assertDictEqual(schedules[0], schedule)
-        filter['instance_id'] = 'aaaa-bbbb-cccc-dddd'
-        schedules = self.client.list_schedules(filter_args=filter)
+        filters['instance_id'] = 'aaaa-bbbb-cccc-dddd'
+        schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 0)
 
         #update schedule

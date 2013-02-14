@@ -14,11 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import uuid
 import webob.exc
 
 from qonos.api.v1 import schedules
 from qonos.common import exception
+from qonos.common import timeutils
 from qonos.common import utils as qonos_utils
 from qonos.db.simple import api as db_api
 from qonos.openstack.common import cfg
@@ -102,6 +104,32 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(path=path, method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 1)
+
+    def test_list_next_run_after_filtered(self):
+        next_run = self.schedule_1['next_run']
+        path = '?next_run_after=%s'
+        path = path % next_run
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 4)
+
+    def test_list_next_run_before_filtered(self):
+        next_run = self.schedule_3['next_run']
+        path = '?next_run_before=%s'
+        path = path % next_run
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 3)
+
+    def test_list_next_run_filtered_before_less_than_after(self):
+        after = self.schedule_3['next_run']
+        before = timeutils.isotime(after
+                        - datetime.timedelta(seconds=1))
+        path = '?next_run_after=%s&next_run_before=%s'
+        path = path % (after, before)
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 0)
 
     def test_list_limit(self):
         path = '?limit=2'
