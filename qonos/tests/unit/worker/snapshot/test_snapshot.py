@@ -58,14 +58,12 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def _create_image(self, instance_id, created, image_id=None,
                       scheduled=True):
-        image = {
-            'id': image_id or uuidutils.generate_uuid(),
-            'created': created,
-            'metadata': {'instance_uuid': instance_id}
-            }
+        image_id = image_id or uuidutils.generate_uuid()
+
+        image = MockImage(image_id, created, instance_id)
 
         if scheduled:
-            image['metadata']['org.openstack__1__created_by'] =\
+            image.metadata['org.openstack__1__created_by'] =\
                 'scheduled_images_service'
 
         return image
@@ -364,8 +362,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         image_list = self._create_images_list(mock_server.id, 5)
         self.nova_client.images.list(detailed=True).AndReturn(image_list)
         # The image list happens to be in descending created order
-        self.nova_client.images.delete(image_list[-2].get('id'))
-        self.nova_client.images.delete(image_list[-1].get('id'))
+        self.nova_client.images.delete(image_list[-2].id)
+        self.nova_client.images.delete(image_list[-1].id)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
                                timeout=mox.IsA(datetime.datetime),
                                error_message=None)
@@ -395,8 +393,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                 uuidutils.generate_uuid(), 3))
         self.nova_client.images.list(detailed=True).AndReturn(image_list)
         # The image list happens to be in descending created order
-        self.nova_client.images.delete(to_delete[0].get('id'))
-        self.nova_client.images.delete(to_delete[1].get('id'))
+        self.nova_client.images.delete(to_delete[0].id)
+        self.nova_client.images.delete(to_delete[1].id)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
                                timeout=mox.IsA(datetime.datetime),
                                error_message=None)
@@ -421,6 +419,15 @@ class MockNovaClient(object):
 class MockImageStatus(object):
     def __init__(self, status):
         self.status = status
+
+
+class MockImage(object):
+    def __init__(self, image_id, created, instance_id):
+        self.id = image_id
+        self.created = created
+        self.metadata = {
+            'instance_uuid': instance_id,
+            }
 
 
 class MockServer(object):
