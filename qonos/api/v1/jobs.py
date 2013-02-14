@@ -23,7 +23,6 @@ from qonos.common import exception
 from qonos.common import utils
 import qonos.db
 from qonos.openstack.common.gettextutils import _
-import qonos.openstack.common.log as logging
 from qonos.openstack.common import timeutils
 from qonos.openstack.common import wsgi
 

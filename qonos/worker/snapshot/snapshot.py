@@ -17,7 +17,6 @@
 import datetime
 from operator import itemgetter
 import time
-import uuid
 
 from novaclient.v1_1 import client
 from qonos.openstack.common import cfg
@@ -25,6 +24,7 @@ from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 import qonos.openstack.common.timeutils as timeutils
 from qonos.worker import worker
+
 
 LOG = logging.getLogger(__name__)
 
