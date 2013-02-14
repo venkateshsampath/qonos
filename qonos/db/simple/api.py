@@ -109,9 +109,9 @@ def schedule_get_all(filter_args={}):
                 if schedule in schedules_mutate:
                     del schedules_mutate[schedules_mutate.index(schedule)]
 
-    if filter_args.get('tenant_id') is not None:
+    if filter_args.get('tenant') is not None:
         for schedule in schedules:
-            if schedule['tenant_id'] != filter_args['tenant_id']:
+            if schedule['tenant'] != filter_args['tenant']:
                 if schedule in schedules_mutate:
                     del schedules_mutate[schedules_mutate.index(schedule)]
 

@@ -18,12 +18,12 @@ from qonos.common import exception
 
 
 def validate_schedule_values(values):
-    keys = ['action', 'tenant_id']
+    keys = ['action', 'tenant']
     _validate_values('Job', values, keys)
 
 
 def validate_job_values(values):
-    keys = ['action', 'tenant_id']
+    keys = ['action', 'tenant']
     _validate_values('Job', values, keys)
 
 

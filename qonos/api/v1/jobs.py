@@ -78,7 +78,7 @@ class JobsController(object):
         # Create job
         values = {}
         values.update(job)
-        values['tenant_id'] = schedule['tenant_id']
+        values['tenant'] = schedule['tenant']
         values['action'] = schedule['action']
         values['status'] = 'queued'
 
@@ -153,7 +153,7 @@ class JobsController(object):
             'job_id': job['id'],
             'action': job['action'],
             'schedule_id': job['schedule_id'],
-            'tenant_id': job['tenant_id'],
+            'tenant': job['tenant'],
             'worker_id': job['worker_id'] or 'UNASSIGNED',
             'job_metadata': str(job_metadata),
             }

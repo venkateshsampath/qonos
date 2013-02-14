@@ -94,7 +94,7 @@ class TestApi(utils.BaseTestCase):
         request = {
             'schedule':
             {
-                'tenant_id': TENANT1,
+                'tenant': TENANT1,
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12',
@@ -115,7 +115,7 @@ class TestApi(utils.BaseTestCase):
         next_job = job['job']
         self.assertNotEqual(next_job.get('id'), None)
         self.assertEqual(next_job['schedule_id'], schedule['id'])
-        self.assertEqual(next_job['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(next_job['tenant'], schedule['tenant'])
         self.assertEqual(next_job['action'], schedule['action'])
         self.assertEqual(next_job['status'], 'queued')
         self.assertMetadataInList(next_job['metadata'], meta_fixture1)
@@ -155,7 +155,7 @@ class TestApi(utils.BaseTestCase):
         request = {
             'schedule':
             {
-                'tenant_id': TENANT1,
+                'tenant': TENANT1,
                 'action': 'snapshot',
                 'minute': 30,
                 'hour': 12,
@@ -164,7 +164,7 @@ class TestApi(utils.BaseTestCase):
         }
         schedule = self.client.create_schedule(request)
         self.assertTrue(schedule['id'])
-        self.assertEqual(schedule['tenant_id'], TENANT1)
+        self.assertEqual(schedule['tenant'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
         self.assertEqual(schedule['minute'], 30)
         self.assertEqual(schedule['hour'], 12)
@@ -176,7 +176,7 @@ class TestApi(utils.BaseTestCase):
         # get schedule
         schedule = self.client.get_schedule(schedule['id'])
         self.assertTrue(schedule['id'])
-        self.assertEqual(schedule['tenant_id'], TENANT1)
+        self.assertEqual(schedule['tenant'], TENANT1)
         self.assertEqual(schedule['action'], 'snapshot')
         self.assertEqual(schedule['minute'], 30)
         self.assertEqual(schedule['hour'], 12)
@@ -215,13 +215,13 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0], schedule)
 
-        #list schedules, tenant_id filters
+        #list schedules, tenant filters
         filters = {}
-        filters['tenant_id'] = TENANT1
+        filters['tenant'] = TENANT1
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0], schedule)
-        filters['tenant_id'] = 'aaaa-bbbb-cccc-dddd'
+        filters['tenant'] = 'aaaa-bbbb-cccc-dddd'
         schedules = self.client.list_schedules(filter_args=filters)
         self.assertEqual(len(schedules), 0)
 
@@ -239,7 +239,7 @@ class TestApi(utils.BaseTestCase):
         request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
         self.assertEqual(updated_schedule['id'], schedule['id'])
-        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
         self.assertEqual(updated_schedule['hour'], request['schedule']['hour'])
@@ -255,7 +255,7 @@ class TestApi(utils.BaseTestCase):
         }
         updated_schedule = self.client.update_schedule(schedule['id'], request)
         self.assertEqual(updated_schedule['id'], schedule['id'])
-        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertTrue('metadata' in updated_schedule)
         metadata = updated_schedule['metadata']
@@ -276,7 +276,7 @@ class TestApi(utils.BaseTestCase):
         request = {
             'schedule':
             {
-                'tenant_id': TENANT1,
+                'tenant': TENANT1,
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12'
@@ -333,7 +333,7 @@ class TestApi(utils.BaseTestCase):
         request = {
             'schedule':
             {
-                'tenant_id': TENANT1,
+                'tenant': TENANT1,
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12',
@@ -351,7 +351,7 @@ class TestApi(utils.BaseTestCase):
         new_job = self.client.create_job(schedule['id'])
         self.assertNotEqual(new_job.get('id'), None)
         self.assertEqual(new_job['schedule_id'], schedule['id'])
-        self.assertEqual(new_job['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(new_job['tenant'], schedule['tenant'])
         self.assertEqual(new_job['action'], schedule['action'])
         self.assertEqual(new_job['status'], 'queued')
         self.assertEqual(new_job['worker_id'], None)
@@ -421,7 +421,7 @@ class TestApi(utils.BaseTestCase):
         job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])
         self.assertNotEqual(job_fault, None)
         self.assertEqual(job_fault['job_id'], job['id'])
-        self.assertEqual(job_fault['tenant_id'], job['tenant_id'])
+        self.assertEqual(job_fault['tenant'], job['tenant'])
         self.assertEqual(job_fault['schedule_id'], job['schedule_id'])
         self.assertEqual(job_fault['worker_id'],
                          job['worker_id'] or 'UNASSIGNED')
@@ -444,7 +444,7 @@ class TestApi(utils.BaseTestCase):
         request = {
             'schedule':
             {
-                'tenant_id': TENANT1,
+                'tenant': TENANT1,
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12'
@@ -456,7 +456,7 @@ class TestApi(utils.BaseTestCase):
         job = self.client.create_job(schedule['id'])
         self.assertNotEqual(job.get('id'), None)
         self.assertEqual(job['schedule_id'], schedule['id'])
-        self.assertEqual(job['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(job['tenant'], schedule['tenant'])
         self.assertEqual(job['action'], schedule['action'])
         self.assertEqual(job['status'], 'queued')
         self.assertEqual(job['worker_id'], None)
@@ -512,7 +512,7 @@ class TestApi(utils.BaseTestCase):
         request = {
             'schedule':
             {
-                'tenant_id': TENANT1,
+                'tenant': TENANT1,
                 'action': 'snapshot',
                 'minute': '30',
                 'hour': '12',

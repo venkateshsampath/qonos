@@ -210,11 +210,11 @@ class SnapshotProcessor(worker.JobProcessor):
         password = CONF.snapshot_worker.nova_admin_password
         debug = CONF.snapshot_worker.http_log_debug
 
-        tenant_id = self.current_job['tenant_id']
+        tenant = self.current_job['tenant']
 
         nova_client = client.Client(user,
                                     password,
-                                    project_id=tenant_id,
+                                    project_id=tenant,
                                     auth_url=auth_url,
                                     insecure=False,
                                     http_log_debug=False)

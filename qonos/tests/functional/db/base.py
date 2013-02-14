@@ -49,7 +49,7 @@ class TestDBApi(test_utils.BaseTestCase):
 
     def test_reset(self):
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
@@ -76,7 +76,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def _create_schedules(self):
         fixture = {
             'id': unit_utils.SCHEDULE_UUID1,
-            'tenant_id': str(TENANT_1),
+            'tenant': str(TENANT_1),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -91,7 +91,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         self.schedule_1 = self.db_api.schedule_create(fixture)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID2,
-            'tenant_id': str(TENANT_2),
+            'tenant': str(TENANT_2),
             'action': 'snapshot',
             'minute': 30,
             'hour': 3,
@@ -101,7 +101,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
 
     def _create_basic_schedule(self):
         return db_api.schedule_create({'action': 'snapshot',
-                                       'tenant_id': unit_utils.TENANT1})
+                                       'tenant': unit_utils.TENANT1})
 
     def test_schedule_get_all(self):
         schedules = self.db_api.schedule_get_all()
@@ -111,7 +111,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         filters = {}
         filters['next_run_after'] = self.schedule_1['next_run']
         filters['next_run_before'] = self.schedule_2['next_run']
-        filters['tenant_id'] = str(TENANT_1)
+        filters['tenant'] = str(TENANT_1)
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
@@ -120,13 +120,13 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         filters = {}
         filters['next_run_after'] = self.schedule_1['next_run']
         filters['next_run_before'] = self.schedule_1['next_run']
-        filters['tenant_id'] = str(TENANT_1)
+        filters['tenant'] = str(TENANT_1)
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 1)
 
-    def test_schedule_get_all_tenant_id_filter(self):
+    def test_schedule_get_all_tenant_filter(self):
         filters = {}
-        filters['tenant_id'] = str(TENANT_1)
+        filters['tenant'] = str(TENANT_1)
         schedules = self.db_api.schedule_get_all(filter_args=filters)
         self.assertEqual(len(schedules), 1)
         self.assertEqual(schedules[0]['id'], self.schedule_1['id'])
@@ -173,7 +173,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
 
     def test_schedule_get_by_id(self):
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -186,7 +186,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         }
         expected = self.db_api.schedule_create(fixture)
         actual = self.db_api.schedule_get_by_id(expected['id'])
-        self.assertEqual(actual['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(actual['tenant'], fixture['tenant'])
         self.assertEqual(actual['action'], fixture['action'])
         self.assertEqual(actual['minute'], fixture['minute'])
         self.assertEqual(actual['hour'], fixture['hour'])
@@ -206,12 +206,12 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
 
     def test_schedule_create_no_action(self):
         fixture = {
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
         }
         self.assertRaises(exception.MissingValue,
                           self.db_api.schedule_create, fixture)
 
-    def test_schedule_create_no_tenant_id(self):
+    def test_schedule_create_no_tenant(self):
         fixture = {
             'action': 'snapshot',
         }
@@ -220,7 +220,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
 
     def test_schedule_create(self):
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -233,7 +233,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         }
         schedule = self.db_api.schedule_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
-        self.assertEqual(schedule['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(schedule['tenant'], fixture['tenant'])
         self.assertEqual(schedule['action'], fixture['action'])
         self.assertEqual(schedule['minute'], fixture['minute'])
         self.assertEqual(schedule['hour'], fixture['hour'])
@@ -249,7 +249,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def test_schedule_update(self):
         fixture = {
             'id': str(uuid.uuid4()),
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -262,7 +262,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         timeutils.clear_time_override()
 
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
-        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
         self.assertEqual(updated_schedule['hour'], fixture['hour'])
@@ -274,7 +274,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def test_schedule_update_remove_metadata(self):
         fixture = {
             'id': str(uuid.uuid4()),
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -296,7 +296,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         timeutils.clear_time_override()
 
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
-        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
         self.assertEqual(updated_schedule['hour'], schedule['hour'])
@@ -309,7 +309,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
     def test_schedule_update_metadata(self):
         fixture = {
             'id': str(uuid.uuid4()),
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -330,7 +330,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         timeutils.clear_time_override()
 
         self.assertTrue(uuidutils.is_uuid_like(schedule['id']))
-        self.assertEqual(updated_schedule['tenant_id'], schedule['tenant_id'])
+        self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
         self.assertEqual(updated_schedule['hour'], schedule['hour'])
@@ -360,7 +360,7 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
 
     def test_medadata_created_with_schedule(self):
         fixture = {
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'action': 'snapshot',
             'minute': 30,
             'hour': 2,
@@ -601,7 +601,7 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID1,
             'action': 'snapshot',
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID1,
             'worker_id': unit_utils.WORKER_UUID1,
             'status': 'queued',
@@ -614,7 +614,7 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID2,
             'action': 'snapshot',
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'error',
@@ -632,17 +632,17 @@ class TestJobsDBApi(test_utils.BaseTestCase):
                 'action': 'snapshot',
                 'timeout': timeout,
                 'hard_timeout': hard_timeout,
-                'tenant_id': unit_utils.TENANT1
+                'tenant': unit_utils.TENANT1
                 })
 
     def test_job_create_no_action(self):
         fixture = {
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
         }
         self.assertRaises(exception.MissingValue,
                           self.db_api.job_create, fixture)
 
-    def test_job_create_no_tenant_id(self):
+    def test_job_create_no_tenant(self):
         fixture = {
             'action': 'snapshot',
         }
@@ -655,7 +655,7 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         hard_timeout = now + datetime.timedelta(hours=4)
         fixture = {
             'action': 'snapshot',
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'queued',
@@ -693,7 +693,7 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         hard_timeout = now + datetime.timedelta(hours=4)
         fixture = {
             'action': 'snapshot',
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'status': 'queued',
             'timeout': timeout,
@@ -762,7 +762,7 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         self.assertEqual(actual['status'], expected['status'])
         self.assertEqual(actual['retry_count'], expected['retry_count'])
         self.assertEqual(actual['action'], expected['action'])
-        self.assertEqual(actual['tenant_id'], expected['tenant_id'])
+        self.assertEqual(actual['tenant'], expected['tenant'])
         self.assertEqual(actual['timeout'], expected['timeout'])
         self.assertEqual(actual['hard_timeout'], expected['hard_timeout'])
 
@@ -926,7 +926,7 @@ class TestJobsDBGetNextJobApi(test_utils.BaseTestCase):
         hard_timeout = now + datetime.timedelta(seconds=30)
         self.job_fixture_1 = {
             'action': 'snapshot',
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID1,
             'worker_id': None,
             'status': None,
@@ -937,7 +937,7 @@ class TestJobsDBGetNextJobApi(test_utils.BaseTestCase):
 
         self.job_fixture_2 = {
             'action': 'snapshot',
-            'tenant_id': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT1,
             'schedule_id': unit_utils.SCHEDULE_UUID2,
             'worker_id': unit_utils.WORKER_UUID2,
             'status': 'queued',
@@ -1012,7 +1012,7 @@ class TestJobFaultDBApi(test_utils.BaseTestCase):
     def test_job_fault_create_minimal(self):
         fixture = {
             'schedule_id': str(uuid.uuid4()),
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'worker_id': str(uuid.uuid4()),
             'job_id': str(uuid.uuid4()),
             'action': 'milking',
@@ -1020,7 +1020,7 @@ class TestJobFaultDBApi(test_utils.BaseTestCase):
         job_fault = self.db_api.job_fault_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(job_fault['id']))
         self.assertEqual(job_fault['schedule_id'], fixture['schedule_id'])
-        self.assertEqual(job_fault['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(job_fault['tenant'], fixture['tenant'])
         self.assertEqual(job_fault['worker_id'], fixture['worker_id'])
         self.assertEqual(job_fault['job_id'], fixture['job_id'])
         self.assertEqual(job_fault['action'], fixture['action'])
@@ -1030,7 +1030,7 @@ class TestJobFaultDBApi(test_utils.BaseTestCase):
     def test_job_fault_create_full(self):
         fixture = {
             'schedule_id': str(uuid.uuid4()),
-            'tenant_id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
             'worker_id': str(uuid.uuid4()),
             'job_id': str(uuid.uuid4()),
             'action': 'milking',
@@ -1040,7 +1040,7 @@ class TestJobFaultDBApi(test_utils.BaseTestCase):
         job_fault = self.db_api.job_fault_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(job_fault['id']))
         self.assertEqual(job_fault['schedule_id'], fixture['schedule_id'])
-        self.assertEqual(job_fault['tenant_id'], fixture['tenant_id'])
+        self.assertEqual(job_fault['tenant'], fixture['tenant'])
         self.assertEqual(job_fault['worker_id'], fixture['worker_id'])
         self.assertEqual(job_fault['job_id'], fixture['job_id'])
         self.assertEqual(job_fault['action'], fixture['action'])

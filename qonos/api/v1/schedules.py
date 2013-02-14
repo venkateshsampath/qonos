@@ -44,8 +44,8 @@ class SchedulesController(object):
             next_run_before = timeutils.normalize_time(next_run_before)
             filter_args['next_run_before'] = next_run_before
 
-        if request.params.get('tenant_id') is not None:
-            filter_args['tenant_id'] = request.params['tenant_id']
+        if request.params.get('tenant') is not None:
+            filter_args['tenant'] = request.params['tenant']
 
         if request.params.get('instance_id') is not None:
             filter_args['instance_id'] = request.params['instance_id']
