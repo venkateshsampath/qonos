@@ -89,7 +89,7 @@ def _do_pagination(items, marker, limit):
 
 def schedule_get_all(filter_args={}):
     SCHEDULE_BASE_FILTERS = ['next_run_after', 'next_run_before',
-                             'tenant_id', 'limit', 'marker']
+                             'tenant', 'limit', 'marker']
     schedules = copy.deepcopy(DATA['schedules'].values())
     schedules_mutate = copy.deepcopy(DATA['schedules'].values())
 
@@ -118,7 +118,7 @@ def schedule_get_all(filter_args={}):
             if schedule['tenant'] != filter_args['tenant']:
                 if schedule in schedules_mutate:
                     del schedules_mutate[schedules_mutate.index(schedule)]
-        filter_args.pop('tenant_id')
+        filter_args.pop('tenant')
 
     for filter_key in filter_args.keys():
         if filter_key not in SCHEDULE_BASE_FILTERS:

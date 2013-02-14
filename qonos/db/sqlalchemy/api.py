@@ -319,7 +319,7 @@ def schedule_get_all(filter_args={}):
     query = session.query(models.Schedule)\
                    .options(sa_orm.joinedload_all(
                             models.Schedule.schedule_metadata))
-    SCHEDULE_BASE_FILTERS = ['next_run_after', 'next_run_before', 'tenant_id',
+    SCHEDULE_BASE_FILTERS = ['next_run_after', 'next_run_before', 'tenant',
                     'limit', 'marker']
 
     if 'next_run_after' in filter_args:
