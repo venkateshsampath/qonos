@@ -24,6 +24,7 @@ import qonos.db
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import wsgi
 
+
 CONF = api.CONF
 
 
