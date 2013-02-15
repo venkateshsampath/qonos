@@ -75,10 +75,12 @@ class Scheduler(object):
                 break
 
     def enqueue_jobs(self, start_time=None, end_time=None):
-        LOG.debug(_('Creating new jobs'))
+        LOG.debug(_('Fetching schedules to process'))
         schedules = self.get_schedules(start_time, end_time)
-        for schedule in schedules:
-            self.client.create_job(schedule['id'])
+        if schedules:
+            LOG.debug(_('Creating %d jobs') % len(schedules))
+            for schedule in schedules:
+                self.client.create_job(schedule['id'])
 
     def get_schedules(self, start_time=None, end_time=None):
         filter_args = {'next_run_before': end_time}
@@ -86,12 +88,18 @@ class Scheduler(object):
         if start_time:
             filter_args['next_run_after'] = start_time
 
-        schedules = self.client.list_schedules(filter_args=filter_args)
+        try:
+            schedules = self.client.list_schedules(filter_args=filter_args)
 
-        response = schedules
-        while response:
-            filter_args['marker'] = response[-1]['id']
-            response = self.client.list_schedules(filter_args=filter_args)
-            schedules.extend(response)
+            response = schedules
+            while response:
+                filter_args['marker'] = response[-1]['id']
+                response = self.client.list_schedules(filter_args=filter_args)
+                schedules.extend(response)
 
-        return schedules
+            return schedules
+        except Exception, ex:
+            LOG.warn(_('Error occurred fetching jobs from qonos. '
+                       'Is the Qonos API running? Will retry...'))
+            LOG.debug(_('Exception: %s') % str(ex))
+            return None
