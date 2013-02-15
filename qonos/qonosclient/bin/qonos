@@ -71,7 +71,7 @@ def _get_kwargs(args):
 
 
 def do_command(args):
-    host = args.get('--host') or os.environ.get('QONOS_HOST', 'http://localhost')
+    host = args.get('--host') or os.environ.get('QONOS_HOST', 'localhost')
     port = args.get('--port') or os.environ.get('QONOS_PORT', 8080)
     qonosclient = client.create_client(host, port)
 
