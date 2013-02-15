@@ -43,6 +43,7 @@ class Scheduler(object):
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
+        self.running = True
 
         if CONF.scheduler.daemonized:
             import daemon
@@ -57,12 +58,17 @@ class Scheduler(object):
         next_run = None
         current_run = None
 
-        while True:
+        while self.running:
             current_run = timeutils.isotime()
             next_run = time.time() + CONF.scheduler.job_schedule_interval
 
             # do work
-            self.enqueue_jobs(end_time=current_run)
+            try:
+                self.enqueue_jobs(end_time=current_run)
+            except Exception, ex:
+                LOG.warn(_('Error occurred while processing schedules. '
+                           'Is the Qonos API running? Will retry...'))
+                LOG.debug(_('Exception: %s') % str(ex))
 
             # do nothing until next run
             seconds = next_run - time.time()
@@ -73,6 +79,9 @@ class Scheduler(object):
 
             if run_once:
                 break
+
+    def _terminate(self, signum, frame):
+        self.running = False
 
     def enqueue_jobs(self, start_time=None, end_time=None):
         LOG.debug(_('Fetching schedules to process'))
@@ -88,18 +97,12 @@ class Scheduler(object):
         if start_time:
             filter_args['next_run_after'] = start_time
 
-        try:
-            schedules = self.client.list_schedules(filter_args=filter_args)
+        schedules = self.client.list_schedules(filter_args=filter_args)
 
-            response = schedules
-            while response:
-                filter_args['marker'] = response[-1]['id']
-                response = self.client.list_schedules(filter_args=filter_args)
-                schedules.extend(response)
+        response = schedules
+        while response:
+            filter_args['marker'] = response[-1]['id']
+            response = self.client.list_schedules(filter_args=filter_args)
+            schedules.extend(response)
 
-            return schedules
-        except Exception, ex:
-            LOG.warn(_('Error occurred fetching jobs from qonos. '
-                       'Is the Qonos API running? Will retry...'))
-            LOG.debug(_('Exception: %s') % str(ex))
-            return None
+        return schedules
