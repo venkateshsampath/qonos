@@ -95,6 +95,8 @@ class SnapshotProcessor(worker.JobProcessor):
 
         LOG.debug("Created image: %s" % image_id)
 
+        self._add_job_metadata(image_id=image_id)
+
         image_status = None
         active = False
         retry = True
@@ -129,6 +131,14 @@ class SnapshotProcessor(worker.JobProcessor):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def _add_job_metadata(self, **to_add):
+        metadata = self.current_job['metadata']
+        for key in to_add:
+            metadata[key] = to_add[key]
+
+        self.current_job['metadata'] = self.update_job_metadata(
+            self.current_job['id'], metadata)
 
     def _process_retention(self, nova_client, instance_id):
         LOG.debug(_("Processing retention."))
