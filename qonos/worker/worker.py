@@ -142,6 +142,7 @@ class Worker(object):
     def update_job_metadata(self, job_id, metadata):
         return self.client.update_job_metadata(job_id, metadata)
 
+
 class JobProcessor(object):
     def __init__(self):
         self.worker = None

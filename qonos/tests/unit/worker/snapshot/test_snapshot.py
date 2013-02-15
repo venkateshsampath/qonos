@@ -76,7 +76,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         metadata['image_id'] = IMAGE_ID
         self.worker.update_job_metadata(fakes.JOB_ID, metadata).\
             AndReturn(metadata)
-        
+
     def _simple_prepare_worker_mock(self, num_processing_updates=0):
         self._init_worker_mock()
         for i in range(num_processing_updates):
