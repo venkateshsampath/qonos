@@ -68,6 +68,23 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         return image
 
+    def _init_worker_mock(self):
+        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
+                               timeout=mox.IsA(datetime.datetime),
+                               error_message=None)
+        metadata = fakes.JOB['job']['metadata']
+        metadata['image_id'] = IMAGE_ID
+        self.worker.update_job_metadata(fakes.JOB_ID, metadata).\
+            AndReturn(metadata)
+
+    def _simple_prepare_worker_mock(self, num_processing_updates=0):
+        self._init_worker_mock()
+        for i in range(num_processing_updates):
+            self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
+                                   error_message=None)
+        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
+                               error_message=None)
+
     def test_process_job_should_succeed_immediately(self):
         timeutils.set_time_override()
         self.nova_client.servers.create_image(mox.IsA(str),
@@ -76,11 +93,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('ACTIVE'))
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(
             MockServer())
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
-                               error_message=None)
+        self._simple_prepare_worker_mock()
+
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -104,11 +118,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('ACTIVE'))
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(
             MockServer())
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
-                               error_message=None)
+        self._simple_prepare_worker_mock()
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -144,15 +154,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('ACTIVE'))
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(
             MockServer())
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
-                               error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
-                               error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
-                               error_message=None)
+        self._simple_prepare_worker_mock(2)
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -188,9 +190,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('ACTIVE'))
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(
             MockServer())
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
+        self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
                                timeout=mox.IsA(datetime.datetime),
                                error_message=None)
@@ -231,9 +231,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.images.get(IMAGE_ID).MultipleTimes().AndReturn(
             MockImageStatus('SAVING'))
 
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
+        self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
                                timeout=mox.IsA(datetime.datetime),
                                error_message=None)
@@ -284,9 +282,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             error_status)
 
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
+        self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
                                error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
@@ -336,9 +332,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(mock_server)
         image_list = self._create_images_list(mock_server.id, 3)
         self.nova_client.images.list(detailed=True).AndReturn(image_list)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
+        self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -364,9 +358,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         # The image list happens to be in descending created order
         self.nova_client.images.delete(image_list[-2].id)
         self.nova_client.images.delete(image_list[-1].id)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
+        self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -395,11 +387,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         # The image list happens to be in descending created order
         self.nova_client.images.delete(to_delete[0].id)
         self.nova_client.images.delete(to_delete[1].id)
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
-                               error_message=None)
+        self._simple_prepare_worker_mock()
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
