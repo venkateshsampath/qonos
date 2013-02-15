@@ -460,6 +460,13 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(updated['next_run'],
                          timeutils.isotime(self.schedule_1['next_run']))
 
+    def test_update_ignore_read_only(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        schedule_id = self.schedule_1['id']
+        schedule = {'schedule': {'updated_at': '2013-01-02 20:20:20'}}
+        self.assertRaises(webob.exc.HTTPForbidden, self.controller.update,
+                          request, schedule_id, schedule)
+
     def test_update_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
         schedule_id = str(uuid.uuid4())
