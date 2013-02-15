@@ -139,6 +139,8 @@ class Worker(object):
         LOG.debug(msg)
         self.client.update_job_status(job_id, status, timeout, error_message)
 
+    def update_job_metadata(self, job_id, metadata):
+        return self.client.update_job_metadata(job_id, metadata)
 
 class JobProcessor(object):
     def __init__(self):
@@ -147,6 +149,9 @@ class JobProcessor(object):
     def update_job(self, job_id, status, timeout=None, error_message=None):
         self.worker.update_job(job_id, status, timeout=timeout,
                                error_message=error_message)
+
+    def update_job_metadata(self, job_id, metadata):
+        return self.worker.update_job_metadata(job_id, metadata)
 
     def init_processor(self, worker):
         """
