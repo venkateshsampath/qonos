@@ -120,9 +120,8 @@ class SchedulesController(object):
             values = {}
             values.update(body['schedule'])
             schedule = self.db_api.schedule_update(schedule_id, values)
-            # NOTE(ameade): We must update the schedules next_run time incase
-            # the cron schedule changed so that it gets picked up by the
-            # scheduler at the correct time.
+            # NOTE(ameade): We must recalculate the schedules next_run time
+            # since the schedule has changed
             values = {}
             values['next_run'] = api_utils.schedule_to_next_run(schedule)
             schedule = self.db_api.schedule_update(schedule_id, values)

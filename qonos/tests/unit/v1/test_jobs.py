@@ -18,6 +18,7 @@ import datetime
 import uuid
 import webob.exc
 
+from qonos.api.v1 import api_utils
 from qonos.api.v1 import jobs
 from qonos.common import exception
 import qonos.db.simple.api as db_api
@@ -195,6 +196,15 @@ class TestJobsApi(test_utils.BaseTestCase):
                              set([self.job_2[k]]))
 
     def test_create(self):
+
+        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return expected_next_run
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
                             'id': unit_utils.JOB_UUID5}}
@@ -209,6 +219,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
         schedule = db_api.schedule_get_by_id(self.schedule_1['id'])
         self.assertNotEqual(schedule['next_run'], self.schedule_1['next_run'])
+        self.assertEqual(schedule['next_run'], expected_next_run)
         self.assertNotEqual(schedule['last_scheduled'],
                             self.schedule_1.get('last_scheduled'))
         self.assertTrue(schedule.get('last_scheduled'))
