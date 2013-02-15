@@ -1,7 +1,7 @@
 [DEFAULT]
 debug = True
 # Log file location
-log_file = /home/eddie/qonos/worker.log
+log_file = /var/log/qonos/worker.log
 
 [worker]
 # Indicates the worker should start as a daemon
