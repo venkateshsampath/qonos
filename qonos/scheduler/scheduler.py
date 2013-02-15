@@ -43,6 +43,7 @@ class Scheduler(object):
 
     def run(self, run_once=False):
         LOG.debug(_('Starting qonos scheduler service'))
+        self.running = True
 
         if CONF.scheduler.daemonized:
             import daemon
@@ -57,12 +58,17 @@ class Scheduler(object):
         next_run = None
         current_run = None
 
-        while True:
+        while self.running:
             current_run = timeutils.isotime()
             next_run = time.time() + CONF.scheduler.job_schedule_interval
 
             # do work
-            self.enqueue_jobs(end_time=current_run)
+            try:
+                self.enqueue_jobs(end_time=current_run)
+            except Exception, ex:
+                LOG.warn(_('Error occurred while processing schedules. '
+                           'Is the Qonos API running? Will retry...'))
+                LOG.debug(_('Exception: %s') % str(ex))
 
             # do nothing until next run
             seconds = next_run - time.time()
@@ -74,11 +80,16 @@ class Scheduler(object):
             if run_once:
                 break
 
+    def _terminate(self, signum, frame):
+        self.running = False
+
     def enqueue_jobs(self, start_time=None, end_time=None):
-        LOG.debug(_('Creating new jobs'))
+        LOG.debug(_('Fetching schedules to process'))
         schedules = self.get_schedules(start_time, end_time)
-        for schedule in schedules:
-            self.client.create_job(schedule['id'])
+        if schedules:
+            LOG.debug(_('Creating %d jobs') % len(schedules))
+            for schedule in schedules:
+                self.client.create_job(schedule['id'])
 
     def get_schedules(self, start_time=None, end_time=None):
         filter_args = {'next_run_before': end_time}
