@@ -119,13 +119,19 @@ class SchedulesController(object):
             api_utils.deserialize_schedule_metadata(body['schedule'])
             values = {}
             values.update(body['schedule'])
-            schedule = self.db_api.schedule_update(schedule_id,
-                                                   values)
-            utils.serialize_datetimes(schedule)
-            api_utils.serialize_schedule_metadata(schedule)
+            schedule = self.db_api.schedule_update(schedule_id, values)
+            # NOTE(ameade): We must update the schedules next_run time incase
+            # the cron schedule changed so that it gets picked up by the
+            # scheduler at the correct time.
+            values = {}
+            values['next_run'] = api_utils.schedule_to_next_run(schedule)
+            schedule = self.db_api.schedule_update(schedule_id, values)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)
+
+        utils.serialize_datetimes(schedule)
+        api_utils.serialize_schedule_metadata(schedule)
         return {'schedule': schedule}
 
 

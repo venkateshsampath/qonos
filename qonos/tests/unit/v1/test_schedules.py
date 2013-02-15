@@ -18,6 +18,7 @@ import datetime
 import uuid
 import webob.exc
 
+from qonos.api.v1 import api_utils
 from qonos.api.v1 import schedules
 from qonos.common import exception
 from qonos.common import timeutils
@@ -274,6 +275,15 @@ class TestSchedulesApi(test_utils.BaseTestCase):
                           self.controller.delete, request, schedule_id)
 
     def test_update(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
         request = unit_utils.get_fake_request(method='PUT')
         update_fixture = {'schedule': {'hour': '5'}}
 
@@ -287,7 +297,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(self.schedule_1['minute'], updated['minute'])
         self.assertEqual(update_fixture['schedule']['hour'],
                          updated['hour'])
-        self.assertNotEqual(updated['next_run'], self.schedule_1['next_run'])
+        self.assertEqual(updated['next_run'], expected_next_run)
 
     def test_update_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
