@@ -104,8 +104,8 @@ class Worker(object):
         while self.running:
             try:
                 worker = self.client.create_worker(self.host)
-                LOG.info(_('Worker has been registered with ID: %s') % 
-                          worker['id'])
+                msg = _('Worker has been registered with ID: %s')
+                LOG.info(msg % worker['id'])
                 return worker['id']
             except Exception, ex:
                 LOG.warn(_('Error occurred registering worker with Qonos. '
@@ -139,7 +139,7 @@ class Worker(object):
                            'Is the Qonos API running? Will retry...'))
                 LOG.debug(_('Exception: %s') % str(ex))
                 job = None
-            
+
             if poll_once:
                 break
 
