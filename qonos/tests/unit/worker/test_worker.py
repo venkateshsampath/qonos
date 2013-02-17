@@ -102,6 +102,77 @@ class TestWorker(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
+    def test_register_retries_on_error(self):
+        self.client.create_worker(mox.IsA(str)).\
+            AndRaise(Exception())
+        self.client.create_worker(mox.IsA(str)).\
+            AndRaise(Exception())
+        self.client.create_worker(mox.IsA(str)).\
+            AndReturn(fakes.WORKER)
+        self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
+            AndReturn(fakes.JOB)
+        self.client.delete_worker(str(fakes.WORKER_ID))
+        self.mox.ReplayAll()
+
+        self.config(job_poll_interval=5, group='worker')
+        self.config(action_type='snapshot', group='worker')
+
+        fake_sleep = lambda x: None
+        self.stubs.Set(time, 'sleep', fake_sleep)
+
+        self.worker.run(run_once=True, poll_once=True)
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(1))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
+
+        self.mox.VerifyAll()
+
+    def test_get_job_retries_on_error(self):
+        self.client.create_worker(mox.IsA(str)).\
+            AndReturn(fakes.WORKER)
+        self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
+            AndRaise(Exception())
+        self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
+            AndRaise(Exception())
+        self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
+            AndReturn(fakes.JOB)
+        self.client.delete_worker(str(fakes.WORKER_ID))
+        self.mox.ReplayAll()
+
+        self.config(job_poll_interval=5, group='worker')
+        self.config(action_type='snapshot', group='worker')
+
+        fake_sleep = lambda x: None
+        self.stubs.Set(time, 'sleep', fake_sleep)
+
+        self.worker.run(run_once=True, poll_once=False)
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(1))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
+
+        self.mox.VerifyAll()
+
+    def test_unregister_does_not_retry_on_error(self):
+        self.client.create_worker(mox.IsA(str)).\
+            AndReturn(fakes.WORKER)
+        self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
+            AndReturn(fakes.JOB)
+        self.client.delete_worker(str(fakes.WORKER_ID)).AndRaise(Exception())
+        self.mox.ReplayAll()
+
+        self.config(job_poll_interval=5, group='worker')
+        self.config(action_type='snapshot', group='worker')
+
+        fake_sleep = lambda x: None
+        self.stubs.Set(time, 'sleep', fake_sleep)
+
+        self.worker.run(run_once=True, poll_once=True)
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(1))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
+
+        self.mox.VerifyAll()
+
 
 class FakeProcessor(worker.JobProcessor):
 

@@ -58,14 +58,13 @@ class Worker(object):
         self.processor = processor
         self.worker_id = None
         self.host = socket.gethostname()
+        self.running = False
 
     def run(self, run_once=False, poll_once=False):
-        LOG.debug(_('Starting qonos worker service'))
-
-        self.processor.init_processor(self)
-        self.worker_id = self._register_worker()
+        LOG.info(_('Starting qonos worker service'))
 
         if CONF.worker.daemonized:
+            LOG.debug(_('Entering daemon mode'))
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = utils.get_qonos_open_file_log_handlers()
@@ -84,6 +83,9 @@ class Worker(object):
 
     def _run_loop(self, run_once=False, poll_once=False):
         self.running = True
+        self.processor.init_processor(self)
+        self.worker_id = self._register_worker()
+
         while self.running:
             job = self._poll_for_next_job(poll_once)
             if job:
@@ -93,31 +95,51 @@ class Worker(object):
             if run_once:
                 self.running = False
 
+        LOG.info(_("Worker is terminating"))
         self._unregister_worker()
         self.processor.cleanup_processor()
 
     def _register_worker(self):
-        LOG.debug(_('Registering worker.'))
-        worker = self.client.create_worker(self.host)
-        LOG.debug(_('Worker has been registered with ID: %s') % worker['id'])
-        return worker['id']
+        LOG.info(_('Registering worker.'))
+        while self.running:
+            try:
+                worker = self.client.create_worker(self.host)
+                LOG.info(_('Worker has been registered with ID: %s') % 
+                          worker['id'])
+                return worker['id']
+            except Exception, ex:
+                LOG.warn(_('Error occurred registering worker with Qonos. '
+                           'Is the Qonos API running? Will retry...'))
+                LOG.debug(_('Exception: %s') % str(ex))
+            time.sleep(CONF.worker.job_poll_interval)
 
     def _unregister_worker(self):
-        msg = _('Unregistering worker. ID: %s')
-        LOG.debug(msg % self.worker_id)
-
-        self.client.delete_worker(self.worker_id)
+        LOG.info(_('Unregistering worker. ID: %s') % self.worker_id)
+        try:
+            self.client.delete_worker(self.worker_id)
+        except Exception, ex:
+            LOG.warn(_('Error occurred unregistering worker from Qonos. '
+                       'Is the Qonos API running? Will NOT retry...'))
+            LOG.debug(_('Exception: %s') % str(ex))
 
     def _terminate(self, signum, frame):
         self.running = False
 
     def _poll_for_next_job(self, poll_once=False):
-        LOG.debug(_("Attempting to get next job from API"))
         job = None
-        while job is None:
+
+        while job is None and self.running:
+            LOG.debug(_("Attempting to get next job from API"))
             time.sleep(CONF.worker.job_poll_interval)
-            job = self.client.get_next_job(self.worker_id,
-                                           CONF.worker.action_type)['job']
+            try:
+                job = self.client.get_next_job(self.worker_id,
+                                               CONF.worker.action_type)['job']
+            except Exception, ex:
+                LOG.warn(_('Error occurred fetching next job from qonos. '
+                           'Is the Qonos API running? Will retry...'))
+                LOG.debug(_('Exception: %s') % str(ex))
+                job = None
+            
             if poll_once:
                 break
 
