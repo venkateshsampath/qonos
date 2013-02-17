@@ -26,7 +26,7 @@ setuptools.setup(
     name='qonos',
     version=version.version_info.canonical_version_string(always=True),
     description='The QonoS project provides services for scheduling '
-                'instance snapshots.',
+                'regularly occuring tasks.',
     license='Apache License (2.0)',
     #author='OpenStack',
     #author_email='openstack@lists.launchpad.net',
@@ -45,5 +45,6 @@ setuptools.setup(
         'Environment :: No Input/Output (Daemon)',
         'Environment :: OpenStack',
     ],
-    scripts=['bin/qonos-api'],
+    scripts=['bin/qonos-api', 'bin/qonos-scheduler',
+             'bin/qonos-worker', 'qonos/qonosclient/bin/qonos'],
     py_modules=[])
