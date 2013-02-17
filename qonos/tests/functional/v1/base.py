@@ -249,6 +249,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(updated_schedule['minute'], schedule['minute'])
         self.assertEqual(updated_schedule['hour'], request['schedule']['hour'])
         self.assertNotEqual(updated_schedule['hour'], schedule['hour'])
+        self.assertNotEqual(updated_schedule['next_run'], schedule['next_run'])
 
         #update schedule metadata
         request = {'schedule': {

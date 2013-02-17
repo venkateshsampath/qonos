@@ -119,13 +119,27 @@ class SchedulesController(object):
             api_utils.deserialize_schedule_metadata(body['schedule'])
             values = {}
             values.update(body['schedule'])
-            schedule = self.db_api.schedule_update(schedule_id,
-                                                   values)
-            utils.serialize_datetimes(schedule)
-            api_utils.serialize_schedule_metadata(schedule)
+            schedule = self.db_api.schedule_update(schedule_id, values)
+            # NOTE(ameade): We must recalculate the schedules next_run time
+            # since the schedule has changed
+            time_keys = ['minute', 'hour', 'month', 'day_of_week',
+                         'day_of_month']
+            update_next_run = False
+            for key in time_keys:
+                if key in values:
+                    update_next_run = True
+                    break
+
+            if update_next_run:
+                values = {}
+                values['next_run'] = api_utils.schedule_to_next_run(schedule)
+                schedule = self.db_api.schedule_update(schedule_id, values)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)
+
+        utils.serialize_datetimes(schedule)
+        api_utils.serialize_schedule_metadata(schedule)
         return {'schedule': schedule}
 
 

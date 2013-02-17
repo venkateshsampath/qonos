@@ -15,6 +15,7 @@
 #    under the License.
 
 from qonos.common import utils
+from qonos.openstack.common import timeutils
 
 
 def serialize_metadata(metadata):
@@ -51,7 +52,8 @@ def deserialize_job_metadata(job):
         job['job_metadata'] = deserialize_metadata(metadata)
 
 
-def schedule_to_next_run(schedule):
+def schedule_to_next_run(schedule, start_time=None):
+    start_time = start_time or timeutils.utcnow()
     minute = schedule.get('minute', '*')
     hour = schedule.get('hour', '*')
     day_of_month = schedule.get('day_of_month', '*')

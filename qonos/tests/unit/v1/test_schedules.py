@@ -18,6 +18,7 @@ import datetime
 import uuid
 import webob.exc
 
+from qonos.api.v1 import api_utils
 from qonos.api.v1 import schedules
 from qonos.common import exception
 from qonos.common import timeutils
@@ -274,6 +275,55 @@ class TestSchedulesApi(test_utils.BaseTestCase):
                           self.controller.delete, request, schedule_id)
 
     def test_update(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {
+                            'minute': '55',
+                            'hour': '5',
+                            'day': '2',
+                            'day_of_week': '4',
+                            'day_of_month': '23',
+                            'action': 'new-action',
+                            'tenant': 'new-tenant',
+                         }}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertEqual(update_fixture['schedule']['minute'],
+                         updated['minute'])
+        self.assertEqual(update_fixture['schedule']['hour'],
+                         updated['hour'])
+        self.assertEqual(update_fixture['schedule']['day'],
+                         updated['day'])
+        self.assertEqual(update_fixture['schedule']['day_of_week'],
+                         updated['day_of_week'])
+        self.assertEqual(update_fixture['schedule']['day_of_month'],
+                         updated['day_of_month'])
+        self.assertEqual(update_fixture['schedule']['action'],
+                         updated['action'])
+        self.assertEqual(update_fixture['schedule']['tenant'],
+                         updated['tenant'])
+        self.assertEqual(updated['next_run'], expected_next_run)
+
+    def test_update_with_hour(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
         request = unit_utils.get_fake_request(method='PUT')
         update_fixture = {'schedule': {'hour': '5'}}
 
@@ -287,7 +337,128 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(self.schedule_1['minute'], updated['minute'])
         self.assertEqual(update_fixture['schedule']['hour'],
                          updated['hour'])
-        self.assertNotEqual(updated['next_run'], self.schedule_1['next_run'])
+        self.assertEqual(updated['next_run'], expected_next_run)
+
+    def test_update_with_minute(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {'minute': '5'}}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertNotEqual(updated.get('created_at'), None)
+        self.assertNotEqual(updated.get('updated_at'), None)
+        self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
+        self.assertEqual(self.schedule_1['action'], updated['action'])
+        self.assertEqual(self.schedule_1['hour'], updated['hour'])
+        self.assertEqual(update_fixture['schedule']['minute'],
+                         updated['minute'])
+        self.assertEqual(updated['next_run'], expected_next_run)
+
+    def test_update_with_month(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {'month': '5'}}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertNotEqual(updated.get('created_at'), None)
+        self.assertNotEqual(updated.get('updated_at'), None)
+        self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
+        self.assertEqual(self.schedule_1['action'], updated['action'])
+        self.assertEqual(update_fixture['schedule']['month'],
+                         updated['month'])
+        self.assertEqual(updated['next_run'], expected_next_run)
+
+    def test_update_with_day_of_week(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {'day_of_week': '5'}}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertNotEqual(updated.get('created_at'), None)
+        self.assertNotEqual(updated.get('updated_at'), None)
+        self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
+        self.assertEqual(self.schedule_1['action'], updated['action'])
+        self.assertEqual(update_fixture['schedule']['day_of_week'],
+                         updated['day_of_week'])
+        self.assertEqual(updated['next_run'], expected_next_run)
+
+    def test_update_with_day_of_month(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            return timeutils.parse_isotime(expected_next_run)
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {'day_of_month': '5'}}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertNotEqual(updated.get('created_at'), None)
+        self.assertNotEqual(updated.get('updated_at'), None)
+        self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
+        self.assertEqual(self.schedule_1['action'], updated['action'])
+        self.assertEqual(update_fixture['schedule']['day_of_month'],
+                         updated['day_of_month'])
+        self.assertEqual(updated['next_run'], expected_next_run)
+
+    def test_update_tenant(self):
+
+        new_tenant = 'new-tenant-name'
+
+        def fake_schedule_to_next_run(*args, **kwargs):
+            self.fail('next_run should not be updated')
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {'tenant': new_tenant}}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertNotEqual(updated.get('created_at'), None)
+        self.assertNotEqual(updated.get('updated_at'), None)
+        self.assertEqual(new_tenant, updated['tenant'])
+        self.assertEqual(self.schedule_1['action'], updated['action'])
+        self.assertEqual(self.schedule_1['minute'], updated['minute'])
+        self.assertEqual(updated['next_run'],
+                         timeutils.isotime(self.schedule_1['next_run']))
 
     def test_update_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
