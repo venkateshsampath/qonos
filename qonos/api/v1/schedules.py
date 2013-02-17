@@ -122,9 +122,18 @@ class SchedulesController(object):
             schedule = self.db_api.schedule_update(schedule_id, values)
             # NOTE(ameade): We must recalculate the schedules next_run time
             # since the schedule has changed
-            values = {}
-            values['next_run'] = api_utils.schedule_to_next_run(schedule)
-            schedule = self.db_api.schedule_update(schedule_id, values)
+            time_keys = ['minute', 'hour', 'month', 'day_of_week',
+                         'day_of_month']
+            update_next_run = False
+            for key in time_keys:
+                if key in values:
+                    update_next_run = True
+                    break
+
+            if update_next_run:
+                values = {}
+                values['next_run'] = api_utils.schedule_to_next_run(schedule)
+                schedule = self.db_api.schedule_update(schedule_id, values)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)
