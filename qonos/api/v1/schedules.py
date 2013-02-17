@@ -119,6 +119,7 @@ class SchedulesController(object):
             api_utils.deserialize_schedule_metadata(body['schedule'])
             values = {}
             values.update(body['schedule'])
+            values = api_utils.check_read_only_properties(values)
             schedule = self.db_api.schedule_update(schedule_id, values)
             # NOTE(ameade): We must recalculate the schedules next_run time
             # since the schedule has changed
@@ -137,6 +138,8 @@ class SchedulesController(object):
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)
+        except exception.Forbidden as e:
+            raise webob.exc.HTTPForbidden(explanation=unicode(e))
 
         utils.serialize_datetimes(schedule)
         api_utils.serialize_schedule_metadata(schedule)

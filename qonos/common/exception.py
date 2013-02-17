@@ -35,6 +35,10 @@ class NotFound(QonosException):
     message = _('An object with the specified identifier could not be found.')
 
 
+class Forbidden(QonosException):
+    message = _('The action performed is forbidden for given object.')
+
+
 class Duplicate(QonosException):
     message = _('An object with the specified identifier already exists.')
 

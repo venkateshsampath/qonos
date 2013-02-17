@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from qonos.common import exception
 from qonos.common import utils
 from qonos.openstack.common import timeutils
 
@@ -28,6 +29,16 @@ def serialize_metadata(metadata):
 def deserialize_metadata(metadata):
     return [{'key': key, 'value': value}
             for key, value in metadata.iteritems()]
+
+
+def check_read_only_properties(values):
+    _read_only_properties = ['created_at', 'updated_at']
+    for key in values.keys():
+        if key in _read_only_properties:
+            msg = "%s is a read only attribute" % key
+            raise exception.Forbidden(explanation=unicode(msg))
+
+    return values
 
 
 def serialize_schedule_metadata(schedule):
