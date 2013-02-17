@@ -90,7 +90,10 @@ class Worker(object):
             job = self._poll_for_next_job(poll_once)
             if job:
                 LOG.debug(_('Processing job: %s') % job)
-                self.processor.process_job(job)
+                try:
+                    self.processor.process_job(job)
+                except Exception as e:
+                    self.update_job(job['id'], 'ERROR', error_message=e)
 
             if run_once:
                 self.running = False
@@ -159,7 +162,11 @@ class Worker(object):
             msg += _("Error message: %s") % error_message
 
         LOG.debug(msg)
-        self.client.update_job_status(job_id, status, timeout, error_message)
+        try:
+            self.client.update_job_status(job_id, status, timeout,
+                                          error_message)
+        except Exception:
+            LOG.exception(_("Failed to update job status."))
 
     def update_job_metadata(self, job_id, metadata):
         return self.client.update_job_metadata(job_id, metadata)

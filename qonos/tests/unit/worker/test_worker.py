@@ -18,6 +18,7 @@ import fakes
 import mox
 import time
 
+from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
 from qonos.worker import worker
 
@@ -152,6 +153,26 @@ class TestWorker(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
+    def test_error_reported_when_processing_job(self):
+        self.prepare_client_mock(job=fakes.JOB)
+
+        def fake_process_job(*args, **kwargs):
+            raise Exception()
+
+        self.stubs.Set(self.processor, 'process_job', fake_process_job)
+
+        self.client.update_job(mox.IsA(str),
+                               'ERROR',
+                               error_message=mox.IsA(str))
+        self.mox.ReplayAll()
+
+        fake_sleep = lambda x: None
+        self.stubs.Set(time, 'sleep', fake_sleep)
+
+        self.worker.run(run_once=True, poll_once=True)
+
+        self.mox.VerifyAll()
+
     def test_unregister_does_not_retry_on_error(self):
         self.client.create_worker(mox.IsA(str)).\
             AndReturn(fakes.WORKER)
@@ -170,6 +191,53 @@ class TestWorker(test_utils.BaseTestCase):
         self.assertTrue(self.processor.was_init_processor_called(1))
         self.assertTrue(self.processor.was_process_job_called(1))
         self.assertTrue(self.processor.was_cleanup_processor_called(1))
+
+        self.mox.VerifyAll()
+
+    def test_update_job(self):
+        status = 'PROCESSING'
+        self.client.update_job_status(unit_utils.JOB_UUID1, status,
+                                      None, None).AndReturn(fakes.WORKER)
+        self.mox.ReplayAll()
+
+        self.worker.update_job(unit_utils.JOB_UUID1, status)
+
+        self.mox.VerifyAll()
+
+    def test_update_job_with_timeout(self):
+        status = 'ERROR'
+        timeout = 'blah'
+        self.client.update_job_status(unit_utils.JOB_UUID1, status,
+                                      timeout, None).AndReturn(fakes.WORKER)
+        self.mox.ReplayAll()
+
+        self.worker.update_job(unit_utils.JOB_UUID1, status, timeout=timeout)
+
+        self.mox.VerifyAll()
+
+    def test_update_job_with_error_message(self):
+        status = 'ERROR'
+        error_message = 'blah'
+        self.client.update_job_status(unit_utils.JOB_UUID1,
+                                      status,
+                                      None,
+                                      error_message).AndReturn(fakes.WORKER)
+        self.mox.ReplayAll()
+
+        self.worker.update_job(unit_utils.JOB_UUID1,
+                               status,
+                               error_message=error_message)
+
+        self.mox.VerifyAll()
+
+    def test_update_job_with_exception(self):
+        status = 'PROCESSING'
+        self.client.update_job_status(unit_utils.JOB_UUID1,
+                                      status,
+                                      None, None).AndRaise(Exception)
+        self.mox.ReplayAll()
+
+        self.worker.update_job(unit_utils.JOB_UUID1, status)
 
         self.mox.VerifyAll()
 
