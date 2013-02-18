@@ -636,6 +636,8 @@ def _job_get_next_by_action(session, now, action, max_retry):
         .filter_by(action=action)\
         .filter(models.Job.retry_count < max_retry)\
         .filter(models.Job.hard_timeout > now)\
+        .filter(sa_sql.or_(models.Job.status != 'DONE',
+                           models.Job.status == None))\
         .filter(sa_sql.or_(models.Job.worker_id == None,
                            models.Job.timeout <= now))\
         .with_lockmode('update')\

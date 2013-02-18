@@ -381,6 +381,7 @@ def job_get_and_assign_next_by_action(action, worker_id, max_retry):
         if job['action'] == action and \
                 job['retry_count'] < max_retry and \
                 job['hard_timeout'] > now and \
+                job['status'] != 'DONE' and \
                 (job['worker_id'] is None or job['timeout'] <= now):
             job_ref = job
             break
