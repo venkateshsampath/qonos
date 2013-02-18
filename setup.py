@@ -24,7 +24,7 @@ depend_links = setup.parse_dependency_links()
 
 setuptools.setup(
     name='qonos',
-    version=version.version_info.canonical_version_string(always=True),
+    version=version.version_info.canonical_version_string(always=False),
     description='The QonoS project provides services for scheduling '
                 'regularly occuring tasks.',
     license='Apache License (2.0)',
