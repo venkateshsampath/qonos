@@ -34,11 +34,13 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestJobsApi, self).setUp()
+        timeutils.set_time_override()
         self.controller = jobs.JobsController(db_api=db_api)
         self._create_jobs()
 
     def tearDown(self):
         super(TestJobsApi, self).tearDown()
+        timeutils.clear_time_override()
         db_api.reset()
 
     def _create_jobs(self):
@@ -199,7 +201,8 @@ class TestJobsApi(test_utils.BaseTestCase):
 
         expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
 
-        def fake_schedule_to_next_run(*args, **kwargs):
+        def fake_schedule_to_next_run(_schedule, start_time=None):
+            self.assertEqual(timeutils.utcnow(), start_time)
             return expected_next_run
 
         self.stubs.Set(api_utils, 'schedule_to_next_run',

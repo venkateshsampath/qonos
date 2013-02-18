@@ -71,7 +71,7 @@ class JobsController(object):
         # Update schedule last_scheduled and next_run
         values = {}
         values['next_run'] = api_utils.schedule_to_next_run(schedule,
-                                                schedule.get('last_scheduled'))
+                                                timeutils.utcnow())
         values['last_scheduled'] = timeutils.utcnow()
         self.db_api.schedule_update(schedule['id'], values)
 

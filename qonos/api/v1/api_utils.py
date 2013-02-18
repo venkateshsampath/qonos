@@ -72,4 +72,4 @@ def schedule_to_next_run(schedule, start_time=None):
     day_of_week = schedule.get('day_of_week', '*')
     return utils.cron_string_to_next_datetime(minute, hour, day_of_month,
                                               month, day_of_week,
-                                              schedule.get('last_scheduled'))
+                                              start_time)
