@@ -17,7 +17,7 @@
 import mox
 import time
 
-from qonos.openstack.common import timeutils
+from qonos.common import timeutils
 from qonos.scheduler import scheduler
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils

@@ -27,12 +27,12 @@ import sqlalchemy.orm as sa_orm
 import sqlalchemy.sql as sa_sql
 
 from qonos.common import exception
+from qonos.common import timeutils
 import qonos.db.db_utils as db_utils
 from qonos.db.sqlalchemy import models
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as os_logging
-from qonos.openstack.common import timeutils
 
 
 _ENGINE = None

@@ -17,8 +17,8 @@
 import datetime
 import logging as pylog
 
+from qonos.common import timeutils
 from qonos.common import utils
-from qonos.openstack.common import timeutils
 from qonos.tests import utils as test_utils
 
 

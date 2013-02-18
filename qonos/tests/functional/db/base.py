@@ -18,9 +18,9 @@ import datetime
 import uuid
 
 from qonos.common import exception
+from qonos.common import timeutils
 from qonos.common import utils as qonos_utils
 from qonos.openstack.common import cfg
-from qonos.openstack.common import timeutils
 from qonos.openstack.common import uuidutils
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils

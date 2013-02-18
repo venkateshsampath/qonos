@@ -25,8 +25,8 @@ from sqlalchemy import ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship, backref, object_mapper
 from sqlalchemy import UniqueConstraint
 
+from qonos.common import timeutils
 import qonos.db.sqlalchemy.api
-from qonos.openstack.common import timeutils
 from qonos.openstack.common import uuidutils
 
 BASE = declarative_base()

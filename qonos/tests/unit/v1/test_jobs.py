@@ -21,8 +21,8 @@ import webob.exc
 from qonos.api.v1 import api_utils
 from qonos.api.v1 import jobs
 from qonos.common import exception
+from qonos.common import timeutils
 import qonos.db.simple.api as db_api
-from qonos.openstack.common import timeutils
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
 

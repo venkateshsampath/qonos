@@ -15,13 +15,13 @@
 
 import uuid
 
+from qonos.common import timeutils
 from qonos.openstack.common import cfg
 from qonos.openstack.common import context
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
 from qonos.openstack.common import jsonutils
 from qonos.openstack.common import log as logging
-from qonos.openstack.common import timeutils
 
 
 LOG = logging.getLogger(__name__)

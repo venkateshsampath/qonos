@@ -40,11 +40,13 @@ class TestSchedulesApi(test_utils.BaseTestCase):
 
     def setUp(self):
         super(TestSchedulesApi, self).setUp()
+        timeutils.set_time_override(datetime.datetime(2013, 2, 17, 2, 0, 0, 0))
         self.controller = schedules.SchedulesController(db_api=db_api)
         self._create_schedules()
 
     def tearDown(self):
         super(TestSchedulesApi, self).tearDown()
+        timeutils.clear_time_override()
         db_api.reset()
 
     def _create_schedules(self):
