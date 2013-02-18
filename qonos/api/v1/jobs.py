@@ -68,6 +68,14 @@ class JobsController(object):
         except exception.NotFound:
             raise webob.exc.HTTPNotFound()
 
+        # Check integrity of schedule
+        expected_next_run = job.get('next_run')
+        if expected_next_run and expected_next_run != schedule.get('next_run'):
+            msg = _("Specified next run does not match the current next run"
+                    " value. This could mean schedule has either changed or"
+                    " been scheduled since you last expected.")
+            raise webob.exc.HTTPConflict(explanation=msg)
+
         # Update schedule last_scheduled and next_run
         values = {}
         values['next_run'] = api_utils.schedule_to_next_run(schedule,
