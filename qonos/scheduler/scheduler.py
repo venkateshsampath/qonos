@@ -21,6 +21,7 @@ from qonos.common import utils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
+from qonos.qonosclient import exception as client_exc
 
 LOG = logging.getLogger(__name__)
 
@@ -89,7 +90,11 @@ class Scheduler(object):
         if schedules:
             LOG.debug(_('Creating %d jobs') % len(schedules))
             for schedule in schedules:
-                self.client.create_job(schedule['id'])
+                try:
+                    self.client.create_job(schedule['id'])
+                except client_exc.Duplicate:
+                    msg = _("Job for schedule %s has already been created")
+                    LOG.info(msg % schedule['id'])
 
     def get_schedules(self, start_time=None, end_time=None):
         filter_args = {'next_run_before': end_time}

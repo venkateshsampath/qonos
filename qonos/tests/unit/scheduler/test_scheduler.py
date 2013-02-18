@@ -18,6 +18,7 @@ import mox
 import time
 
 from qonos.common import timeutils
+from qonos.qonosclient import exception as client_exc
 from qonos.scheduler import scheduler
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
@@ -85,6 +86,20 @@ class TestScheduler(test_utils.BaseTestCase):
 
         self.stubs.Set(self.scheduler, 'get_schedules', fake)
         self.client.create_job(mox.IgnoreArg())
+        self.mox.ReplayAll()
+        self.scheduler.enqueue_jobs()
+        self.mox.VerifyAll()
+
+    def test_enqueue_jobs_job_exists(self):
+        called = {'get_schedules': False}
+
+        def fake(*args, **kwargs):
+            called['get_schedules'] = True
+            return [{'id': unit_utils.SCHEDULE_UUID1}]
+
+        self.stubs.Set(self.scheduler, 'get_schedules', fake)
+        self.client.create_job(mox.IgnoreArg()).AndRaise(
+                                        client_exc.Duplicate())
         self.mox.ReplayAll()
         self.scheduler.enqueue_jobs()
         self.mox.VerifyAll()
