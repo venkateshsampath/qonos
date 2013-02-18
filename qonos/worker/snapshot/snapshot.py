@@ -159,9 +159,16 @@ class SnapshotProcessor(worker.JobProcessor):
                     LOG.warn(_('Removed image %s') % image_id)
 
     def _get_retention(self, nova_client, instance_id):
-        server = nova_client.servers.get(instance_id)
-        ret_str = server.metadata.get("org.openstack__1__retention")
-        retention = int(ret_str or 0)
+        ret_str = None
+        retention = 0
+        try:
+            server = nova_client.servers.get(instance_id)
+            ret_str = server.metadata.get("org.openstack__1__retention")
+            retention = int(ret_str or 0)
+        except ValueError, e:
+            LOG.warn(_('Error getting retention for server %(instance_id)s: '
+                       'found %(ret_str)s') %
+                     {'instance_id': instance_id, 'ret_str': ret_str})
 
         return retention
 
