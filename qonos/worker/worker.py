@@ -93,7 +93,8 @@ class Worker(object):
                 try:
                     self.processor.process_job(job)
                 except Exception as e:
-                    self.update_job(job['id'], 'ERROR', error_message=e)
+                    self.update_job(job['id'], 'ERROR',
+                                    error_message=unicode(e))
 
             if run_once:
                 self.running = False
