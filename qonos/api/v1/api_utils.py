@@ -15,8 +15,8 @@
 #    under the License.
 
 from qonos.common import exception
+from qonos.common import timeutils
 from qonos.common import utils
-from qonos.openstack.common import timeutils
 
 
 def serialize_metadata(metadata):

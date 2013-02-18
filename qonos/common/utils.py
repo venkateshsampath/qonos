@@ -20,9 +20,9 @@ import logging as pylog
 from croniter.croniter import croniter
 
 from qonos.common import exception as exc
+from qonos.common import timeutils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
-from qonos.openstack.common import timeutils
 
 
 CONF = cfg.CONF

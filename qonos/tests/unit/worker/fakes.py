@@ -18,7 +18,7 @@ Fakes For Worker tests.
 
 import datetime
 
-from qonos.openstack.common import timeutils
+from qonos.common import timeutils
 
 WORKER_ID = '11111111-1111-1111-1111-11111111'
 JOB_ID = '22222222-2222-2222-2222-22222222'
