@@ -80,9 +80,12 @@ class SchedulesController(object):
         return {'schedules': schedules, 'schedules_links': links}
 
     def create(self, request, body=None):
-        if (body is None or type(body).__name__ != 'dict' or
-            body.get('schedule') is None):
-            raise webob.exc.HTTPBadRequest()
+        if not body:
+            msg = _('The request body must not be empty')
+            raise webob.exc.HTTPBadRequest(explanation=msg)
+        if not 'schedule' in body:
+            msg = _('The request body must contain a "schedule" entity')
+            raise webob.exc.HTTPBadRequest(explanation=msg)
 
         api_utils.deserialize_schedule_metadata(body['schedule'])
         values = {}
@@ -112,8 +115,12 @@ class SchedulesController(object):
             raise webob.exc.HTTPNotFound(explanation=msg)
 
     def update(self, request, schedule_id, body):
-        if body is None or body.get('schedule') is None:
-            raise webob.exc.HTTPBadRequest()
+        if not body:
+            msg = _('The request body must not be empty')
+            raise webob.exc.HTTPBadRequest(explanation=msg)
+        if not 'schedule' in body:
+            msg = _('The request body must contain a "schedule" entity')
+            raise webob.exc.HTTPBadRequest(explanation=msg)
 
         try:
             api_utils.deserialize_schedule_metadata(body['schedule'])

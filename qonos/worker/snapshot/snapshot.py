@@ -151,13 +151,13 @@ class SnapshotProcessor(worker.JobProcessor):
 
             if len(scheduled_images) > retention:
                 to_delete = scheduled_images[retention:]
-                LOG.warn(_('Removing %(remove)d images for a retention '
+                LOG.info(_('Removing %(remove)d images for a retention '
                            'of %(retention)d') % {'remove': len(to_delete),
                                                  'retention': retention})
                 for image in to_delete:
                     image_id = image.id
                     nova_client.images.delete(image_id)
-                    LOG.warn(_('Removed image %s') % image_id)
+                    LOG.info(_('Removed image %s') % image_id)
 
     def _get_retention(self, nova_client, instance_id):
         ret_str = None
