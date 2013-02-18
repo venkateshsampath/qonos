@@ -68,19 +68,24 @@ class JobsController(object):
         except exception.NotFound:
             raise webob.exc.HTTPNotFound()
 
-        # Check integrity of schedule
+        # Check integrity of schedule and update next run
         expected_next_run = job.get('next_run')
-        actual_next_run = timeutils.isotime(schedule.get('next_run'))
-        if expected_next_run and expected_next_run != actual_next_run:
+        if expected_next_run:
+            expected_next_run = timeutils.parse_isotime(job.get('next_run'))
+
+        next_run = api_utils.schedule_to_next_run(schedule, timeutils.utcnow())
+        try:
+            self.db_api.schedule_test_and_set_next_run(schedule['id'],
+                        expected_next_run, next_run)
+
+        except exception.NotFound:
             msg = _("Specified next run does not match the current next run"
-                    " value. This could mean schedule has either changed or"
-                    " been scheduled since you last expected.")
+                    " value. This could mean schedule has either changed"
+                    "or has already been scheduled since you last expected.")
             raise webob.exc.HTTPConflict(explanation=msg)
 
-        # Update schedule last_scheduled and next_run
+        # Update schedule last_scheduled
         values = {}
-        values['next_run'] = api_utils.schedule_to_next_run(schedule,
-                                                timeutils.utcnow())
         values['last_scheduled'] = timeutils.utcnow()
         self.db_api.schedule_update(schedule['id'], values)
 

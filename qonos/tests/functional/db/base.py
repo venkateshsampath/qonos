@@ -368,6 +368,22 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
         updated_schedule = self.db_api.schedule_get_by_id(schedule['id'])
         self.assertEqual(updated_schedule['next_run'], new_next_run)
 
+    def test_schedule_test_and_set_next_run_with_expected(self):
+        fixture = {
+            'id': str(uuid.uuid4()),
+            'tenant': str(uuid.uuid4()),
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': 2,
+        }
+        new_next_run = timeutils.utcnow()
+        schedule = self.db_api.schedule_create(fixture)
+        self.db_api.schedule_test_and_set_next_run(
+                        schedule['id'], schedule.get('next_run'), new_next_run)
+
+        updated_schedule = self.db_api.schedule_get_by_id(schedule['id'])
+        self.assertEqual(updated_schedule['next_run'], new_next_run)
+
     def test_schedule_test_and_set_next_run_invalid(self):
         fixture = {
             'id': str(uuid.uuid4()),
@@ -376,10 +392,12 @@ class TestSchedulesDBApi(test_utils.BaseTestCase):
             'minute': 30,
             'hour': 2,
         }
+        bad_expected_next_run = timeutils.utcnow()
+        timeutils.advance_time_seconds(10)
         schedule = self.db_api.schedule_create(fixture)
         self.assertRaises(exception.NotFound,
                           self.db_api.schedule_test_and_set_next_run,
-                          schedule['id'], timeutils.utcnow(),
+                          schedule['id'], bad_expected_next_run,
                           timeutils.utcnow())
 
     def test_schedule_delete(self):

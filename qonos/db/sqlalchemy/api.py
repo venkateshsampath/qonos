@@ -388,9 +388,14 @@ def schedule_update(schedule_id, schedule_values):
 
 def schedule_test_and_set_next_run(schedule_id, expected_next_run, next_run):
     session = get_session()
-    query = session.query(models.Schedule).filter_by(id=schedule_id)\
-                   .filter_by(next_run=expected_next_run)\
-                   .update(dict(next_run=next_run))
+    if expected_next_run:
+        query = session.query(models.Schedule).filter_by(id=schedule_id)\
+                       .filter_by(next_run=expected_next_run)\
+                       .update(dict(next_run=next_run))
+    else:
+        query = session.query(models.Schedule).filter_by(id=schedule_id)\
+                       .update(dict(next_run=next_run))
+
     if not query:
         raise exception.NotFound()
 
