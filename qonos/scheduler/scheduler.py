@@ -91,7 +91,8 @@ class Scheduler(object):
             LOG.debug(_('Creating %d jobs') % len(schedules))
             for schedule in schedules:
                 try:
-                    self.client.create_job(schedule['id'])
+                    self.client.create_job(schedule['id'],
+                                           schedule.get('next_run'))
                 except client_exc.Duplicate:
                     msg = _("Job for schedule %s has already been created")
                     LOG.info(msg % schedule['id'])

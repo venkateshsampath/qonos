@@ -79,26 +79,29 @@ class TestScheduler(test_utils.BaseTestCase):
 
     def test_enqueue_jobs(self):
         called = {'get_schedules': False}
+        next_run = '2010-11-30T17:00:00Z'
 
         def fake(*args, **kwargs):
             called['get_schedules'] = True
-            return [{'id': unit_utils.SCHEDULE_UUID1}]
+            return [{'id': unit_utils.SCHEDULE_UUID1, 'next_run': next_run}]
 
         self.stubs.Set(self.scheduler, 'get_schedules', fake)
-        self.client.create_job(mox.IgnoreArg())
+        self.client.create_job(unit_utils.SCHEDULE_UUID1, next_run)
         self.mox.ReplayAll()
         self.scheduler.enqueue_jobs()
         self.mox.VerifyAll()
 
     def test_enqueue_jobs_job_exists(self):
         called = {'get_schedules': False}
+        next_run = '2010-11-30T17:00:00Z'
 
         def fake(*args, **kwargs):
             called['get_schedules'] = True
-            return [{'id': unit_utils.SCHEDULE_UUID1}]
+            return [{'id': unit_utils.SCHEDULE_UUID1, 'next_run': next_run}]
 
         self.stubs.Set(self.scheduler, 'get_schedules', fake)
-        self.client.create_job(mox.IgnoreArg()).AndRaise(
+        self.client.create_job(unit_utils.SCHEDULE_UUID1,
+                               next_run).AndRaise(
                                         client_exc.Duplicate())
         self.mox.ReplayAll()
         self.scheduler.enqueue_jobs()
