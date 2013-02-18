@@ -70,7 +70,8 @@ class JobsController(object):
 
         # Check integrity of schedule
         expected_next_run = job.get('next_run')
-        if expected_next_run and expected_next_run != schedule.get('next_run'):
+        actual_next_run = timeutils.isotime(schedule.get('next_run'))
+        if expected_next_run and expected_next_run != actual_next_run:
             msg = _("Specified next run does not match the current next run"
                     " value. This could mean schedule has either changed or"
                     " been scheduled since you last expected.")

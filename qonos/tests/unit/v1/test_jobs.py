@@ -50,7 +50,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': '2012-11-27T02:30:00Z'
+            'next_run': timeutils.parse_isotime('2012-11-27T02:30:00Z')
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
@@ -59,7 +59,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': '2012-11-27T02:30:00Z',
+            'next_run': timeutils.parse_isotime('2012-11-27T02:30:00Z'),
             'schedule_metadata': [
                     {
                     'key': 'instance_id',
@@ -239,7 +239,8 @@ class TestJobsApi(test_utils.BaseTestCase):
 
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
-                           'next_run': self.schedule_1['next_run']}}
+                           'next_run':
+                           timeutils.isotime(self.schedule_1['next_run'])}}
         job = self.controller.create(request, fixture).get('job')
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
@@ -258,7 +259,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def test_create_next_run_differs(self):
 
-        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
+        expected_next_run = '1989-01-19T12:00:00Z'
 
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
