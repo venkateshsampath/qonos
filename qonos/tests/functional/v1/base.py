@@ -17,7 +17,6 @@
 import datetime
 from operator import itemgetter
 import random
-import time
 
 from qonos.common import config
 from qonos.common import timeutils
@@ -41,7 +40,7 @@ class TestApi(utils.BaseTestCase):
     def setUp(self):
         super(TestApi, self).setUp()
         CONF.paste_deploy.config_file = './etc/qonos/qonos-api-paste.ini'
-        self.port = random.randint(50000, 60000)
+        self.port = random.randint(50000, 65000)
         self.service = wsgi.Service()
         app = config.load_paste_app('qonos-api')
         retry_count = 3
@@ -53,7 +52,7 @@ class TestApi(utils.BaseTestCase):
                 retry_count -= 1
                 if retry_count < 1:
                     raise ex
-                time.sleep(5)
+                self.port = random.randint(50000, 65000)
 
         self.client = client.Client("localhost", self.port)
         self.db_api = qonos.db.get_api()
