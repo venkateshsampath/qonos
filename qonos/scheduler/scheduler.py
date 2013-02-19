@@ -97,12 +97,4 @@ class Scheduler(object):
         if start_time:
             filter_args['next_run_after'] = start_time
 
-        schedules = self.client.list_schedules(filter_args=filter_args)
-
-        response = schedules
-        while response:
-            filter_args['marker'] = response[-1]['id']
-            response = self.client.list_schedules(filter_args=filter_args)
-            schedules.extend(response)
-
-        return schedules
+        return self.client.list_schedules(filter_args=filter_args)
