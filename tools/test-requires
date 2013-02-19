@@ -5,7 +5,7 @@ distribute>=0.6.24
 Babel
 
 # Needed for testing
-coverage
+coverage>=3.6
 mox
 nose
 nose-exclude
