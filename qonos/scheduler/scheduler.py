@@ -64,12 +64,8 @@ class Scheduler(object):
             next_run = time.time() + CONF.scheduler.job_schedule_interval
 
             # do work
-            try:
+            with utils.log_warning_and_dismiss_exception():
                 self.enqueue_jobs(end_time=current_run)
-            except Exception, ex:
-                LOG.warn(_('Error occurred while processing schedules. '
-                           'Is the Qonos API running? Will retry...'))
-                LOG.debug(_('Exception: %s') % str(ex))
 
             # do nothing until next run
             seconds = next_run - time.time()
