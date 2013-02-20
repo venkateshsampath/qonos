@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
 import datetime
 import logging as pylog
 
@@ -23,6 +24,9 @@ from qonos.common import exception as exc
 from qonos.common import timeutils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
+import qonos.openstack.common.log as logging
+
+LOG = logging.getLogger(__name__)
 
 
 CONF = cfg.CONF
@@ -81,3 +85,13 @@ def get_qonos_open_file_log_handlers():
                 hasattr(handler.stream, 'fileno')):
             open_files.append(handler.stream)
     return open_files
+
+
+@contextlib.contextmanager
+def log_warning_and_dismiss_exception():
+    try:
+        yield
+    except Exception as ex:
+        msg = '%(name)s: %(message)s'
+        LOG.warn(msg % {'name': unicode(type(ex).__name__),
+                        'message': unicode(ex)})

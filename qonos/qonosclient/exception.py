@@ -15,6 +15,10 @@
 #    under the License.
 
 
+class ConnRefused(Exception):
+    pass
+
+
 class NotFound(Exception):
     pass
 
