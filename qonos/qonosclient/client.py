@@ -125,8 +125,10 @@ class Client(object):
             query += ('%s=%s&' % (key, params[key]))
         return self._do_request('GET', path % query)['jobs']
 
-    def create_job(self, schedule_id):
+    def create_job(self, schedule_id, next_run=None):
         job = {'job': {'schedule_id': schedule_id}}
+        if next_run:
+            job['job']['next_run'] = next_run
         return self._do_request('POST', 'v1/jobs', job)['job']
 
     def get_job(self, job_id):

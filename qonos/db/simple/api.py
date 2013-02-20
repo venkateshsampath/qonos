@@ -200,6 +200,25 @@ def schedule_update(schedule_id, schedule_values):
     return schedule_get_by_id(schedule_id)
 
 
+def schedule_test_and_set_next_run(schedule_id, expected_next_run, next_run):
+    global DATA
+
+    schedule = DATA['schedules'].get(schedule_id)
+
+    if not schedule:
+        raise exception.NotFound()
+
+    if expected_next_run:
+        expected_next_run = expected_next_run.replace(tzinfo=None)
+        current_next_run = schedule.get('next_run')
+        if current_next_run:
+            current_next_run = current_next_run.replace(tzinfo=None)
+        if expected_next_run != current_next_run:
+            raise exception.NotFound()
+
+    schedule['next_run'] = next_run
+
+
 def schedule_delete(schedule_id):
     global DATA
     if schedule_id not in DATA['schedules']:

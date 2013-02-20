@@ -364,7 +364,7 @@ class TestApi(utils.BaseTestCase):
         meta_fixture2 = {meta2['key']: meta2['value']}
         # create job
 
-        new_job = self.client.create_job(schedule['id'])
+        new_job = self.client.create_job(schedule['id'], schedule['next_run'])
         self.assertNotEqual(new_job.get('id'), None)
         self.assertEqual(new_job['schedule_id'], schedule['id'])
         self.assertEqual(new_job['tenant'], schedule['tenant'])
@@ -379,6 +379,21 @@ class TestApi(utils.BaseTestCase):
         # ensure schedule was updated
         updated_schedule = self.client.get_schedule(schedule['id'])
         self.assertTrue(updated_schedule.get('last_scheduled'))
+
+        # change the schedule times
+        request = {
+            'schedule':
+            {
+                'minute': '33',
+                'hour': '1',
+            }
+        }
+        updated_schedule = self.client.update_schedule(schedule['id'], request)
+        self.assertNotEqual(updated_schedule['next_run'], schedule['next_run'])
+
+        # attempt to recreate the job using old next_run
+        self.assertRaises(client_exc.Duplicate, self.client.create_job,
+                          schedule['id'], schedule['next_run'])
 
         # list jobs
         jobs = self.client.list_jobs()

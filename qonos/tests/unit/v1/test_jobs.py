@@ -50,7 +50,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': '2012-11-27T02:30:00Z'
+            'next_run': timeutils.parse_isotime('2012-11-27T02:30:00Z')
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
@@ -59,7 +59,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': '2012-11-27T02:30:00Z',
+            'next_run': timeutils.parse_isotime('2012-11-27T02:30:00Z'),
             'schedule_metadata': [
                     {
                     'key': 'instance_id',
@@ -209,8 +209,7 @@ class TestJobsApi(test_utils.BaseTestCase):
                        fake_schedule_to_next_run)
 
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'job': {'schedule_id': self.schedule_1['id'],
-                            'id': unit_utils.JOB_UUID5}}
+        fixture = {'job': {'schedule_id': self.schedule_1['id']}}
         job = self.controller.create(request, fixture).get('job')
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
@@ -227,10 +226,50 @@ class TestJobsApi(test_utils.BaseTestCase):
                             self.schedule_1.get('last_scheduled'))
         self.assertTrue(schedule.get('last_scheduled'))
 
+    def test_create_with_next_run(self):
+
+        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
+
+        def fake_schedule_to_next_run(_schedule, start_time=None):
+            self.assertEqual(timeutils.utcnow(), start_time)
+            return expected_next_run
+
+        self.stubs.Set(api_utils, 'schedule_to_next_run',
+                       fake_schedule_to_next_run)
+
+        request = unit_utils.get_fake_request(method='POST')
+        fixture = {'job': {'schedule_id': self.schedule_1['id'],
+                           'next_run':
+                           timeutils.isotime(self.schedule_1['next_run'])}}
+        job = self.controller.create(request, fixture).get('job')
+        self.assertNotEqual(job, None)
+        self.assertNotEqual(job.get('id'), None)
+        self.assertEqual(job['schedule_id'], self.schedule_1['id'])
+        self.assertEqual(job['tenant'], self.schedule_1['tenant'])
+        self.assertEqual(job['action'], self.schedule_1['action'])
+        self.assertEqual(job['status'], 'queued')
+        self.assertEqual(len(job['metadata']), 0)
+
+        schedule = db_api.schedule_get_by_id(self.schedule_1['id'])
+        self.assertNotEqual(schedule['next_run'], self.schedule_1['next_run'])
+        self.assertEqual(schedule['next_run'], expected_next_run)
+        self.assertNotEqual(schedule['last_scheduled'],
+                            self.schedule_1.get('last_scheduled'))
+        self.assertTrue(schedule.get('last_scheduled'))
+
+    def test_create_next_run_differs(self):
+
+        expected_next_run = '1989-01-19T12:00:00Z'
+
+        request = unit_utils.get_fake_request(method='POST')
+        fixture = {'job': {'schedule_id': self.schedule_1['id'],
+                           'next_run': expected_next_run}}
+        self.assertRaises(webob.exc.HTTPConflict,
+                          self.controller.create, request, fixture)
+
     def test_create_with_metadata(self):
         request = unit_utils.get_fake_request(method='POST')
-        fixture = {'job': {'schedule_id': self.schedule_2['id'],
-                           'id': unit_utils.JOB_UUID5}}
+        fixture = {'job': {'schedule_id': self.schedule_2['id']}}
         job = self.controller.create(request, fixture).get('job')
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
