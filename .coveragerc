@@ -1,2 +1,8 @@
 [run]
+branch = True
+source = qonos
+include = qonos/*
 omit = qonos/openstack/*
+
+[report]
+ignore-errors = True
