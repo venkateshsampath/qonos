@@ -621,27 +621,34 @@ def job_updated_at_get_by_id(job_id):
 
 
 @force_dict
-def job_get_and_assign_next_by_action(action, worker_id, max_retry):
+def job_get_and_assign_next_by_action(action, worker_id, max_retry,
+                                      new_timeout):
     """Get the next available job for the given action and assign it
-    to the worker for worker_id.
-    This must be an atomic action!"""
+    to the worker for worker_id."""
     now = timeutils.utcnow()
     session = get_session()
-    job_id = None
+
+    job_ref = _job_get_next_by_action(session, now, action, max_retry)
+
+    if not job_ref:
+        return None
+
+    # Make sure the job has not changed unexpectedly since
+    # retrieving it
     try:
-        job_ref = _job_get_next_by_action(session, now, action, max_retry)
-
-        if job_ref is None:
-            return None
-
-        job_ref.update({'worker_id': worker_id,
-                        'retry_count': job_ref['retry_count'] + 1})
-        job_id = job_ref['id']
-        job_ref.save(session)
+        query = session.query(models.Job).filter_by(id=job_ref['id'])\
+                       .filter_by(updated_at=job_ref['updated_at'])\
+                       .update({'worker_id': worker_id,
+                                'timeout': new_timeout,
+                                'retry_count': job_ref['retry_count'] + 1})
     except sa_orm.exc.NoResultFound:
-        raise exception.NotFound()
+        #In case the job was deleted during assignment return nothing
+        return None
 
-    return _job_get_by_id(job_id)
+    if not query:
+        return None
+
+    return _job_get_by_id(job_ref['id'])
 
 
 def _job_get_next_by_action(session, now, action, max_retry):
@@ -654,7 +661,6 @@ def _job_get_next_by_action(session, now, action, max_retry):
                            models.Job.status == None))\
         .filter(sa_sql.or_(models.Job.worker_id == None,
                            models.Job.timeout <= now))\
-        .with_lockmode('update')\
         .order_by(models.Job.created_at.asc())\
         .first()
     return job_ref

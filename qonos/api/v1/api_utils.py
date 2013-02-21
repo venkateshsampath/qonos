@@ -14,9 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
+from qonos.api import api
 from qonos.common import exception
 from qonos.common import timeutils
 from qonos.common import utils
+
+
+CONF = api.CONF
 
 
 def serialize_metadata(metadata):
@@ -73,3 +79,13 @@ def schedule_to_next_run(schedule, start_time=None):
     return utils.cron_string_to_next_datetime(minute, hour, day_of_month,
                                               month, day_of_week,
                                               start_time)
+
+
+def get_new_timeout_by_action(action):
+    now = timeutils.utcnow()
+
+    group = 'action_' + action
+    if group not in CONF:
+        group = 'action_default'
+    job_timeout_seconds = CONF.get(group).timeout_seconds
+    return now + datetime.timedelta(seconds=job_timeout_seconds)

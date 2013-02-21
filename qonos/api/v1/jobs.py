@@ -105,14 +105,11 @@ class JobsController(object):
 
         values['job_metadata'] = job_metadata
 
-        now = timeutils.utcnow()
-
-        job_timeout_seconds = self._job_get_timeout(values['action'])
+        job_action = values['action']
         if not 'timeout' in values:
-            values['timeout'] = now +\
-                datetime.timedelta(seconds=job_timeout_seconds)
-        values['hard_timeout'] = now +\
-            datetime.timedelta(seconds=job_timeout_seconds)
+            values['timeout'] = api_utils.get_new_timeout_by_action(job_action)
+            values['hard_timeout'] = \
+                api_utils.get_new_timeout_by_action(job_action)
 
         job = self.db_api.job_create(values)
         utils.serialize_datetimes(job)
