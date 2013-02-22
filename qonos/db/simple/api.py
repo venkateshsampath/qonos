@@ -389,7 +389,8 @@ def job_updated_at_get_by_id(job_id):
     return job['updated_at']
 
 
-def job_get_and_assign_next_by_action(action, worker_id, max_retry):
+def job_get_and_assign_next_by_action(action, worker_id, max_retry,
+                                      new_timeout):
     """Get the next available job for the given action and assign it
     to the worker for worker_id.
     This must be an atomic action!"""
@@ -410,6 +411,7 @@ def job_get_and_assign_next_by_action(action, worker_id, max_retry):
 
     job_id = job_ref['id']
     DATA['jobs'][job_id]['worker_id'] = worker_id
+    DATA['jobs'][job_id]['timeout'] = new_timeout
     DATA['jobs'][job_id]['retry_count'] = job_ref['retry_count'] + 1
     job = copy.deepcopy(DATA['jobs'][job_id])
     job['job_metadata'] = job_meta_get_all_by_job_id(job_id)

@@ -83,9 +83,10 @@ class WorkersController(object):
             raise webob.exc.HTTPNotFound(explanation=msg)
 
         max_retry = self._job_get_max_retry(action)
+        new_timeout = api_utils.get_new_timeout_by_action(action)
 
         job = self.db_api.job_get_and_assign_next_by_action(
-            action, worker_id, max_retry)
+            action, worker_id, max_retry, new_timeout)
         if job:
             utils.serialize_datetimes(job)
             api_utils.serialize_job_metadata(job)
