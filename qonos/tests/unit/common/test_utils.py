@@ -119,3 +119,17 @@ class TestUtils(test_utils.BaseTestCase):
         self.stubs.Set(pylog, 'getLogger', fake_get_logger)
         open_files = utils.get_qonos_open_file_log_handlers()
         self.assertEqual(open_files, [fake_stream])
+
+    def test_log_warning_and_dismiss_exception(self):
+        def mock_method():
+            with utils.log_warning_and_dismiss_exception():
+                raise Exception()
+            return True
+        self.assertTrue(mock_method())
+
+    def test_log_warning_and_dismiss_exception_no_raise(self):
+        def mock_method():
+            with utils.log_warning_and_dismiss_exception():
+                pass
+            return True
+        self.assertTrue(mock_method())

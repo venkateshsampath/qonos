@@ -106,25 +106,21 @@ class Worker(object):
     def _register_worker(self):
         LOG.info(_('Registering worker.'))
         while self.running:
-            try:
+            worker = None
+            with utils.log_warning_and_dismiss_exception():
                 worker = self.client.create_worker(self.host)
+
+            if worker:
                 msg = _('Worker has been registered with ID: %s')
                 LOG.info(msg % worker['id'])
                 return worker['id']
-            except Exception, ex:
-                LOG.warn(_('Error occurred registering worker with Qonos. '
-                           'Is the Qonos API running? Will retry...'))
-                LOG.debug(_('Exception: %s') % str(ex))
+
             time.sleep(CONF.worker.job_poll_interval)
 
     def _unregister_worker(self):
         LOG.info(_('Unregistering worker. ID: %s') % self.worker_id)
-        try:
+        with utils.log_warning_and_dismiss_exception():
             self.client.delete_worker(self.worker_id)
-        except Exception, ex:
-            LOG.warn(_('Error occurred unregistering worker from Qonos. '
-                       'Is the Qonos API running? Will NOT retry...'))
-            LOG.debug(_('Exception: %s') % str(ex))
 
     def _terminate(self, signum, frame):
         self.running = False
@@ -133,16 +129,12 @@ class Worker(object):
         job = None
 
         while job is None and self.running:
-            LOG.debug(_("Attempting to get next job from API"))
             time.sleep(CONF.worker.job_poll_interval)
-            try:
+            LOG.debug(_("Attempting to get next job from API"))
+            job = None
+            with utils.log_warning_and_dismiss_exception():
                 job = self.client.get_next_job(self.worker_id,
                                                CONF.worker.action_type)['job']
-            except Exception, ex:
-                LOG.warn(_('Error occurred fetching next job from qonos. '
-                           'Is the Qonos API running? Will retry...'))
-                LOG.debug(_('Exception: %s') % str(ex))
-                job = None
 
             if poll_once:
                 break
