@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import signal
 import time
 
 from qonos.common import timeutils
@@ -50,10 +51,18 @@ class Scheduler(object):
             import daemon
             #NOTE(ameade): We need to preserve all open files for logging
             open_files = utils.get_qonos_open_file_log_handlers()
-            with daemon.DaemonContext(files_preserve=open_files):
+            signal_map = self._signal_map()
+            with daemon.DaemonContext(files_preserve=open_files,
+                                      signal_map=signal_map):
                 self._run_loop(run_once)
         else:
             self._run_loop(run_once)
+
+    def _signal_map(self):
+        return {
+            signal.SIGTERM: self._terminate,
+            signal.SIGHUP: self._terminate,
+        }
 
     def _run_loop(self, run_once=False):
         next_run = None
@@ -67,17 +76,21 @@ class Scheduler(object):
             with utils.log_warning_and_dismiss_exception():
                 self.enqueue_jobs(end_time=current_run)
 
-            # do nothing until next run
-            seconds = next_run - time.time()
-            if seconds > 0:
-                time.sleep(seconds)
-            else:
-                LOG.warn(_('Scheduling of jobs took longer than expected.'))
+            # if shutdown hasn't been requested, do nothing until next run
+            if self.running:
+                seconds = next_run - time.time()
+                if seconds > 0:
+                    time.sleep(seconds)
+                else:
+                    LOG.warn(_('Scheduling of jobs took longer than expected.'))
 
             if run_once:
                 break
 
+        LOG.info(_('Scheduler is shutting down'))
+
     def _terminate(self, signum, frame):
+        LOG.debug(_('Received signal %s - will exit') % str(signum))
         self.running = False
 
     def enqueue_jobs(self, start_time=None, end_time=None):

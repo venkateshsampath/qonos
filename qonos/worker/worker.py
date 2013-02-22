@@ -99,7 +99,7 @@ class Worker(object):
             if run_once:
                 self.running = False
 
-        LOG.info(_("Worker is terminating"))
+        LOG.info(_('Worker is shutting down'))
         self._unregister_worker()
         self.processor.cleanup_processor()
 
@@ -123,6 +123,7 @@ class Worker(object):
             self.client.delete_worker(self.worker_id)
 
     def _terminate(self, signum, frame):
+        LOG.debug(_('Received signal %s - will exit') % str(signum))
         self.running = False
 
     def _poll_for_next_job(self, poll_once=False):
