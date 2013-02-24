@@ -82,7 +82,8 @@ class Scheduler(object):
                 if seconds > 0:
                     time.sleep(seconds)
                 else:
-                    LOG.warn(_('Scheduling of jobs took longer than expected.'))
+                    msg = _('Scheduling of jobs took longer than expected.')
+                    LOG.warn(msg)
 
             if run_once:
                 break
