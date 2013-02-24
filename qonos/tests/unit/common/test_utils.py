@@ -84,11 +84,11 @@ class TestUtils(test_utils.BaseTestCase):
         self.assertTrue(next_run > timeutils.utcnow())
 
     def test_cron_string_to_datetime_from_time(self):
-        start_time = datetime.datetime(1900, 5, 16, 0, 0, 0, 0)
+        start_time = datetime.datetime(1980, 5, 16, 0, 0, 0, 0)
         next_run = utils.cron_string_to_next_datetime(minute=30,
                                                       hour=5,
                                                       start_time=start_time)
-        expected = datetime.datetime(1900, 5, 16, 5, 30, 0, 0)
+        expected = datetime.datetime(1980, 5, 16, 5, 30, 0, 0)
 
         self.assertTrue(next_run == expected)
 
