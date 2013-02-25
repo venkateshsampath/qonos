@@ -20,6 +20,7 @@ import mox
 
 from qonos.common import timeutils
 from qonos.openstack.common import uuidutils
+import qonos.qonosclient.exception as qonos_ex
 from qonos.tests.unit.worker import fakes
 from qonos.tests import utils as test_utils
 from qonos.worker.snapshot import snapshot
@@ -37,7 +38,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client = MockNovaClient()
         self.nova_client.servers = self.mox.CreateMockAnything()
         self.nova_client.images = self.mox.CreateMockAnything()
+        self.qonos_client = self.mox.CreateMockAnything()
         self.worker = self.mox.CreateMockAnything()
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
         self.snapshot_meta = {
             "org.openstack__1__created-by": "scheduled_images_service"
             }
@@ -68,6 +71,14 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         return image
 
+    def _init_qonos_client(self, schedule=None):
+        if schedule:
+            self.qonos_client.get_schedule(mox.IsA(str)).\
+                AndReturn(schedule)
+        else:
+            self.qonos_client.get_schedule(mox.IsA(str)).\
+                AndRaise(qonos_ex.NotFound())
+
     def _init_worker_mock(self):
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
                                timeout=mox.IsA(datetime.datetime),
@@ -76,6 +87,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         metadata['image_id'] = IMAGE_ID
         self.worker.update_job_metadata(fakes.JOB_ID, metadata).\
             AndReturn(metadata)
+        self._init_qonos_client(MockSchedule())
 
     def _simple_prepare_worker_mock(self, num_processing_updates=0):
         self._init_worker_mock()
@@ -84,6 +96,19 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                    error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
+
+    def test_process_job_should_cancel_if_schedule_deleted(self):
+        self._init_qonos_client()
+        self.worker.update_job(fakes.JOB_ID, 'CANCELLED', timeout=None,
+                               error_message=mox.IsA(str))
+        self.mox.ReplayAll()
+
+        processor = TestableSnapshotProcessor(self.nova_client)
+        processor.init_processor(self.worker)
+
+        processor.process_job(fakes.JOB['job'])
+
+        self.mox.VerifyAll()
 
     def test_process_job_should_succeed_immediately(self):
         timeutils.set_time_override()
@@ -442,6 +467,11 @@ class MockNovaClient(object):
     def __init__(self):
         self.servers = None
         self.images = None
+
+
+class MockSchedule(object):
+    def __init__(self):
+        pass
 
 
 class MockImageStatus(object):

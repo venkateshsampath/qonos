@@ -142,6 +142,9 @@ class Worker(object):
 
         return job
 
+    def get_qonos_client(self):
+        return self.client
+
     def update_job(self, job_id, status, timeout=None, error_message=None):
         msg = (_("Worker: [%(worker_id)s] updating "
                "job [%(job_id)s] Status: %(status)s") %
@@ -169,6 +172,9 @@ class Worker(object):
 class JobProcessor(object):
     def __init__(self):
         self.worker = None
+
+    def get_qonos_client(self):
+        return self.worker.get_qonos_client()
 
     def update_job(self, job_id, status, timeout=None, error_message=None):
         self.worker.update_job(job_id, status, timeout=timeout,

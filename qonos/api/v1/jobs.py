@@ -149,7 +149,7 @@ class JobsController(object):
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-        if status['status'].upper() == 'ERROR':
+        if status['status'].upper() in ['ERROR', 'CANCELLED']:
             values = self._get_error_values(status, job)
             self.db_api.job_fault_create(values)
 

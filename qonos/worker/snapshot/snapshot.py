@@ -24,6 +24,7 @@ from qonos.common import timeutils
 from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
+import qonos.qonosclient.exception as qonos_ex
 from qonos.worker import worker
 
 
@@ -77,10 +78,18 @@ class SnapshotProcessor(worker.JobProcessor):
         self.image_poll_interval = CONF.snapshot_worker.image_poll_interval_sec
 
     def process_job(self, job):
-        LOG.debug(_("Process job: %s") % str(job))
+        LOG.debug(_("Processing job: %s") % str(job))
+        job_id = job['id']
+        if not self._check_schedule_exists(job):
+            msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
+                   {'schedule_id': job['schedule_id'], 'job_id': job_id})
+            self._job_cancelled(job_id, msg)
+
+            LOG.info(_('Job cancelled: %s') % msg)
+            return
+
         self.current_job = job
 
-        job_id = job['id']
         now = self._get_utcnow()
         self.next_timeout = now + self.timeout_increment
         self.update_job(job_id, 'PROCESSING', timeout=self.next_timeout)
@@ -247,6 +256,9 @@ class SnapshotProcessor(worker.JobProcessor):
     def _job_failed(self, job_id, error_message):
         self.update_job(job_id, 'ERROR', error_message=error_message)
 
+    def _job_cancelled(self, job_id, message):
+        self.update_job(job_id, 'CANCELLED', error_message=message)
+
     def _try_update(self, job_id, status):
         now = self._get_utcnow()
         # Time for a timeout update?
@@ -269,6 +281,14 @@ class SnapshotProcessor(worker.JobProcessor):
     def _get_instance_id(self, job):
         metadata = job['metadata']
         return metadata.get('instance_id')
+
+    def _check_schedule_exists(self, job):
+        qonosclient = self.get_qonos_client()
+        try:
+            qonosclient.get_schedule(job['schedule_id'])
+            return True
+        except qonos_ex.NotFound, ex:
+            return False
 
     # Seam for testing
     def _get_utcnow(self):
