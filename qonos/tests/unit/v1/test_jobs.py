@@ -79,7 +79,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
-            'status': 'queued',
+            'status': 'QUEUED',
             'timeout': timeout,
             'hard_timeout': hard_timeout,
             'retry_count': 0,
@@ -91,7 +91,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'tenant': unit_utils.TENANT2,
             'worker_id': unit_utils.WORKER_UUID2,
             'action': 'snapshot',
-            'status': 'error',
+            'status': 'ERROR',
             'timeout': timeout,
             'hard_timeout': hard_timeout,
             'retry_count': 1,
@@ -109,7 +109,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
-            'status': 'queued',
+            'status': 'QUEUED',
             'timeout': timeout,
             'hard_timeout': hard_timeout,
             'retry_count': 0,
@@ -121,7 +121,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
-            'status': 'queued',
+            'status': 'QUEUED',
             'timeout': timeout,
             'hard_timeout': hard_timeout,
             'retry_count': 0,
@@ -216,7 +216,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['schedule_id'], self.schedule_1['id'])
         self.assertEqual(job['tenant'], self.schedule_1['tenant'])
         self.assertEqual(job['action'], self.schedule_1['action'])
-        self.assertEqual(job['status'], 'queued')
+        self.assertEqual(job['status'], 'QUEUED')
         self.assertEqual(len(job['metadata']), 0)
 
         schedule = db_api.schedule_get_by_id(self.schedule_1['id'])
@@ -247,7 +247,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['schedule_id'], self.schedule_1['id'])
         self.assertEqual(job['tenant'], self.schedule_1['tenant'])
         self.assertEqual(job['action'], self.schedule_1['action'])
-        self.assertEqual(job['status'], 'queued')
+        self.assertEqual(job['status'], 'QUEUED')
         self.assertEqual(len(job['metadata']), 0)
 
         schedule = db_api.schedule_get_by_id(self.schedule_1['id'])
@@ -276,7 +276,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(job['schedule_id'], self.schedule_2['id'])
         self.assertEqual(job['tenant'], self.schedule_2['tenant'])
         self.assertEqual(job['action'], self.schedule_2['action'])
-        self.assertEqual(job['status'], 'queued')
+        self.assertEqual(job['status'], 'QUEUED')
         self.assertEqual(len(job['metadata']), 1)
         self.assertTrue('instance_id' in job['metadata'])
         self.assertEqual(job['metadata']['instance_id'], 'my_instance')
@@ -284,7 +284,7 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_get(self):
         request = unit_utils.get_fake_request(method='GET')
         job = self.controller.get(request, self.job_1['id']).get('job')
-        self.assertEqual(job['status'], 'queued')
+        self.assertEqual(job['status'], 'QUEUED')
         self.assertEqual(job['schedule_id'], self.schedule_1['id'])
         self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
         self.assertEqual(job['retry_count'], 0)
@@ -294,7 +294,7 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_get_with_metadata(self):
         request = unit_utils.get_fake_request(method='GET')
         job = self.controller.get(request, self.job_2['id']).get('job')
-        self.assertEqual(job['status'], 'error')
+        self.assertEqual(job['status'], 'ERROR')
         self.assertEqual(job['schedule_id'], self.schedule_2['id'])
         self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID2)
         self.assertEqual(job['retry_count'], 1)
