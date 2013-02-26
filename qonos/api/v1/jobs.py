@@ -93,7 +93,7 @@ class JobsController(object):
         values.update(job)
         values['tenant'] = schedule['tenant']
         values['action'] = schedule['action']
-        values['status'] = 'queued'
+        values['status'] = 'QUEUED'
 
         job_metadata = []
         for metadata in schedule['schedule_metadata']:
