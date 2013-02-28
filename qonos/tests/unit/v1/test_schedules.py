@@ -228,8 +228,8 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'id': unit_utils.SCHEDULE_UUID5,
             'tenant': unit_utils.TENANT1,
             'action': 'snapshot',
-            'minute': '30',
-            'hour': '2',
+            'minute': 30,
+            'hour': 2,
         }}
         expected = fixture['schedule']
         request = unit_utils.get_fake_request(method='POST')
@@ -240,6 +240,35 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertNotEqual(actual.get('created_at'), None)
         self.assertNotEqual(actual.get('updated_at'), None)
         self.assertNotEqual(actual.get('next_run'), None)
+        self.assertEqual(expected['tenant'], actual['tenant'])
+        self.assertEqual(expected['action'], actual['action'])
+        self.assertEqual(expected['minute'], actual['minute'])
+        self.assertEqual(expected['hour'], actual['hour'])
+
+    def test_create_zero_hour(self):
+        hour = 0
+        fixture = {'schedule': {
+            'id': unit_utils.SCHEDULE_UUID5,
+            'tenant': unit_utils.TENANT1,
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': hour,
+        }}
+        expected = fixture['schedule']
+        request = unit_utils.get_fake_request(method='POST')
+
+        actual = self.controller.create(request, fixture)['schedule']
+
+        self.assertNotEqual(actual.get('id'), None)
+        self.assertNotEqual(actual.get('created_at'), None)
+        self.assertNotEqual(actual.get('updated_at'), None)
+        now = timeutils.utcnow()
+        if not (now.hour == hour and now.minute < 30):
+            now = now + datetime.timedelta(days=1)
+        expected_next_run = timeutils.isotime(
+            now.replace(hour=hour, minute=30, second=0,
+                        microsecond=0))
+        self.assertEqual(expected_next_run, actual['next_run'])
         self.assertEqual(expected['tenant'], actual['tenant'])
         self.assertEqual(expected['action'], actual['action'])
         self.assertEqual(expected['minute'], actual['minute'])

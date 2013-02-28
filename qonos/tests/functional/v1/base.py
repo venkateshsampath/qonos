@@ -183,7 +183,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(1, len(metadata))
         self.assertEqual(metadata['instance_id'], 'my_instance_1')
 
-        # get schedule
+        # Get schedule
         schedule = self.client.get_schedule(schedule['id'])
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant'], TENANT1)

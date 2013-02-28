@@ -48,13 +48,20 @@ def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
                                  month="*", day_of_week="*", start_time=None):
     start_time = start_time or timeutils.utcnow()
     cron_string = ("%s %s %s %s %s" %
-                  (minute or '*',
-                   hour or '*',
-                   day_of_month or '*',
-                   month or '*',
-                   day_of_week or '*'))
+                  (_default_if_none(minute, '*'),
+                   _default_if_none(hour, '*'),
+                   _default_if_none(day_of_month, '*'),
+                   _default_if_none(month, '*'),
+                   _default_if_none(day_of_week, '*')))
     iter = croniter(cron_string, start_time)
     return iter.get_next(datetime.datetime)
+
+
+def _default_if_none(value, default):
+    if value is None:
+        return default
+    else:
+        return value
 
 
 def _validate_limit(limit):
