@@ -657,7 +657,7 @@ def _job_get_next_by_action(session, now, action, max_retry):
         .filter_by(action=action)\
         .filter(models.Job.retry_count < max_retry)\
         .filter(models.Job.hard_timeout > now)\
-        .filter(sa_sql.or_(models.Job.status != 'DONE',
+        .filter(sa_sql.or_(~models.Job.status.in_(['DONE', 'CANCELLED']),
                            models.Job.status == None))\
         .filter(sa_sql.or_(models.Job.worker_id == None,
                            models.Job.timeout <= now))\
@@ -806,7 +806,7 @@ def job_fault_latest_for_job_id(job_id):
         job_fault = session.query(models.JobFault)\
             .filter_by(job_id=job_id)\
             .order_by(models.JobFault.created_at.desc())\
-            .one()
+            .first()
         return job_fault
     except sa_orm.exc.NoResultFound:
         return None

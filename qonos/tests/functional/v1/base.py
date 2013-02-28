@@ -463,6 +463,27 @@ class TestApi(utils.BaseTestCase):
         self.assertNotEqual(job_fault['updated_at'], None)
         self.assertNotEqual(job_fault['id'], None)
 
+        # cancel the job
+        error_message = 'ermagerd! cancelled!'
+        self.client.update_job_status(job['id'], 'CANCELLED',
+                                      error_message=error_message)
+        status = self.client.get_job(job['id'])['status']
+        self.assertNotEqual(status, new_job['status'])
+        self.assertEqual(status, 'CANCELLED')
+        job_fault = self.db_api.job_fault_latest_for_job_id(job['id'])
+        self.assertNotEqual(job_fault, None)
+        self.assertEqual(job_fault['job_id'], job['id'])
+        self.assertEqual(job_fault['tenant'], job['tenant'])
+        self.assertEqual(job_fault['schedule_id'], job['schedule_id'])
+        self.assertEqual(job_fault['worker_id'],
+                         job['worker_id'] or 'UNASSIGNED')
+        self.assertEqual(job_fault['action'], job['action'])
+        self.assertNotEqual(job_fault['job_metadata'], None)
+        self.assertEqual(job_fault['message'], error_message)
+        self.assertNotEqual(job_fault['created_at'], None)
+        self.assertNotEqual(job_fault['updated_at'], None)
+        self.assertNotEqual(job_fault['id'], None)
+
         # delete job
         self.client.delete_job(job['id'])
 
