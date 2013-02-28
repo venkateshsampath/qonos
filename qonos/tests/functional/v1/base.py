@@ -256,7 +256,10 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(updated_schedule['id'], schedule['id'])
         self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
-        self.assertEqual(updated_schedule['minute'], schedule['minute'])
+        self.assertEqual(updated_schedule['minute'], None)
+        self.assertEqual(updated_schedule['month'], None)
+        self.assertEqual(updated_schedule['day_of_week'], None)
+        self.assertEqual(updated_schedule['day_of_month'], None)
         self.assertEqual(updated_schedule['hour'], request['schedule']['hour'])
         self.assertNotEqual(updated_schedule['hour'], schedule['hour'])
         self.assertNotEqual(updated_schedule['next_run'], schedule['next_run'])
@@ -269,10 +272,18 @@ class TestApi(utils.BaseTestCase):
                 }
             }
         }
+        schedule = self.client.get_schedule(schedule['id'])
         updated_schedule = self.client.update_schedule(schedule['id'], request)
         self.assertEqual(updated_schedule['id'], schedule['id'])
         self.assertEqual(updated_schedule['tenant'], schedule['tenant'])
         self.assertEqual(updated_schedule['action'], schedule['action'])
+        self.assertEqual(updated_schedule['hour'], schedule['hour'])
+        self.assertEqual(updated_schedule['minute'], schedule['minute'])
+        self.assertEqual(updated_schedule['month'], schedule['month'])
+        self.assertEqual(updated_schedule['day_of_week'],
+                         schedule['day_of_week'])
+        self.assertEqual(updated_schedule['day_of_month'],
+                         schedule['day_of_month'])
         self.assertTrue('metadata' in updated_schedule)
         metadata = updated_schedule['metadata']
         self.assertEqual(2, len(metadata))
