@@ -18,6 +18,8 @@ import copy
 import datetime
 import mox
 
+from novaclient import exceptions
+
 from qonos.common import timeutils
 from qonos.openstack.common import uuidutils
 import qonos.qonosclient.exception as qonos_ex
@@ -37,6 +39,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.nova_client = MockNovaClient()
         self.nova_client.servers = self.mox.CreateMockAnything()
+        self.nova_client.rax_scheduled_images_python_novaclient_ext =\
+            self.mox.CreateMockAnything()
         self.nova_client.images = self.mox.CreateMockAnything()
         self.qonos_client = self.mox.CreateMockAnything()
         self.worker = self.mox.CreateMockAnything()
@@ -116,8 +120,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(
-            MockServer())
+        mock_retention = MockRetention()
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
         self._simple_prepare_worker_mock()
 
         self.mox.ReplayAll()
@@ -141,8 +146,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(
-            MockServer())
+        mock_retention = MockRetention()
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
         self._simple_prepare_worker_mock()
         self.mox.ReplayAll()
 
@@ -177,8 +183,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(
-            MockServer())
+        mock_retention = MockRetention()
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
         self._simple_prepare_worker_mock(2)
         self.mox.ReplayAll()
 
@@ -213,8 +220,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(
-            MockServer())
+        mock_retention = MockRetention()
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
         self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
                                timeout=mox.IsA(datetime.datetime),
@@ -353,8 +361,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        mock_server = MockServer(retention=3)
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(mock_server)
+        mock_retention = MockRetention(3)
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
+        mock_server = MockServer()
         image_list = self._create_images_list(mock_server.id, 3)
         self.nova_client.images.list(detailed=True).AndReturn(image_list)
         self._init_worker_mock()
@@ -375,8 +385,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        mock_server = MockServer(retention="gabe 1337")
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(mock_server)
+        mock_retention = MockRetention("gabe 1337")
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
+        mock_server = MockServer()
         self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
@@ -395,8 +407,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndRaise(exceptions.NotFound('404!'))
         mock_server = MockServer(retention=None)
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(mock_server)
         self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
@@ -416,8 +429,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        mock_server = MockServer(instance_id=instance_id, retention=3)
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(mock_server)
+        mock_retention = MockRetention(3)
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
+        mock_server = MockServer(instance_id=instance_id)
         image_list = self._create_images_list(mock_server.id, 5)
         self.nova_client.images.list(detailed=True).AndReturn(image_list)
         # The image list happens to be in descending created order
@@ -442,8 +457,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
-        mock_server = MockServer(instance_id=instance_id, retention=3)
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(mock_server)
+        mock_retention = MockRetention(3)
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
+        mock_server = MockServer(instance_id=instance_id)
         image_list = self._create_images_list(mock_server.id, 5)
         to_delete = image_list[3:]
         image_list.extend(self._create_images_list(
@@ -457,7 +474,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         processor = TestableSnapshotProcessor(self.nova_client)
         processor.init_processor(self.worker)
-
         processor.process_job(fakes.JOB['job'])
 
         self.mox.VerifyAll()
@@ -491,9 +507,11 @@ class MockImage(object):
 class MockServer(object):
     def __init__(self, instance_id=None, retention="0"):
         self.id = instance_id or uuidutils.generate_uuid()
-        self.metadata = {}
-        if retention:
-            self.metadata["org.openstack__1__retention"] = str(retention)
+
+
+class MockRetention(object):
+    def __init__(self, retention="0"):
+        self.retention = retention
 
 
 class TestableSnapshotProcessor(snapshot.SnapshotProcessor):
