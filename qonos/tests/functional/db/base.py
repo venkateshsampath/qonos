@@ -624,6 +624,16 @@ class TestWorkersDBApi(test_utils.BaseTestCase):
         self.assertNotEqual(worker['created_at'], None)
         self.assertNotEqual(worker['updated_at'], None)
 
+    def test_worker_create_with_pid(self):
+        fixture = {'host': 'i.am.cowman',
+                   'process_id': 12345}
+        worker = self.db_api.worker_create(fixture)
+        self.assertTrue(uuidutils.is_uuid_like(worker['id']))
+        self.assertEqual(worker['host'], fixture['host'])
+        self.assertEqual(worker['process_id'], fixture['process_id'])
+        self.assertNotEqual(worker['created_at'], None)
+        self.assertNotEqual(worker['updated_at'], None)
+
     def test_worker_delete(self):
         workers = self.db_api.worker_get_all()
         self.assertEqual(len(workers), 2)
