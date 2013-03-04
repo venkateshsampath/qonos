@@ -316,8 +316,11 @@ def worker_get_by_id(worker_id):
 
 def worker_create(values):
     global DATA
+    worker_values = copy.deepcopy(values)
+    if 'process_id' not in worker_values:
+        worker_values['process_id'] = None
     worker = {}
-    worker.update(values)
+    worker.update(worker_values)
     item_id = values.get('id')
     worker.update(_gen_base_attributes(item_id=item_id))
     DATA['workers'][worker['id']] = worker

@@ -121,6 +121,7 @@ class Worker(BASE, ModelBase):
     __tablename__ = 'workers'
 
     host = Column(String(255), nullable=False)
+    process_id = Column(Integer, nullable=True)
 
 
 class Job(BASE, ModelBase):

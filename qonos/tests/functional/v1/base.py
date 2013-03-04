@@ -83,11 +83,39 @@ class TestApi(utils.BaseTestCase):
         worker = self.client.create_worker('hostname')
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
+        self.assertTrue(worker['process_id'] is None)
 
         # get worker
         worker = self.client.get_worker(worker['id'])
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
+        self.assertTrue(worker['process_id'] is None)
+
+        # list workers
+        workers = self.client.list_workers()
+        self.assertEqual(len(workers), 1)
+        self.assertEqual(workers[0], worker)
+
+        # create worker with process_id
+        worker2 = self.client.create_worker('hostname2', 12345)
+        self.assertTrue(worker2['id'])
+        self.assertEqual(worker2['host'], 'hostname2')
+        self.assertEqual(worker2['process_id'], 12345)
+
+        # get worker
+        worker2 = self.client.get_worker(worker2['id'])
+        self.assertTrue(worker2['id'])
+        self.assertEqual(worker2['host'], 'hostname2')
+        self.assertEqual(worker2['process_id'], 12345)
+
+        # list workers
+        workers = self.client.list_workers()
+        self.assertEqual(len(workers), 2)
+        self.assertTrue(worker in workers)
+        self.assertTrue(worker2 in workers)
+
+        # delete second worker
+        self.client.delete_worker(worker2['id'])
 
         # list workers
         workers = self.client.list_workers()

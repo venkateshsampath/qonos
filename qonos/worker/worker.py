@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import signal
 import socket
 import time
@@ -83,6 +84,7 @@ class Worker(object):
 
     def _run_loop(self, run_once=False, poll_once=False):
         self.running = True
+        self.pid = os.getpid()
         self.processor.init_processor(self)
         self.worker_id = self._register_worker()
 
@@ -108,7 +110,7 @@ class Worker(object):
         while self.running:
             worker = None
             with utils.log_warning_and_dismiss_exception():
-                worker = self.client.create_worker(self.host)
+                worker = self.client.create_worker(self.host, self.pid)
 
             if worker:
                 msg = _('Worker has been registered with ID: %s')
