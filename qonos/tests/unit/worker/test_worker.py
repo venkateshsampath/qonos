@@ -41,7 +41,7 @@ class TestWorker(test_utils.BaseTestCase):
         super(TestWorker, self).tearDown()
 
     def prepare_client_mock(self, job=fakes.JOB_NONE, empty_jobs=0):
-        self.client.create_worker(mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndReturn(fakes.WORKER)
         # Argh! Mox why you no have "Times(x)" function?!?!
         for i in range(empty_jobs):
@@ -104,11 +104,11 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.VerifyAll()
 
     def test_register_retries_on_error(self):
-        self.client.create_worker(mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndRaise(Exception())
-        self.client.create_worker(mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndRaise(Exception())
-        self.client.create_worker(mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndReturn(fakes.WORKER)
         self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
             AndReturn(fakes.JOB)
@@ -129,7 +129,7 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.VerifyAll()
 
     def test_get_job_retries_on_error(self):
-        self.client.create_worker(mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndReturn(fakes.WORKER)
         self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
             AndRaise(Exception())
@@ -174,7 +174,7 @@ class TestWorker(test_utils.BaseTestCase):
         self.mox.VerifyAll()
 
     def test_unregister_does_not_retry_on_error(self):
-        self.client.create_worker(mox.IsA(str)).\
+        self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndReturn(fakes.WORKER)
         self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
             AndReturn(fakes.JOB)
