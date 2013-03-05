@@ -153,6 +153,36 @@ class SchedulesController(object):
         return {'schedule': schedule}
 
 
+class SchedulesSerializer(wsgi.ResponseSerializer):
+    def __init__(self):
+        super(SchedulesSerializer, self).__init__()
+
+    def list(self, response, schedules):
+        body = json.dumps(schedules, ensure_ascii=False)
+        response.unicode_body = unicode(body)
+        response.content_type = 'application/json'
+
+    def create(self, response, schedule):
+        body = json.dumps(schedule, ensure_ascii=False)
+        response.unicode_body = unicode(body)
+        response.content_type = 'application/json'
+
+    def get(self, response, schedule):
+        body = json.dumps(schedule, ensure_ascii=False)
+        response.unicode_body = unicode(body)
+        response.content_type = 'application/json'
+
+    def update(self, response, schedule):
+        body = json.dumps(schedule, ensure_ascii=False)
+        response.unicode_body = unicode(body)
+        response.content_type = 'application/json'
+
+    def delete(self, response, result):
+        response.status_int = 204
+
+
 def create_resource():
     """QonoS resource factory method."""
-    return wsgi.Resource(SchedulesController())
+    controller = SchedulesController()
+    serializer = SchedulesSerializer()
+    return wsgi.Resource(controller, serializer=serializer)
