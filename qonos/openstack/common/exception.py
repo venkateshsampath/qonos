@@ -21,6 +21,10 @@ Exceptions common to OpenStack projects
 
 import logging
 
+from qonos.openstack.common.gettextutils import _
+
+_FATAL_EXCEPTION_FORMAT_ERRORS = False
+
 
 class Error(Exception):
     def __init__(self, message=None):
@@ -97,7 +101,7 @@ def wrap_exception(f):
         except Exception, e:
             if not isinstance(e, Error):
                 #exc_type, exc_value, exc_traceback = sys.exc_info()
-                logging.exception('Uncaught exception')
+                logging.exception(_('Uncaught exception'))
                 #logging.error(traceback.extract_stack(exc_traceback))
                 raise Error(str(e))
             raise
@@ -119,9 +123,12 @@ class OpenstackException(Exception):
         try:
             self._error_string = self.message % kwargs
 
-        except Exception:
-            # at least get the core message out if something happened
-            self._error_string = self.message
+        except Exception as e:
+            if _FATAL_EXCEPTION_FORMAT_ERRORS:
+                raise e
+            else:
+                # at least get the core message out if something happened
+                self._error_string = self.message
 
     def __str__(self):
         return self._error_string

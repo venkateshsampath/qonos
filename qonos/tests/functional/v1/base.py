@@ -41,12 +41,12 @@ class TestApi(utils.BaseTestCase):
         super(TestApi, self).setUp()
         CONF.paste_deploy.config_file = './etc/qonos/qonos-api-paste.ini'
         self.port = random.randint(50000, 65000)
-        self.service = wsgi.Service()
         app = config.load_paste_app('qonos-api')
         retry_count = 3
         while retry_count:
             try:
-                self.service.start(app, self.port)
+                self.service = wsgi.Service(app, self.port)
+                self.service.start()
                 retry_count = 0
             except Exception, ex:
                 retry_count -= 1
