@@ -97,15 +97,19 @@ class SnapshotProcessor(worker.JobProcessor):
 
         nova_client = self._get_nova_client()
         instance_id = self._get_instance_id(job)
-        metadata = {
-            "org.openstack__1__created-by": "scheduled_images_service"
-            }
-        image_id = nova_client.servers.create_image(
-            instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
+        if ('image_id' in job['metadata'] and
+            job['status'] in ['PROCESSING','TIMED_OUT']):
+            image_id = job['metadata']['image_id']
+        else:
+            metadata = {
+                "org.openstack__1__created-by": "scheduled_images_service"
+                }
+            image_id = nova_client.servers.create_image(
+                instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
 
-        LOG.debug("Created image: %s" % image_id)
+            LOG.debug("Created image: %s" % image_id)
 
-        self._add_job_metadata(image_id=image_id)
+            self._add_job_metadata(image_id=image_id)
 
         image_status = None
         active = False

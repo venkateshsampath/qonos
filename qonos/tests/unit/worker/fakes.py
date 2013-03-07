@@ -38,7 +38,7 @@ JOB = {
         'schedule_id': SCHEDULE_ID,
         'tenant': TENANT,
         'worker_id': WORKER_ID,
-        'status': 'SCHEDULED',
+        'status': 'QUEUED',
         'action': 'snapshot',
         'retry_count': 3,
         'timeout': TIMEOUT,
