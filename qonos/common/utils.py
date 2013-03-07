@@ -25,11 +25,18 @@ from qonos.common import exception as exc
 from qonos.common import timeutils
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
+from qonos.openstack.common.notifier import api as notifier_api
 
 LOG = logging.getLogger(__name__)
 
 
 CONF = cfg.CONF
+CONF.import_opt('host', 'qonos.netconf')
+
+
+def generate_notification(context, event_type, payload, level='DEBUG'):
+    publisher_id = notifier_api.publisher_id('qonos', CONF.host)
+    notifier_api.notify(context, publisher_id, event_type, level, payload)
 
 
 def serialize_datetimes(data):
