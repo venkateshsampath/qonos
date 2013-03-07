@@ -17,9 +17,10 @@
 import signal
 import time
 
+from oslo.config import cfg
+
 from qonos.common import timeutils
 from qonos.common import utils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 from qonos.qonosclient import exception as client_exc

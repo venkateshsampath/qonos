@@ -16,7 +16,8 @@
 
 import sys
 
-from qonos.openstack.common import cfg
+from oslo.config import cfg
+
 from qonos.tests.functional.v1 import base
 from qonos.tests import utils as utils
 

@@ -130,6 +130,7 @@ log_opts = [
                 default=[
                     'amqplib=WARN',
                     'sqlalchemy=WARN',
+                    'qonos=DEBUG',
                     'boto=WARN',
                     'suds=INFO',
                     'keystone=INFO',

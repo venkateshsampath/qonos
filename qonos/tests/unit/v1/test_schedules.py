@@ -18,13 +18,14 @@ import datetime
 import uuid
 import webob.exc
 
+from oslo.config import cfg
+
 from qonos.api.v1 import api_utils
 from qonos.api.v1 import schedules
 from qonos.common import exception
 from qonos.common import timeutils
 from qonos.common import utils as qonos_utils
 from qonos.db.simple import api as db_api
-from qonos.openstack.common import cfg
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
 

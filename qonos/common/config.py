@@ -18,10 +18,10 @@ import logging
 import logging.config
 import logging.handlers
 import os
+from oslo.config import cfg
 
 from paste import deploy
 
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 
 paste_deploy_opts = [

@@ -19,8 +19,9 @@ import signal
 import socket
 import time
 
+from oslo.config import cfg
+
 from qonos.common import utils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
 import qonos.openstack.common.log as logging
