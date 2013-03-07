@@ -19,9 +19,9 @@ from operator import attrgetter
 import time
 
 from novaclient.v1_1 import client
+from oslo.config import cfg
 
 from qonos.common import timeutils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 import qonos.qonosclient.exception as qonos_ex

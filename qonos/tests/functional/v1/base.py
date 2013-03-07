@@ -18,10 +18,11 @@ import datetime
 from operator import itemgetter
 import random
 
+from oslo.config import cfg
+
 from qonos.common import config
 from qonos.common import timeutils
 import qonos.db
-from qonos.openstack.common import cfg
 from qonos.openstack.common import wsgi
 from qonos.qonosclient import client
 from qonos.qonosclient import exception as client_exc

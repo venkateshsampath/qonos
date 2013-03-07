@@ -14,8 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.config import cfg
+
 from qonos.common import utils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 import qonos.openstack.common.wsgi as wsgi

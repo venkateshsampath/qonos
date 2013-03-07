@@ -19,10 +19,10 @@ import datetime
 import logging as pylog
 
 from croniter.croniter import croniter
+from oslo.config import cfg
 
 from qonos.common import exception as exc
 from qonos.common import timeutils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 
