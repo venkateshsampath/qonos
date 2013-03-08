@@ -130,12 +130,10 @@ log_opts = [
                 default=[
                     'amqplib=WARN',
                     'sqlalchemy=WARN',
-                    'qonos=DEBUG',
                     'boto=WARN',
                     'suds=INFO',
                     'keystone=INFO',
                     'eventlet.wsgi.server=WARN',
-                    'qonos=DEBUG'
                 ],
                 help='list of logger=LEVEL pairs'),
     cfg.BoolOpt('publish_errors',
