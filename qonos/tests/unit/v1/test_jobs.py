@@ -22,6 +22,7 @@ from qonos.api.v1 import api_utils
 from qonos.api.v1 import jobs
 from qonos.common import exception
 from qonos.common import timeutils
+from qonos.common import utils
 import qonos.db.simple.api as db_api
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
@@ -42,6 +43,16 @@ class TestJobsApi(test_utils.BaseTestCase):
         super(TestJobsApi, self).tearDown()
         timeutils.clear_time_override()
         db_api.reset()
+
+    def _stub_notifications(self, ex_context, ex_event_type, ex_payload,
+                            ex_level):
+        def fake_gen_notify(context, event_type, payload, level='INFO'):
+            self.assertEqual(ex_context, context)
+            self.assertEqual(ex_event_type, event_type)
+            #NOTE(isethi): Avoiding repetitive checking of job
+            self.assertTrue(payload['job'] is not None)
+            self.assertEqual(ex_level, level)
+        self.stubs.Set(utils, 'generate_notification', fake_gen_notify)
 
     def _create_jobs(self):
         fixture = {
@@ -200,6 +211,8 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_create(self):
 
         expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
+        self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
+                                 'INFO')
 
         def fake_schedule_to_next_run(_schedule, start_time=None):
             self.assertEqual(timeutils.utcnow(), start_time)
@@ -237,6 +250,8 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.stubs.Set(api_utils, 'schedule_to_next_run',
                        fake_schedule_to_next_run)
 
+        self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
+                                 'INFO')
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
                            'next_run':
@@ -261,6 +276,8 @@ class TestJobsApi(test_utils.BaseTestCase):
 
         expected_next_run = '1989-01-19T12:00:00Z'
 
+        self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
+                                 'INFO')
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
                            'next_run': expected_next_run}}
@@ -268,6 +285,8 @@ class TestJobsApi(test_utils.BaseTestCase):
                           self.controller.create, request, fixture)
 
     def test_create_with_metadata(self):
+        self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
+                                 'INFO')
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_2['id']}}
         job = self.controller.create(request, fixture).get('job')

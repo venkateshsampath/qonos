@@ -19,6 +19,7 @@ import logging as pylog
 
 from qonos.common import timeutils
 from qonos.common import utils
+from qonos.openstack.common.notifier import api as notifier_api
 from qonos.tests import utils as test_utils
 
 
@@ -91,6 +92,38 @@ class TestUtils(test_utils.BaseTestCase):
         expected = datetime.datetime(1980, 5, 16, 5, 30, 0, 0)
 
         self.assertTrue(next_run == expected)
+
+    def test_generate_notification(self):
+
+        notification = {}
+
+        def fake_publisher_id(service, host=None):
+            if not host:
+                host = 'localhost'
+            return "%s.%s" % (service, host)
+
+        def fake_notify(context, publisher_id, event_type, priority, payload):
+            notification['context'] = context
+            notification['publisher_id'] = publisher_id
+            notification['event_type'] = event_type
+            notification['priority'] = priority
+            notification['payload'] = payload
+
+        self.stubs.Set(notifier_api, 'publisher_id', fake_publisher_id)
+        self.stubs.Set(notifier_api, 'notify', fake_notify)
+        payload = {'id': 'fake-id'}
+        self.assertEqual(notification, {})
+        self.config(host='localhost')
+        utils.generate_notification(None, 'qonos.fake.event', payload)
+        expected_notification = {
+                                    'context': None,
+                                    'publisher_id': 'qonos.localhost',
+                                    'event_type': 'qonos.fake.event',
+                                    'priority': 'INFO',
+                                    'payload': {'id': 'fake-id'}
+                                }
+
+        self.assertEqual(notification, expected_notification)
 
     def test_get_qonos_open_file_log_handlers(self):
 

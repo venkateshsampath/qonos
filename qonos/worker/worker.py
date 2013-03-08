@@ -179,6 +179,18 @@ class JobProcessor(object):
     def get_qonos_client(self):
         return self.worker.get_qonos_client()
 
+    def send_notification(self, event_type, payload, level='INFO'):
+        utils.generate_notification(None, event_type, payload, level)
+
+    def send_notification_start(self, payload, level='INFO'):
+        self.send_notification('qonos.job.run.start', payload, level)
+
+    def send_notification_end(self, payload, level='INFO'):
+        self.send_notification('qonos.job.run.end', payload, level)
+
+    def send_notification_retry(self, payload, level='INFO'):
+        self.send_notification('qonos.job.retry', payload, level)
+
     def update_job(self, job_id, status, timeout=None, error_message=None):
         self.worker.update_job(job_id, status, timeout=timeout,
                                error_message=error_message)
