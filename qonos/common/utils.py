@@ -34,7 +34,7 @@ CONF = cfg.CONF
 CONF.import_opt('host', 'qonos.netconf')
 
 
-def generate_notification(context, event_type, payload, level='DEBUG'):
+def generate_notification(context, event_type, payload, level='INFO'):
     publisher_id = notifier_api.publisher_id('qonos', CONF.host)
     notifier_api.notify(context, publisher_id, event_type, level, payload)
 

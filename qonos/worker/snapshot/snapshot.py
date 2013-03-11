@@ -79,6 +79,11 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def process_job(self, job):
         LOG.debug(_("Processing job: %s") % str(job))
+        payload = {'job': job}
+        if job['status'] == 'QUEUED':
+            self.send_notification_start(payload)
+        else:
+            self.send_notification_retry(payload)
         job_id = job['id']
         if not self._check_schedule_exists(job):
             msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
@@ -136,6 +141,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
         if active:
             self._process_retention(nova_client, instance_id)
+            self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
 
