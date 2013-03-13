@@ -471,6 +471,16 @@ class TestApi(utils.BaseTestCase):
         self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
         self.assertEqual(updated_job['timeout'], timeout)
 
+        # update status with timeout as a datetime
+        timeout_str = '2010-11-30T18:00:00Z'
+        timeout = timeutils.parse_isotime(timeout_str)
+        self.client.update_job_status(job['id'], 'done', timeout)
+        updated_job = self.client.get_job(new_job['id'])
+        self.assertNotEqual(updated_job['status'], new_job['status'])
+        self.assertEqual(updated_job['status'], 'DONE')
+        self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
+        self.assertEqual(updated_job['timeout'], timeout_str)
+
         # update status with error
         error_message = 'ermagerd! errer!'
         self.client.update_job_status(job['id'], 'error',
