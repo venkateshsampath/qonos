@@ -18,6 +18,7 @@ import datetime
 from operator import attrgetter
 import time
 
+from novaclient import exceptions
 from novaclient.v1_1 import client
 from oslo.config import cfg
 
@@ -183,9 +184,13 @@ class SnapshotProcessor(worker.JobProcessor):
         ret_str = None
         retention = 0
         try:
-            server = nova_client.servers.get(instance_id)
-            ret_str = server.metadata.get("org.openstack__1__retention")
+            result = nova_client.rax_scheduled_images_python_novaclient_ext.\
+                get(instance_id)
+            ret_str = result.retention
             retention = int(ret_str or 0)
+        except exceptions.NotFound, e:
+            LOG.warn(_('Error getting retention for server %s: '
+                       'retention not found on server.') % instance_id)
         except ValueError, e:
             LOG.warn(_('Error getting retention for server %(instance_id)s: '
                        'found %(ret_str)s') %
