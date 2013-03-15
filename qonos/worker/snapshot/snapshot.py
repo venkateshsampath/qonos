@@ -19,8 +19,10 @@ from operator import attrgetter
 import time
 
 from novaclient import exceptions
+import novaclient.extension
 from novaclient.v1_1 import client
 from oslo.config import cfg
+import rax_scheduled_images_python_novaclient_ext
 
 from qonos.common import timeutils
 from qonos.openstack.common.gettextutils import _
@@ -255,11 +257,15 @@ class SnapshotProcessor(worker.JobProcessor):
 
         tenant = self.current_job['tenant']
 
+        sched_image_ext = novaclient.extension.Extension(
+                            'rax_scheduled_images_python_novaclient_ext',
+                            rax_scheduled_images_python_novaclient_ext)
         nova_client = client.Client(user,
                                     password,
                                     project_id=tenant,
                                     auth_url=auth_url,
                                     insecure=False,
+                                    extensions=[sched_image_ext],
                                     http_log_debug=False)
         return nova_client
 
