@@ -17,10 +17,11 @@
 import datetime
 import uuid
 
+from oslo.config import cfg
+
 from qonos.common import exception
 from qonos.common import timeutils
 from qonos.common import utils as qonos_utils
-from qonos.openstack.common import cfg
 from qonos.openstack.common import uuidutils
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
@@ -621,6 +622,16 @@ class TestWorkersDBApi(test_utils.BaseTestCase):
         worker = self.db_api.worker_create(fixture)
         self.assertTrue(uuidutils.is_uuid_like(worker['id']))
         self.assertEqual(worker['host'], fixture['host'])
+        self.assertNotEqual(worker['created_at'], None)
+        self.assertNotEqual(worker['updated_at'], None)
+
+    def test_worker_create_with_pid(self):
+        fixture = {'host': 'i.am.cowman',
+                   'process_id': 12345}
+        worker = self.db_api.worker_create(fixture)
+        self.assertTrue(uuidutils.is_uuid_like(worker['id']))
+        self.assertEqual(worker['host'], fixture['host'])
+        self.assertEqual(worker['process_id'], fixture['process_id'])
         self.assertNotEqual(worker['created_at'], None)
         self.assertNotEqual(worker['updated_at'], None)
 

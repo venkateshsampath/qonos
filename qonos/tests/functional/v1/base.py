@@ -18,10 +18,11 @@ import datetime
 from operator import itemgetter
 import random
 
+from oslo.config import cfg
+
 from qonos.common import config
 from qonos.common import timeutils
 import qonos.db
-from qonos.openstack.common import cfg
 from qonos.openstack.common import wsgi
 from qonos.qonosclient import client
 from qonos.qonosclient import exception as client_exc
@@ -41,12 +42,12 @@ class TestApi(utils.BaseTestCase):
         super(TestApi, self).setUp()
         CONF.paste_deploy.config_file = './etc/qonos/qonos-api-paste.ini'
         self.port = random.randint(50000, 65000)
-        self.service = wsgi.Service()
         app = config.load_paste_app('qonos-api')
         retry_count = 3
         while retry_count:
             try:
-                self.service.start(app, self.port)
+                self.service = wsgi.Service(app, self.port)
+                self.service.start()
                 retry_count = 0
             except Exception, ex:
                 retry_count -= 1
@@ -83,11 +84,39 @@ class TestApi(utils.BaseTestCase):
         worker = self.client.create_worker('hostname')
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
+        self.assertTrue(worker['process_id'] is None)
 
         # get worker
         worker = self.client.get_worker(worker['id'])
         self.assertTrue(worker['id'])
         self.assertEqual(worker['host'], 'hostname')
+        self.assertTrue(worker['process_id'] is None)
+
+        # list workers
+        workers = self.client.list_workers()
+        self.assertEqual(len(workers), 1)
+        self.assertEqual(workers[0], worker)
+
+        # create worker with process_id
+        worker2 = self.client.create_worker('hostname2', 12345)
+        self.assertTrue(worker2['id'])
+        self.assertEqual(worker2['host'], 'hostname2')
+        self.assertEqual(worker2['process_id'], 12345)
+
+        # get worker
+        worker2 = self.client.get_worker(worker2['id'])
+        self.assertTrue(worker2['id'])
+        self.assertEqual(worker2['host'], 'hostname2')
+        self.assertEqual(worker2['process_id'], 12345)
+
+        # list workers
+        workers = self.client.list_workers()
+        self.assertEqual(len(workers), 2)
+        self.assertTrue(worker in workers)
+        self.assertTrue(worker2 in workers)
+
+        # delete second worker
+        self.client.delete_worker(worker2['id'])
 
         # list workers
         workers = self.client.list_workers()
@@ -183,7 +212,7 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(1, len(metadata))
         self.assertEqual(metadata['instance_id'], 'my_instance_1')
 
-        # get schedule
+        # Get schedule
         schedule = self.client.get_schedule(schedule['id'])
         self.assertTrue(schedule['id'])
         self.assertEqual(schedule['tenant'], TENANT1)
@@ -441,6 +470,16 @@ class TestApi(utils.BaseTestCase):
         self.assertEqual(updated_job['status'], 'DONE')
         self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
         self.assertEqual(updated_job['timeout'], timeout)
+
+        # update status with timeout as a datetime
+        timeout_str = '2010-11-30T18:00:00Z'
+        timeout = timeutils.parse_isotime(timeout_str)
+        self.client.update_job_status(job['id'], 'done', timeout)
+        updated_job = self.client.get_job(new_job['id'])
+        self.assertNotEqual(updated_job['status'], new_job['status'])
+        self.assertEqual(updated_job['status'], 'DONE')
+        self.assertNotEqual(updated_job['timeout'], new_job['timeout'])
+        self.assertEqual(updated_job['timeout'], timeout_str)
 
         # update status with error
         error_message = 'ermagerd! errer!'

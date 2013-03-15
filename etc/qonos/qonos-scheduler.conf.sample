@@ -2,6 +2,9 @@
 debug = True
 # Log file location
 log_file = /var/log/qonos/qonos-scheduler.log
+default_log_levels = amqplib=WARN,sqlalchemy=WARN,boto=WARN,suds=INFO,qonos=DEBUG,eventlet.wsgi.server=WARN
+
+notification_driver = qonos.openstack.common.notifier.log_notifier
 
 [scheduler]
 # Indicates the scheduler should start as a daemon

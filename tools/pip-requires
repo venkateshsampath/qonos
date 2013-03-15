@@ -3,7 +3,6 @@
 # package to get the right headers...
 greenlet>=0.3.1
 
-MySQL-python
 SQLAlchemy>=0.7,<=0.7.9
 anyjson
 eventlet>=0.9.12
@@ -25,3 +24,5 @@ python-novaclient==2.10.0
 Paste
 
 python-daemon
+
+http://tarballs.openstack.org/oslo-config/oslo.config-1.1.0b1.tar.gz#egg=oslo.config

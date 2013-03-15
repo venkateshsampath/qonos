@@ -18,8 +18,9 @@ import inspect
 import stubout
 import unittest
 
+from oslo.config import cfg
+
 from qonos.common import config
-from qonos.openstack.common import cfg
 
 
 CONF = cfg.CONF

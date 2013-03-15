@@ -19,17 +19,24 @@ import datetime
 import logging as pylog
 
 from croniter.croniter import croniter
+from oslo.config import cfg
 
 from qonos.common import exception as exc
 from qonos.common import timeutils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
+from qonos.openstack.common.notifier import api as notifier_api
 
 LOG = logging.getLogger(__name__)
 
 
 CONF = cfg.CONF
+CONF.import_opt('host', 'qonos.netconf')
+
+
+def generate_notification(context, event_type, payload, level='INFO'):
+    publisher_id = notifier_api.publisher_id('qonos', CONF.host)
+    notifier_api.notify(context, publisher_id, event_type, level, payload)
 
 
 def serialize_datetimes(data):
@@ -48,13 +55,20 @@ def cron_string_to_next_datetime(minute="*", hour="*", day_of_month="*",
                                  month="*", day_of_week="*", start_time=None):
     start_time = start_time or timeutils.utcnow()
     cron_string = ("%s %s %s %s %s" %
-                  (minute or '*',
-                   hour or '*',
-                   day_of_month or '*',
-                   month or '*',
-                   day_of_week or '*'))
+                  (_default_if_none(minute, '*'),
+                   _default_if_none(hour, '*'),
+                   _default_if_none(day_of_month, '*'),
+                   _default_if_none(month, '*'),
+                   _default_if_none(day_of_week, '*')))
     iter = croniter(cron_string, start_time)
     return iter.get_next(datetime.datetime)
+
+
+def _default_if_none(value, default):
+    if value is None:
+        return default
+    else:
+        return value
 
 
 def _validate_limit(limit):

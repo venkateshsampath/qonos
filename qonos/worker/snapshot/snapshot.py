@@ -20,9 +20,9 @@ import time
 
 from novaclient import exceptions
 from novaclient.v1_1 import client
+from oslo.config import cfg
 
 from qonos.common import timeutils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 import qonos.qonosclient.exception as qonos_ex
@@ -80,6 +80,11 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def process_job(self, job):
         LOG.debug(_("Processing job: %s") % str(job))
+        payload = {'job': job}
+        if job['status'] == 'QUEUED':
+            self.send_notification_start(payload)
+        else:
+            self.send_notification_retry(payload)
         job_id = job['id']
         if not self._check_schedule_exists(job):
             msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
@@ -98,15 +103,20 @@ class SnapshotProcessor(worker.JobProcessor):
 
         nova_client = self._get_nova_client()
         instance_id = self._get_instance_id(job)
-        metadata = {
-            "org.openstack__1__created-by": "scheduled_images_service"
-            }
-        image_id = nova_client.servers.create_image(
-            instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
+        if ('image_id' in job['metadata'] and
+            job['status'] in ['PROCESSING', 'TIMED_OUT']):
+            image_id = job['metadata']['image_id']
+            LOG.debug("Resuming image: %s" % image_id)
+        else:
+            metadata = {
+                "org.openstack__1__created-by": "scheduled_images_service"
+                }
+            image_id = nova_client.servers.create_image(
+                instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
 
-        LOG.debug("Created image: %s" % image_id)
+            LOG.debug("Created image: %s" % image_id)
 
-        self._add_job_metadata(image_id=image_id)
+            self._add_job_metadata(image_id=image_id)
 
         image_status = None
         active = False
@@ -132,6 +142,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
         if active:
             self._process_retention(nova_client, instance_id)
+            self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
 

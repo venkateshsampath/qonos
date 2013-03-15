@@ -14,10 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import httplib
-
-from qonos.common import utils
-from qonos.openstack.common import log as logging
 
 try:
     import json
@@ -25,8 +23,6 @@ except ImportError:
     import simplejson as json
 
 from qonos.qonosclient import exception
-
-LOG = logging.getLogger(__name__)
 
 
 class Client(object):
@@ -61,6 +57,27 @@ class Client(object):
             if body != '':
                 return json.loads(body)
 
+    def _isotime(self, at=None):
+        """Stringify time in ISO 8601 format."""
+        TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+        if not at:
+            at = datetime.utcnow()
+        str = at.strftime(TIME_FORMAT)
+        tz = at.tzinfo.tzname(None) if at.tzinfo else 'UTC'
+        str += ('Z' if tz == 'UTC' else tz)
+        return str
+
+    def _serialize_datetimes(self, data):
+        """Serializes datetimes to string in the top level values of a dict."""
+        for (k, v) in data.iteritems():
+            if isinstance(v, datetime.datetime):
+                data[k] = self._isotime(v)
+            elif isinstance(v, list):
+                for item in v:
+                    self._serialize_datetimes(item)
+            elif isinstance(v, dict):
+                self._serialize_datetimes(v)
+
     ######## workers
 
     def list_workers(self, params={}):
@@ -70,8 +87,10 @@ class Client(object):
             query += ('%s=%s&' % (param, params[param]))
         return self._do_request('GET', path % query)['workers']
 
-    def create_worker(self, host):
+    def create_worker(self, host, process_id=None):
         body = {'worker': {'host': host}}
+        if process_id:
+            body['worker']['process_id'] = int(process_id)
         return self._do_request('POST', '/v1/workers', body)['worker']
 
     def get_worker(self, worker_id):
@@ -148,7 +167,7 @@ class Client(object):
             body['status']['error_message'] = error_message
         if timeout:
             body['status']['timeout'] = timeout
-            utils.serialize_datetimes(body)
+            self._serialize_datetimes(body)
 
         path = '/v1/jobs/%s/status' % job_id
         return self._do_request('PUT', path, body)['status']

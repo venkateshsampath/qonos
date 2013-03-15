@@ -3,6 +3,8 @@ debug = True
 db_auto_create = True
 db_api = 'qonos.db.sqlalchemy.api'
 
+notification_driver = qonos.openstack.common.notifier.log_notifier
+
 # Sqlalchemy database connection string
 # If none defaults to sqlite
 # sql_connection = 'mysql://qonos:openstack@localhost/qonos'
@@ -10,12 +12,13 @@ sql_connection = sqlite:///qonos.sqlite
 
 # Log file location
 log_file = /var/log/qonos/qonos-api.log
+default_log_levels = amqplib=WARN,sqlalchemy=WARN,boto=WARN,suds=INFO,qonos=DEBUG,eventlet.wsgi.server=WARN
 
 [api]
 # Indicates the API should start as a daemon
 daemonized = False
 
-# Any actions that need overridden values for retry 
+# Any actions that need overridden values for retry
 # and / or timeout should be listed here and a section
 # provided below named [action_<action name>]
 action_overrides = snapshot

@@ -14,7 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from qonos.openstack.common import cfg
+from oslo.config import cfg
+
 from qonos.openstack.common import importutils
 
 sql_connection_opt = cfg.StrOpt('sql_connection',

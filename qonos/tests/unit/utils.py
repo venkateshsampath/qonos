@@ -45,7 +45,6 @@ WORKER_UUID5 = 'dcbed618-b6db-4e29-a9ce-b8d6c04ba3f2'
 def get_fake_request(path='', method='GET'):
     req = wsgi.Request.blank(path)
     req.method = method
-
     return req
 
 

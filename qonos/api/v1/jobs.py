@@ -113,8 +113,9 @@ class JobsController(object):
         job = self.db_api.job_create(values)
         utils.serialize_datetimes(job)
         api_utils.serialize_job_metadata(job)
-
-        return {'job': job}
+        job = {'job': job}
+        utils.generate_notification(None, 'qonos.job.create', job, 'INFO')
+        return job
 
     def get(self, request, job_id):
         try:

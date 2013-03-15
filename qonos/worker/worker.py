@@ -14,12 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import signal
 import socket
 import time
 
+from oslo.config import cfg
+
 from qonos.common import utils
-from qonos.openstack.common import cfg
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
 import qonos.openstack.common.log as logging
@@ -83,6 +85,7 @@ class Worker(object):
 
     def _run_loop(self, run_once=False, poll_once=False):
         self.running = True
+        self.pid = os.getpid()
         self.processor.init_processor(self)
         self.worker_id = self._register_worker()
 
@@ -108,7 +111,7 @@ class Worker(object):
         while self.running:
             worker = None
             with utils.log_warning_and_dismiss_exception():
-                worker = self.client.create_worker(self.host)
+                worker = self.client.create_worker(self.host, self.pid)
 
             if worker:
                 msg = _('Worker has been registered with ID: %s')
@@ -175,6 +178,18 @@ class JobProcessor(object):
 
     def get_qonos_client(self):
         return self.worker.get_qonos_client()
+
+    def send_notification(self, event_type, payload, level='INFO'):
+        utils.generate_notification(None, event_type, payload, level)
+
+    def send_notification_start(self, payload, level='INFO'):
+        self.send_notification('qonos.job.run.start', payload, level)
+
+    def send_notification_end(self, payload, level='INFO'):
+        self.send_notification('qonos.job.run.end', payload, level)
+
+    def send_notification_retry(self, payload, level='INFO'):
+        self.send_notification('qonos.job.retry', payload, level)
 
     def update_job(self, job_id, status, timeout=None, error_message=None):
         self.worker.update_job(job_id, status, timeout=timeout,
