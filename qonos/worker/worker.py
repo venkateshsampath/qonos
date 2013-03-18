@@ -110,7 +110,7 @@ class Worker(object):
         LOG.info(_('Registering worker.'))
         while self.running:
             worker = None
-            with utils.log_warning_and_dismiss_exception():
+            with utils.log_warning_and_dismiss_exception(LOG):
                 worker = self.client.create_worker(self.host, self.pid)
 
             if worker:
@@ -122,7 +122,7 @@ class Worker(object):
 
     def _unregister_worker(self):
         LOG.info(_('Unregistering worker. ID: %s') % self.worker_id)
-        with utils.log_warning_and_dismiss_exception():
+        with utils.log_warning_and_dismiss_exception(LOG):
             self.client.delete_worker(self.worker_id)
 
     def _terminate(self, signum, frame):
@@ -136,7 +136,7 @@ class Worker(object):
             time.sleep(CONF.worker.job_poll_interval)
             LOG.debug(_("Attempting to get next job from API"))
             job = None
-            with utils.log_warning_and_dismiss_exception():
+            with utils.log_warning_and_dismiss_exception(LOG):
                 job = self.client.get_next_job(self.worker_id,
                                                CONF.worker.action_type)['job']
 

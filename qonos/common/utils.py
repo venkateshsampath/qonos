@@ -17,6 +17,8 @@
 import contextlib
 import datetime
 import logging as pylog
+import sys
+import traceback
 
 from croniter.croniter import croniter
 from oslo.config import cfg
@@ -102,10 +104,10 @@ def get_qonos_open_file_log_handlers():
 
 
 @contextlib.contextmanager
-def log_warning_and_dismiss_exception():
+def log_warning_and_dismiss_exception(logger=LOG):
     try:
         yield
     except Exception as ex:
+        name, value, tb = sys.exc_info()
         msg = '%(name)s: %(message)s'
-        LOG.warn(msg % {'name': unicode(type(ex).__name__),
-                        'message': unicode(ex)})
+        logger.warn(msg % {"name": name.__name__, "message": value})

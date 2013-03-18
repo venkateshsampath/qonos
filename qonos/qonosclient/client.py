@@ -32,16 +32,17 @@ class Client(object):
         self.port = port
 
     def _do_request(self, method, url, body=None):
+        conn = httplib.HTTPConnection(self.endpoint, self.port)
+
+        if body and isinstance(body, dict):
+            body = json.dumps(body)
         try:
-            conn = httplib.HTTPConnection(self.endpoint, self.port)
+            conn.request(method, url, body=body,
+                         headers={'Content-Type': 'application/json'})
         except Exception:
             msg = 'Could not contact Qonos API, is it running?'
             raise exception.ConnRefused(msg)
 
-        if body and isinstance(body, dict):
-            body = json.dumps(body)
-        conn.request(method, url, body=body,
-                     headers={'Content-Type': 'application/json'})
         response = conn.getresponse()
         if response.status == 400:
             raise exception.BadRequest('Bad Request Received')
