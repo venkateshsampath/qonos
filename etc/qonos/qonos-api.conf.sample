@@ -12,7 +12,7 @@ sql_connection = sqlite:///qonos.sqlite
 
 # Log file location
 log_file = /var/log/qonos/qonos-api.log
-default_log_levels = amqplib=WARN,sqlalchemy=WARN,boto=WARN,suds=INFO,qonos=DEBUG,eventlet.wsgi.server=WARN
+default_log_levels = sqlalchemy=WARN,eventlet.wsgi.server=WARN
 
 [api]
 # Indicates the API should start as a daemon

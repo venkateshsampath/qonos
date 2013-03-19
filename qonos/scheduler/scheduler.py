@@ -74,7 +74,7 @@ class Scheduler(object):
             next_run = time.time() + CONF.scheduler.job_schedule_interval
 
             # do work
-            with utils.log_warning_and_dismiss_exception():
+            with utils.log_warning_and_dismiss_exception(LOG):
                 self.enqueue_jobs(end_time=current_run)
 
             # if shutdown hasn't been requested, do nothing until next run
@@ -99,7 +99,7 @@ class Scheduler(object):
         LOG.debug(_('Fetching schedules to process'))
         schedules = self.get_schedules(start_time, end_time)
         if schedules:
-            LOG.debug(_('Creating %d jobs') % len(schedules))
+            LOG.info(_('Creating %d jobs') % len(schedules))
             for schedule in schedules:
                 try:
                     self.client.create_job(schedule['id'],
