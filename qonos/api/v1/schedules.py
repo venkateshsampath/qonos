@@ -122,31 +122,39 @@ class SchedulesController(object):
             msg = _('The request body must contain a "schedule" entity')
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
+        api_utils.deserialize_schedule_metadata(body['schedule'])
+        values = {}
+        values.update(body['schedule'])
+
         try:
-            api_utils.deserialize_schedule_metadata(body['schedule'])
-            values = {}
-            values.update(body['schedule'])
             values = api_utils.check_read_only_properties(values)
-            schedule = self.db_api.schedule_update(schedule_id, values)
+        except exception.Forbidden as e:
+            raise webob.exc.HTTPForbidden(explanation=unicode(e))
+
+        times = {
+            'minute': None,
+            'hour': None,
+            'month': None,
+            'day_of_week': None,
+            'day_of_month': None,
+        }
+        update_schedule_times = False
+        for key in times:
+            if key in values:
+                times[key] = values[key]
+                update_schedule_times = True
+
+        if update_schedule_times:
             # NOTE(ameade): We must recalculate the schedules next_run time
             # since the schedule has changed
-            time_keys = ['minute', 'hour', 'month', 'day_of_week',
-                         'day_of_month']
-            update_next_run = False
-            for key in time_keys:
-                if key in values:
-                    update_next_run = True
-                    break
+            values.update(times)
+            values['next_run'] = api_utils.schedule_to_next_run(times)
 
-            if update_next_run:
-                values = {}
-                values['next_run'] = api_utils.schedule_to_next_run(schedule)
-                schedule = self.db_api.schedule_update(schedule_id, values)
+        try:
+            schedule = self.db_api.schedule_update(schedule_id, values)
         except exception.NotFound:
             msg = _('Schedule %s could not be found.') % schedule_id
             raise webob.exc.HTTPNotFound(explanation=msg)
-        except exception.Forbidden as e:
-            raise webob.exc.HTTPForbidden(explanation=unicode(e))
 
         utils.serialize_datetimes(schedule)
         api_utils.serialize_schedule_metadata(schedule)

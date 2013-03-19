@@ -366,9 +366,12 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertNotEqual(updated.get('updated_at'), None)
         self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
         self.assertEqual(self.schedule_1['action'], updated['action'])
-        self.assertEqual(self.schedule_1['minute'], updated['minute'])
         self.assertEqual(update_fixture['schedule']['hour'],
                          updated['hour'])
+        self.assertFalse(updated['minute'])
+        self.assertFalse(updated['month'])
+        self.assertFalse(updated['day_of_week'])
+        self.assertFalse(updated['day_of_month'])
         self.assertEqual(updated['next_run'], expected_next_run)
 
     def test_update_with_minute(self):
@@ -391,7 +394,10 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertNotEqual(updated.get('updated_at'), None)
         self.assertEqual(self.schedule_1['tenant'], updated['tenant'])
         self.assertEqual(self.schedule_1['action'], updated['action'])
-        self.assertEqual(self.schedule_1['hour'], updated['hour'])
+        self.assertFalse(updated['hour'])
+        self.assertFalse(updated['month'])
+        self.assertFalse(updated['day_of_week'])
+        self.assertFalse(updated['day_of_month'])
         self.assertEqual(update_fixture['schedule']['minute'],
                          updated['minute'])
         self.assertEqual(updated['next_run'], expected_next_run)
@@ -418,6 +424,10 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(self.schedule_1['action'], updated['action'])
         self.assertEqual(update_fixture['schedule']['month'],
                          updated['month'])
+        self.assertFalse(updated['minute'])
+        self.assertFalse(updated['hour'])
+        self.assertFalse(updated['day_of_week'])
+        self.assertFalse(updated['day_of_month'])
         self.assertEqual(updated['next_run'], expected_next_run)
 
     def test_update_with_day_of_week(self):
@@ -442,6 +452,10 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(self.schedule_1['action'], updated['action'])
         self.assertEqual(update_fixture['schedule']['day_of_week'],
                          updated['day_of_week'])
+        self.assertFalse(updated['minute'])
+        self.assertFalse(updated['hour'])
+        self.assertFalse(updated['month'])
+        self.assertFalse(updated['day_of_month'])
         self.assertEqual(updated['next_run'], expected_next_run)
 
     def test_update_with_day_of_month(self):
@@ -466,6 +480,10 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(self.schedule_1['action'], updated['action'])
         self.assertEqual(update_fixture['schedule']['day_of_month'],
                          updated['day_of_month'])
+        self.assertFalse(updated['minute'])
+        self.assertFalse(updated['hour'])
+        self.assertFalse(updated['month'])
+        self.assertFalse(updated['day_of_week'])
         self.assertEqual(updated['next_run'], expected_next_run)
 
     def test_update_tenant(self):
