@@ -28,10 +28,12 @@ api_opts = [
     cfg.IntOpt('port', default=8080),
     cfg.MultiStrOpt('action_overrides', default=[]),
     cfg.StrOpt('wsgi_log_format',
-            default='%(client_ip)s "%(request_line)s" status: %(status_code)s'                      ' len: %(body_length)s time: %(wall_seconds).7f',
+            default='%(client_ip)s "%(request_line)s" status: %(status_code)s'
+                    ' len: %(body_length)s time: %(wall_seconds).7f',
             help='A python format string that is used as the template to '
                  'generate log lines. The following values can be formatted '
-                 'into it: client_ip, date_time, request_line, status_code, '                    'body_length, wall_seconds.'),
+                 'into it: client_ip, date_time, request_line, status_code, '
+                 'body_length, wall_seconds.'),
 ]
 
 action_opts = [
