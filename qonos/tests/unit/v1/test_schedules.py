@@ -81,7 +81,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.SCHEDULE_UUID4,
             'tenant': unit_utils.TENANT4,
-            'action': 'snapshot',
+            'action': 'other',
             'minute': '30',
             'hour': '5',
             'next_run': qonos_utils.cron_string_to_next_datetime(30, 5)
@@ -140,6 +140,12 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(path=path, method='GET')
         schedules = self.controller.list(request).get('schedules')
         self.assertEqual(len(schedules), 2)
+
+    def test_list_filter_by_action(self):
+        path = '?action=snapshot'
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        schedules = self.controller.list(request).get('schedules')
+        self.assertEqual(len(schedules), 3)
 
     def test_list_limit_max(self):
         self.config(api_limit_max=3)

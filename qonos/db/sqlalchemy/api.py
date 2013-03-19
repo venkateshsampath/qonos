@@ -320,7 +320,7 @@ def schedule_get_all(filter_args={}):
                    .options(sa_orm.joinedload_all(
                             models.Schedule.schedule_metadata))
     SCHEDULE_BASE_FILTERS = ['next_run_after', 'next_run_before', 'tenant',
-                    'limit', 'marker']
+                    'limit', 'marker', 'action']
 
     if 'next_run_after' in filter_args:
         query = query.filter(
@@ -334,6 +334,10 @@ def schedule_get_all(filter_args={}):
     if filter_args.get('tenant') is not None:
         query = query.filter(
                 models.Schedule.tenant == filter_args['tenant'])
+
+    if filter_args.get('action') is not None:
+        query = query.filter(
+                models.Schedule.action == filter_args['action'])
 
     for filter_key in filter_args.keys():
         if filter_key not in SCHEDULE_BASE_FILTERS:

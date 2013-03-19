@@ -120,6 +120,13 @@ def schedule_get_all(filter_args={}):
                     del schedules_mutate[schedules_mutate.index(schedule)]
         filter_args.pop('tenant')
 
+    if filter_args.get('action') is not None:
+        for schedule in schedules:
+            if schedule['action'] != filter_args['action']:
+                if schedule in schedules_mutate:
+                    del schedules_mutate[schedules_mutate.index(schedule)]
+        filter_args.pop('action')
+
     for filter_key in filter_args.keys():
         if filter_key not in SCHEDULE_BASE_FILTERS:
             filter_value = filter_args[filter_key]
