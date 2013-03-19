@@ -279,6 +279,16 @@ class TestApi(utils.BaseTestCase):
         schedules = self.client.list_schedules(filter_args=filter)
         self.assertEqual(len(schedules), 0)
 
+        # test filter by action
+        filter = {}
+        filter['action'] = 'snapshot'
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 1)
+        self.assertEqual(schedules[0], schedule)
+        filter['action'] = 'test_action'
+        schedules = self.client.list_schedules(filter_args=filter)
+        self.assertEqual(len(schedules), 0)
+
         #update schedule
         request = {'schedule': {'hour': 14}}
         updated_schedule = self.client.update_schedule(schedule['id'], request)
