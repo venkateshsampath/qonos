@@ -191,12 +191,13 @@ class SnapshotProcessor(worker.JobProcessor):
             ret_str = result.retention
             retention = int(ret_str or 0)
         except exceptions.NotFound, e:
-            LOG.warn(_('Error getting retention for server %s: '
-                       'retention not found on server.') % instance_id)
-        except ValueError, e:
-            LOG.warn(_('Error getting retention for server %(instance_id)s: '
-                       'found %(ret_str)s') %
-                     {'instance_id': instance_id, 'ret_str': ret_str})
+            msg = _('Could not retrieve retention for server %s: either the'
+                    ' server was deleted or scheduled images for'
+                    ' the server was disabled.') % instance_id
+            LOG.warn(msg)
+        except Exception, e:
+            msg = _('Error getting retention for server %s: ')
+            LOG.exception(msg % instance_id)
 
         return retention
 
