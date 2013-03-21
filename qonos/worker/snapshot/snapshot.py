@@ -105,6 +105,12 @@ class SnapshotProcessor(worker.JobProcessor):
 
         nova_client = self._get_nova_client()
         instance_id = self._get_instance_id(job)
+        if not instance_id:
+            msg = ('Job %s does not specify an instance_id in its metadata.'
+                   % job_id)
+            self._job_cancelled(job_id, msg)
+            return
+
         if ('image_id' in job['metadata'] and
             job['status'] in ['PROCESSING', 'TIMED_OUT']):
             image_id = job['metadata']['image_id']
@@ -113,8 +119,18 @@ class SnapshotProcessor(worker.JobProcessor):
             metadata = {
                 "org.openstack__1__created-by": "scheduled_images_service"
                 }
-            image_id = nova_client.servers.create_image(
-                instance_id, ('Daily-' + str(self._get_utcnow())), metadata)
+
+            try:
+                image_id = nova_client.servers.create_image(
+                    instance_id,
+                    ('Daily-' + str(self._get_utcnow())),
+                    metadata)
+            except exceptions.NotFound:
+                msg = ('Instance %(instance_id)s specified by job %(job_id)s '
+                       'was not found.' %
+                     {'instance_id': instance_id, 'job_id': job_id})
+                self._job_cancelled(job_id, msg)
+                return
 
             LOG.debug("Created image: %s" % image_id)
 
