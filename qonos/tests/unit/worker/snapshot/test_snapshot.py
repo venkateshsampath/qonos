@@ -517,6 +517,32 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
+    def test_doesnt_delete_images_on_retention_error(self):
+        timeutils.set_time_override()
+        self.nova_client.servers.create_image(mox.IsA(str),
+            mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndRaise(Exception())
+        mock_server = MockServer(retention=None)
+        self._init_worker_mock()
+        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
+                               error_message=None)
+        self.mox.StubOutWithMock(utils, 'generate_notification')
+        utils.generate_notification(None, 'qonos.job.run.start', mox.IsA(dict),
+                                    mox.IsA(str))
+        utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
+                                    mox.IsA(str))
+        self.mox.ReplayAll()
+
+        processor = TestableSnapshotProcessor(self.nova_client)
+        processor.init_processor(self.worker)
+
+        processor.process_job(self.job)
+
+        self.mox.VerifyAll()
+
     def test_deletes_images_more_than_retention(self):
         timeutils.set_time_override()
         instance_id = self.job['metadata']['instance_id']
