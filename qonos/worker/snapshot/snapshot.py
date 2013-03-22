@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import calendar
 import datetime
 from operator import attrgetter
 import time
@@ -121,9 +122,10 @@ class SnapshotProcessor(worker.JobProcessor):
                 }
 
             try:
+                server_name = nova_client.servers.get(instance_id).name
                 image_id = nova_client.servers.create_image(
                     instance_id,
-                    ('Daily-' + str(self._get_utcnow())),
+                    self.generate_image_name(server_name),
                     metadata)
             except exceptions.NotFound:
                 msg = ('Instance %(instance_id)s specified by job %(job_id)s '
@@ -171,6 +173,15 @@ class SnapshotProcessor(worker.JobProcessor):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def generate_image_name(self, server_name):
+        prefix = 'Daily-'
+        now = str(calendar.timegm(self._get_utcnow().utctimetuple()))
+
+        server_name_len = 255 - len(now) - len(prefix) - len('-')
+        server_name = server_name[:server_name_len]
+
+        return (prefix + server_name + '-' + str(now))
 
     def _add_job_metadata(self, **to_add):
         metadata = self.current_job['metadata']
