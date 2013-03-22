@@ -18,7 +18,6 @@ import contextlib
 import datetime
 import logging as pylog
 import sys
-import traceback
 
 from croniter.croniter import croniter
 from oslo.config import cfg
