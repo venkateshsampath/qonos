@@ -10,6 +10,16 @@ notification_driver = qonos.openstack.common.notifier.log_notifier
 # sql_connection = 'mysql://qonos:openstack@localhost/qonos'
 sql_connection = sqlite:///qonos.sqlite
 
+# Notification and rabbit configs
+# notification_driver=qonos.openstack.common.notifier.rpc_notifier
+# notification_topics=monitor_qonos
+# rabbit_host=localhost
+# rabbit_virtual_host=qonos
+# rabbit_durable_queues=true
+# rabbit_userid=qonos
+# rabbit_password=openstack
+# rabbit_port=
+
 # Log file location
 log_file = /var/log/qonos/qonos-api.log
 default_log_levels = sqlalchemy=WARN,sqlalchemy.engine.base.Engine=WARN,eventlet.wsgi.server=WARN
