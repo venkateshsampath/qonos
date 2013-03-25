@@ -370,6 +370,13 @@ def job_create(job_values):
 
 def job_get_all(params={}):
     jobs = copy.deepcopy(DATA['jobs'].values())
+    JOB_BASE_FILTERS = ['schedule_id']
+
+    for key in JOB_BASE_FILTERS:
+        if key in params:
+            for job in reversed(jobs):
+                if not (job.get(key) == params.get(key)):
+                    del jobs[jobs.index(job)]
 
     for job in jobs:
         job['job_metadata'] =\

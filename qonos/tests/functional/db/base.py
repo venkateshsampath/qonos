@@ -819,6 +819,14 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         expected = [self.job_2]
         self.assertEqual(expected, jobs)
 
+    def test_job_get_all_with_schedule_id(self):
+        params = {}
+        params['schedule_id'] = unit_utils.SCHEDULE_UUID2
+        jobs = self.db_api.job_get_all(params=params)
+        self.assertEqual(len(jobs), 1)
+        expected = [self.job_2]
+        self.assertEqual(expected, jobs)
+
     def test_job_get_by_id(self):
         expected = self.job_1
         actual = self.db_api.job_get_by_id(self.job_1['id'])
