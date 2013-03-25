@@ -34,14 +34,9 @@ class JobsController(object):
     def __init__(self, db_api=None):
         self.db_api = db_api or qonos.db.get_api()
 
-    def _get_request_params(self, request):
-        params = {}
-        params['limit'] = request.params.get('limit')
-        params['marker'] = request.params.get('marker')
-        return params
-
     def list(self, request):
-        params = self._get_request_params(request)
+        params = request.params.copy()
+
         try:
             params = utils.get_pagination_limit(params)
         except exception.Invalid as e:

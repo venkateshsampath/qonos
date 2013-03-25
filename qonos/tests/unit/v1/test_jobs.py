@@ -117,7 +117,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID3,
             'schedule_id': self.schedule_1['id'],
-            'tenant': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT3,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'QUEUED',
@@ -207,6 +207,19 @@ class TestJobsApi(test_utils.BaseTestCase):
         for k in JOB_ATTRS:
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_2[k]]))
+
+    def test_list_with_schedule_id(self):
+        path = '?schedule_id=%s' % unit_utils.SCHEDULE_UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 3)
+
+    def test_list_with_tenant(self):
+        path = '?tenant=%s' % unit_utils.TENANT3
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_3['id'])
 
     def test_create(self):
 
