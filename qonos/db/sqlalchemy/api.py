@@ -601,8 +601,9 @@ def job_get_all(params={}):
     session = get_session()
     query = session.query(models.Job)\
                    .options(sa_orm.subqueryload('job_metadata'))
-    JOB_BASE_FILTERS = ['schedule_id']
+    JOB_BASE_FILTERS = ['schedule_id', 'tenant']
 
+    print params
     query = _filter_query_on_attributes(query,
                                         params,
                                         models.Job,
