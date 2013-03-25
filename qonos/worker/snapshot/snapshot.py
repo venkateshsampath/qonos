@@ -175,10 +175,19 @@ class SnapshotProcessor(worker.JobProcessor):
         pass
 
     def generate_image_name(self, server_name):
+        """
+        Creates a string based on the specified server name and current time.
+
+        The string is of the format:
+        "Daily-<truncated-server-name>-<unix-timestamp>"
+        """
         prefix = 'Daily-'
+        max_name_length = 255
         now = str(calendar.timegm(self._get_utcnow().utctimetuple()))
 
-        server_name_len = 255 - len(now) - len(prefix) - len('-')
+        #NOTE(ameade): Truncate the server name so the image name is within
+        # 255 characters total
+        server_name_len = max_name_length - len(now) - len(prefix) - len('-')
         server_name = server_name[:server_name_len]
 
         return (prefix + server_name + '-' + str(now))
