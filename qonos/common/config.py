@@ -32,10 +32,10 @@ paste_deploy_opts = [
 common_opts = [
     cfg.StrOpt('db_api', default='qonos.db.simple.api',
                help=_('Python module path of database access API')),
-    cfg.IntOpt('limit_param_default', default=10,
+    cfg.IntOpt('limit_param_default', default=100,
                help=_('Default value for the number of items returned by a '
                'request if not specified explicitly in the request')),
-    cfg.IntOpt('api_limit_max', default=100,
+    cfg.IntOpt('api_limit_max', default=1000,
                help=_('Maximum permissible number of items that could be '
                'returned by a request')),
 ]
