@@ -146,6 +146,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.mox.StubOutWithMock(utils, 'generate_notification')
         utils.generate_notification(None, 'qonos.job.run.start', mox.IsA(dict),
                                     mox.IsA(str))
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str),
             self.snapshot_meta).AndRaise(exceptions.NotFound("404"))
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
@@ -163,6 +164,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_process_job_should_succeed_immediately(self):
         timeutils.set_time_override()
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -214,6 +216,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.job['metadata']['image_id'] = IMAGE_ID
         self.job['status'] = 'ERROR'
 
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -236,6 +239,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_process_job_should_succeed_after_multiple_tries(self):
         timeutils.set_time_override()
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -278,6 +282,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(self.job)
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -320,6 +325,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(self.job)
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -371,6 +377,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(self.job)
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -418,6 +425,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job = copy.deepcopy(self.job)
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -476,6 +484,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_doesnt_delete_images_less_than_retention(self):
         timeutils.set_time_override()
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -505,6 +514,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_doesnt_delete_images_with_bad_retention(self):
         timeutils.set_time_override()
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -532,6 +542,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_doesnt_delete_images_with_no_retention(self):
         timeutils.set_time_override()
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -558,6 +569,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
     def test_doesnt_delete_images_on_retention_error(self):
         timeutils.set_time_override()
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -585,6 +597,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
     def test_deletes_images_more_than_retention(self):
         timeutils.set_time_override()
         instance_id = self.job['metadata']['instance_id']
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -618,6 +631,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
     def test_doesnt_delete_images_from_another_instance(self):
         timeutils.set_time_override()
         instance_id = self.job['metadata']['instance_id']
+        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
             mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -648,6 +662,23 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
+    def test_generate_image_name(self):
+        timeutils.set_time_override(datetime.datetime(2013, 3, 22, 22, 39, 27))
+        timestamp = '1363991967'
+        processor = TestableSnapshotProcessor(self.nova_client)
+        image_name = processor.generate_image_name("test")
+        self.assertEqual(image_name, 'Daily-test-' + timestamp)
+
+    def test_generate_image_name_long_server_name(self):
+        timeutils.set_time_override(datetime.datetime(2013, 3, 22, 22, 39, 27))
+        timestamp = '1363991967'
+        processor = TestableSnapshotProcessor(self.nova_client)
+        fake_server_name = 'a' * 255
+        expected_server_name = 'a' * (255 - len(timestamp) - len('Daily--'))
+        image_name = processor.generate_image_name(fake_server_name)
+        expected_image_name = 'Daily-' + expected_server_name + '-' + timestamp
+        self.assertEqual(image_name, expected_image_name)
+
 
 class MockNovaClient(object):
     def __init__(self):
@@ -675,8 +706,9 @@ class MockImage(object):
 
 
 class MockServer(object):
-    def __init__(self, instance_id=None, retention="0"):
+    def __init__(self, instance_id=None, retention="0", name='test'):
         self.id = instance_id or uuidutils.generate_uuid()
+        self.name = name
 
 
 class MockRetention(object):
