@@ -6,6 +6,7 @@ greenlet>=0.3.1
 SQLAlchemy>=0.7,<=0.7.9
 anyjson
 eventlet>=0.9.12
+kombu>=1.0.4
 PasteDeploy
 routes
 webob==1.0.8
