@@ -31,7 +31,7 @@ scheduler_opts = [
     cfg.IntOpt('job_schedule_interval', default=5,
                help=_('Interval to poll api for ready jobs in seconds')),
     cfg.StrOpt('api_endpoint', default='localhost'),
-    cfg.IntOpt('api_port', default=8080),
+    cfg.IntOpt('api_port', default=7667),
     cfg.BoolOpt('daemonized', default=False),
 ]
 
