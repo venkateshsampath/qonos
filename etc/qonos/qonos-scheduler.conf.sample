@@ -8,4 +8,5 @@ notification_driver = qonos.openstack.common.notifier.log_notifier
 [scheduler]
 # Indicates the scheduler should start as a daemon
 daemonized = True
+api_port = 7667
 

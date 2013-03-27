@@ -12,6 +12,7 @@ daemonized = True
 action_type = 'snapshot'
 # The class of the processor wrapped by this worker
 processor_class = 'qonos.worker.snapshot.snapshot.SnapshotProcessor'
+api_port = 7667
 
 # Processor specific settings
 [snapshot_worker]
