@@ -27,6 +27,7 @@ default_log_levels = sqlalchemy=WARN,sqlalchemy.engine.base.Engine=WARN,eventlet
 [api]
 # Indicates the API should start as a daemon
 daemonized = False
+port = 7667
 
 # Any actions that need overridden values for retry
 # and / or timeout should be listed here and a section

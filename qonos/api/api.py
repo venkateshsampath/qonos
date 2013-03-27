@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 api_opts = [
     cfg.BoolOpt('daemonized', default=False),
-    cfg.IntOpt('port', default=8080),
+    cfg.IntOpt('port', default=7667),
     cfg.MultiStrOpt('action_overrides', default=[]),
     cfg.StrOpt('wsgi_log_format',
             default='%(client_ip)s "%(request_line)s" status: %(status_code)s'
