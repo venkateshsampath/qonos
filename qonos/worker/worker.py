@@ -107,7 +107,7 @@ class Worker(object):
         self.processor.cleanup_processor()
 
     def _register_worker(self):
-        LOG.info(_('Registering worker.'))
+        LOG.info(_('Registering worker with pid %s') % str(self.pid))
         while self.running:
             worker = None
             with utils.log_warning_and_dismiss_exception(LOG):
