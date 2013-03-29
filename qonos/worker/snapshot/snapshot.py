@@ -83,10 +83,10 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def process_job(self, job):
         LOG.info(_("Worker %(worker_id)s Processing job: %(job)s") %
-                    {'worker_id': self.worker_id,
+                    {'worker_id': self.worker.worker_id,
                      'job': job['id']})
         LOG.debug(_("Worker %(worker_id)s Processing job: %(job)s") %
-                    {'worker_id': self.worker_id,
+                    {'worker_id': self.worker.worker_id,
                      'job': str(job)})
         payload = {'job': job}
         if job['status'] == 'QUEUED':
@@ -100,7 +100,7 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_cancelled(job_id, msg)
 
             LOG.info(_('Worker %(worker_id)s Job cancelled: %(msg)s') %
-                      {'worker_id': self.worker_id,
+                      {'worker_id': self.worker.worker_id,
                        'msg': msg})
             return
 
@@ -123,7 +123,7 @@ class SnapshotProcessor(worker.JobProcessor):
             job['status'] in ['PROCESSING', 'TIMED_OUT']):
             image_id = job['metadata']['image_id']
             LOG.info(_("Worker %(worker_id)s Resuming image: %(image_id)s") %
-                      {'worker_id': self.worker_id,
+                      {'worker_id': self.worker.worker_id,
                        'image_id': image_id})
         else:
             metadata = {
@@ -144,7 +144,7 @@ class SnapshotProcessor(worker.JobProcessor):
                 return
 
             LOG.info(_("Worker %(worker_id)s Started create image: "
-                       " %(image_id)s") % {'worker_id': self.worker_id,
+                       " %(image_id)s") % {'worker_id': self.worker.worker_id,
                                           'image_id': image_id})
 
             self._add_job_metadata(image_id=image_id)
@@ -223,14 +223,14 @@ class SnapshotProcessor(worker.JobProcessor):
                 to_delete = scheduled_images[retention:]
                 LOG.info(_('Worker %(worker_id)s '
                            'Removing %(remove)d images for a retention '
-                           'of %(retention)d') % {'worker_id': self.worker_id,
+                           'of %(retention)d') % {'worker_id': self.worker.worker_id,
                                                   'remove': len(to_delete),
                                                   'retention': retention})
                 for image in to_delete:
                     image_id = image.id
                     nova_client.images.delete(image_id)
                     LOG.info(_('Worker %(worker_id)s Removed image '
-                               '%(image_id)s') % {'worker_id': self.worker_id,
+                               '%(image_id)s') % {'worker_id': self.worker.worker_id,
                                                   'image_id': image_id})
 
     def _get_retention(self, nova_client, instance_id):
