@@ -82,7 +82,12 @@ class SnapshotProcessor(worker.JobProcessor):
         self.image_poll_interval = CONF.snapshot_worker.image_poll_interval_sec
 
     def process_job(self, job):
-        LOG.debug(_("Processing job: %s") % str(job))
+        LOG.info(_("Worker %(worker_id)s Processing job: %(job)s") %
+                    {'worker_id': self.worker_id,
+                     'job': job['id']})
+        LOG.debug(_("Worker %(worker_id)s Processing job: %(job)s") %
+                    {'worker_id': self.worker_id,
+                     'job': str(job)})
         payload = {'job': job}
         if job['status'] == 'QUEUED':
             self.send_notification_start(payload)
@@ -94,7 +99,9 @@ class SnapshotProcessor(worker.JobProcessor):
                    {'schedule_id': job['schedule_id'], 'job_id': job_id})
             self._job_cancelled(job_id, msg)
 
-            LOG.info(_('Job cancelled: %s') % msg)
+            LOG.info(_('Worker %(worker_id)s Job cancelled: %(msg)s') %
+                      {'worker_id': self.worker_id,
+                       'msg': msg})
             return
 
         self.current_job = job
@@ -115,7 +122,9 @@ class SnapshotProcessor(worker.JobProcessor):
         if ('image_id' in job['metadata'] and
             job['status'] in ['PROCESSING', 'TIMED_OUT']):
             image_id = job['metadata']['image_id']
-            LOG.debug("Resuming image: %s" % image_id)
+            LOG.info(_("Worker %(worker_id)s Resuming image: %(image_id)s") %
+                      {'worker_id': self.worker_id,
+                       'image_id': image_id})
         else:
             metadata = {
                 "org.openstack__1__created-by": "scheduled_images_service"
@@ -134,7 +143,9 @@ class SnapshotProcessor(worker.JobProcessor):
                 self._job_cancelled(job_id, msg)
                 return
 
-            LOG.debug("Created image: %s" % image_id)
+            LOG.info(_("Worker %(worker_id)s Started create image: "
+                       " %(image_id)s") % {'worker_id': self.worker_id,
+                                          'image_id': image_id})
 
             self._add_job_metadata(image_id=image_id)
 
@@ -210,13 +221,17 @@ class SnapshotProcessor(worker.JobProcessor):
 
             if len(scheduled_images) > retention:
                 to_delete = scheduled_images[retention:]
-                LOG.info(_('Removing %(remove)d images for a retention '
-                           'of %(retention)d') % {'remove': len(to_delete),
-                                                 'retention': retention})
+                LOG.info(_('Worker %(worker_id)s '
+                           'Removing %(remove)d images for a retention '
+                           'of %(retention)d') % {'worker_id': self.worker_id,
+                                                  'remove': len(to_delete),
+                                                  'retention': retention})
                 for image in to_delete:
                     image_id = image.id
                     nova_client.images.delete(image_id)
-                    LOG.info(_('Removed image %s') % image_id)
+                    LOG.info(_('Worker %(worker_id)s Removed image '
+                               '%(image_id)s') % {'worker_id': self.worker_id,
+                                                  'image_id': image_id})
 
     def _get_retention(self, nova_client, instance_id):
         ret_str = None
