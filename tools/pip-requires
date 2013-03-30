@@ -9,7 +9,7 @@ eventlet>=0.9.12
 kombu>=1.0.4
 PasteDeploy
 routes
-webob==1.0.8
+webob==1.2.3
 wsgiref
 argparse
 iso8601>=0.1.4
