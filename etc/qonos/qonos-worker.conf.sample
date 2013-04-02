@@ -16,7 +16,34 @@ api_port = 7667
 
 # Processor specific settings
 [snapshot_worker]
-auth_url='http://127.0.0.1:5000/v2.0/'
-nova_admin_user='demo'
-nova_admin_password='startrek'
+# The fully qualified class name of the Nova client factory
+# See the [nova_client_factory] section for details on factory configuration
+nova_client_factory_class = 'qonos.worker.snapshot.simple_nova_client_factory.NovaClientFactory'
 
+# How often to poll Nova for the image status
+image_poll_interval_sec = 10
+
+# How often to update the job status, in seconds
+job_update_interval_sec = 300
+
+# How often to update the job timeout, in minutes
+job_timeout_update_interval_min = 60
+
+# How much to increment the timeout, in minutes
+job_timeout_update_increment_min = 60
+
+# How many times to update the timeout before considering the job to be failed
+job_timeout_max_updates = 3
+
+[nova_client_factory]
+# Common options for either Nova client factory
+auth_protocol = 'http'
+auth_host = '127.0.0.1'
+auth_port = 5000
+auth_version = 'v2.0'
+nova_admin_user='admin_user'
+nova_admin_password='admin_pass'
+# Should the Nova client log debugging messages
+#http_log_debug = False
+# Should the Nova client ignore invalid SSL certificates
+#nova_auth_insecure = False

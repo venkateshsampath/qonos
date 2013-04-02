@@ -16,6 +16,13 @@
 
 import calendar
 import datetime
+import httplib
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 from operator import attrgetter
 import time
 
@@ -27,6 +34,7 @@ import rax_scheduled_images_python_novaclient_ext
 
 from qonos.common import timeutils
 from qonos.openstack.common.gettextutils import _
+from qonos.openstack.common import importutils
 import qonos.openstack.common.log as logging
 import qonos.qonosclient.exception as qonos_ex
 from qonos.worker import worker
@@ -35,12 +43,11 @@ from qonos.worker import worker
 LOG = logging.getLogger(__name__)
 
 snapshot_worker_opts = [
-    cfg.StrOpt('auth_url', default="http://127.0.0.100:5000/v2.0/"),
-    cfg.StrOpt('nova_admin_user', default='admin'),
-    cfg.StrOpt('nova_admin_password', default='admin'),
+    cfg.StrOpt('nova_client_factory_class',
+               default='qonos.worker.snapshot.simple_nova_client_factory.'
+                       'NovaClientFactory'),
     cfg.IntOpt('image_poll_interval_sec', default=0,
                help=_('How often to poll Nova for the image status')),
-    cfg.BoolOpt('http_log_debug', default=True),
     cfg.IntOpt('job_update_interval_sec', default=300,
                help=_('How often to update the job status, in seconds')),
     cfg.IntOpt('job_timeout_update_interval_min', default=60,
@@ -69,7 +76,7 @@ class SnapshotProcessor(worker.JobProcessor):
             "ERROR": "ERROR"
         }
 
-    def init_processor(self, worker):
+    def init_processor(self, worker, nova_client_factory=None):
         super(SnapshotProcessor, self).init_processor(worker)
         self.current_job = None
         self.timeout_count = 0
@@ -80,6 +87,11 @@ class SnapshotProcessor(worker.JobProcessor):
         self.timeout_increment = datetime.timedelta(
             minutes=CONF.snapshot_worker.job_timeout_update_increment_min)
         self.image_poll_interval = CONF.snapshot_worker.image_poll_interval_sec
+
+        if not nova_client_factory:
+            nova_client_factory = importutils.import_object(
+                CONF.snapshot_worker.nova_client_factory_class)
+        self.nova_client_factory = nova_client_factory
 
     def process_job(self, job):
         LOG.info(_("Worker %(worker_id)s Processing job: %(job)s") %
@@ -304,23 +316,8 @@ class SnapshotProcessor(worker.JobProcessor):
                 'job_status': self.status_map[image_status]}
 
     def _get_nova_client(self):
-        auth_url = CONF.snapshot_worker.auth_url
-        user = CONF.snapshot_worker.nova_admin_user
-        password = CONF.snapshot_worker.nova_admin_password
-        debug = CONF.snapshot_worker.http_log_debug
-
-        tenant = self.current_job['tenant']
-
-        sched_image_ext = novaclient.extension.Extension(
-                            'rax_scheduled_images_python_novaclient_ext',
-                            rax_scheduled_images_python_novaclient_ext)
-        nova_client = client.Client(user,
-                                    password,
-                                    project_id=tenant,
-                                    auth_url=auth_url,
-                                    insecure=False,
-                                    extensions=[sched_image_ext],
-                                    http_log_debug=False)
+        nova_client = self.nova_client_factory.get_nova_client(
+            self.current_job)
         return nova_client
 
     def _job_succeeded(self, job_id):
@@ -357,6 +354,10 @@ class SnapshotProcessor(worker.JobProcessor):
     def _get_instance_id(self, job):
         metadata = job['metadata']
         return metadata.get('instance_id')
+
+    def _get_username(self, job):
+        metadata = job['metadata']
+        return metadata.get('user_name')
 
     def _check_schedule_exists(self, job):
         qonosclient = self.get_qonos_client()
