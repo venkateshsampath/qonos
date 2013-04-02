@@ -96,6 +96,10 @@ class Worker(object):
                 try:
                     self.processor.process_job(job)
                 except Exception as e:
+                    msg = _("Worker %(worker_id)s Error processing job:"
+                            " %(job)s")
+                    LOG.exception(msg % {'worker_id': self.worker_id,
+                                         'job': job['id']})
                     self.update_job(job['id'], 'ERROR',
                                     error_message=unicode(e))
 
