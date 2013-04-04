@@ -16,21 +16,11 @@
 
 import calendar
 import datetime
-import httplib
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 from operator import attrgetter
 import time
 
 from novaclient import exceptions
-import novaclient.extension
-from novaclient.v1_1 import client
 from oslo.config import cfg
-import rax_scheduled_images_python_novaclient_ext
 
 from qonos.common import timeutils
 from qonos.openstack.common.gettextutils import _

@@ -13,20 +13,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import httplib
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
-from novaclient import exceptions
 import novaclient.extension
 from novaclient.v1_1 import client
 from oslo.config import cfg
 import rax_scheduled_images_python_novaclient_ext
 
-from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 
 
