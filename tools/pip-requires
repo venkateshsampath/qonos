@@ -20,7 +20,7 @@ docopt==0.6.1
 
 # For snapshot worker to contact Nova
 httplib2
-python-novaclient==2.10.0
+python-novaclient==2.13
 rax_scheduled_images_python_novaclient_ext
 
 Paste
