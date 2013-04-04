@@ -44,7 +44,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.rax_scheduled_images_python_novaclient_ext =\
             self.mox.CreateMockAnything()
         self.nova_client.images = self.mox.CreateMockAnything()
+
         self.qonos_client = self.mox.CreateMockAnything()
+
         self.worker = self.mox.CreateMockAnything()
         self.worker.get_qonos_client().AndReturn(self.qonos_client)
         self.snapshot_meta = {
@@ -680,6 +682,14 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.assertEqual(image_name, expected_image_name)
 
 
+class MockNovaClientFactory(object):
+    def __init__(self, nova_client):
+        self.nova_client = nova_client
+
+    def get_nova_client(self, job):
+        return self.nova_client
+
+
 class MockNovaClient(object):
     def __init__(self):
         self.servers = None
@@ -720,6 +730,12 @@ class TestableSnapshotProcessor(snapshot.SnapshotProcessor):
     def __init__(self, nova_client):
         super(TestableSnapshotProcessor, self).__init__()
         self.nova_client = nova_client
+
+    def init_processor(self, worker, nova_client_factory=None):
+        if not nova_client_factory:
+            nova_client_factory = MockNovaClientFactory(self.nova_client)
+        super(TestableSnapshotProcessor, self).init_processor(
+            worker, nova_client_factory)
 
     def _get_nova_client(self):
         return self.nova_client
