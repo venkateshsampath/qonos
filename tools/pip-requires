@@ -14,17 +14,16 @@ wsgiref
 argparse
 iso8601>=0.1.4
 croniter
+oslo.config
 
 #Client only reqs
 docopt==0.6.1
 
 # For snapshot worker to contact Nova
 httplib2
-python-novaclient==2.13
+python-novaclient
 rax_scheduled_images_python_novaclient_ext
 
 Paste
 
 python-daemon
-
-http://tarballs.openstack.org/oslo-config/oslo.config-1.1.0b1.tar.gz#egg=oslo.config
