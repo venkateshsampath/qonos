@@ -160,10 +160,10 @@ class Worker(object):
                  'status': status})
 
         if timeout:
-            msg += _("Timeout: %s") % str(timeout)
+            msg += _(" Timeout: %s") % str(timeout)
 
         if error_message:
-            msg += _("Error message: %s") % error_message
+            msg += _(" Error message: %s") % error_message
 
         LOG.debug(msg)
         try:

@@ -113,7 +113,6 @@ class SnapshotProcessor(worker.JobProcessor):
         self.update_job(job_id, 'PROCESSING', timeout=self.next_timeout)
         self.next_update = self._get_utcnow() + self.update_interval
 
-        nova_client = self._get_nova_client()
         instance_id = self._get_instance_id(job)
         if not instance_id:
             msg = ('Job %s does not specify an instance_id in its metadata.'
@@ -133,8 +132,9 @@ class SnapshotProcessor(worker.JobProcessor):
                 }
 
             try:
-                server_name = nova_client.servers.get(instance_id).name
-                image_id = nova_client.servers.create_image(
+                server_name = self._get_nova_client().servers.\
+                    get(instance_id).name
+                image_id = self._get_nova_client().servers.create_image(
                     instance_id,
                     self.generate_image_name(server_name),
                     metadata)
@@ -157,7 +157,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
         status = None
         while retry and not active:
-            status = self._get_image_status(nova_client, image_id)
+            status = self._get_image_status(image_id)
             if self._is_error_status(status):
                 break
 
@@ -174,7 +174,7 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_timed_out(job_id)
 
         if active:
-            self._process_retention(nova_client, instance_id)
+            self._process_retention(instance_id)
             self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
@@ -213,13 +213,13 @@ class SnapshotProcessor(worker.JobProcessor):
         self.current_job['metadata'] = self.update_job_metadata(
             self.current_job['id'], metadata)
 
-    def _process_retention(self, nova_client, instance_id):
+    def _process_retention(self, instance_id):
         LOG.debug(_("Processing retention."))
-        retention = self._get_retention(nova_client, instance_id)
+        retention = self._get_retention(instance_id)
 
         if retention > 0:
             scheduled_images = self._find_scheduled_images_for_server(
-                nova_client, instance_id)
+                instance_id)
 
             if len(scheduled_images) > retention:
                 to_delete = scheduled_images[retention:]
@@ -231,18 +231,18 @@ class SnapshotProcessor(worker.JobProcessor):
                              'retention': retention})
                 for image in to_delete:
                     image_id = image.id
-                    nova_client.images.delete(image_id)
+                    self._get_nova_client().images.delete(image_id)
                     LOG.info(_('Worker %(worker_id)s Removed image '
                                '%(image_id)s')
                               % {'worker_id': self.worker.worker_id,
                                  'image_id': image_id})
 
-    def _get_retention(self, nova_client, instance_id):
+    def _get_retention(self, instance_id):
         ret_str = None
         retention = 0
         try:
-            result = nova_client.rax_scheduled_images_python_novaclient_ext.\
-                get(instance_id)
+            result = self._get_nova_client().\
+                rax_scheduled_images_python_novaclient_ext.get(instance_id)
             ret_str = result.retention
             retention = int(ret_str or 0)
         except exceptions.NotFound, e:
@@ -256,8 +256,8 @@ class SnapshotProcessor(worker.JobProcessor):
 
         return retention
 
-    def _find_scheduled_images_for_server(self, nova_client, instance_id):
-        images = nova_client.images.list(detailed=True)
+    def _find_scheduled_images_for_server(self, instance_id):
+        images = self._get_nova_client().images.list(detailed=True)
         scheduled_images = []
         for image in images:
             metadata = image.metadata
@@ -294,8 +294,8 @@ class SnapshotProcessor(worker.JobProcessor):
         active = image_status == 'ACTIVE'
         return active
 
-    def _get_image_status(self, nova_client, image_id):
-        image = nova_client.images.get(image_id)
+    def _get_image_status(self, image_id):
+        image = self._get_nova_client().images.get(image_id)
         if image:
             image_status = image.status
         else:
