@@ -44,9 +44,15 @@ CONF.register_opts(nova_client_factory_opts,
 class NovaClientFactory(object):
 
     def __init__(self):
-        pass
+        self.nova_client = None
+        self.current_job_id = None
 
     def get_nova_client(self, job):
+        if (self.nova_client is not None and
+            self.current_job_id == job['id']):
+            return self.nova_client
+
+        self.current_job_id = job['id']
         auth_protocol = CONF.nova_client_factory.auth_protocol
         auth_host = CONF.nova_client_factory.auth_host
         auth_port = CONF.nova_client_factory.auth_port
@@ -65,11 +71,11 @@ class NovaClientFactory(object):
                             'rax_scheduled_images_python_novaclient_ext',
                             rax_scheduled_images_python_novaclient_ext)
 
-        nova_client = client.Client(user,
+        self.nova_client = client.Client(user,
                                     password,
                                     project_id=tenant,
                                     auth_url=auth_url,
                                     insecure=insecure,
                                     extensions=[sched_image_ext],
                                     http_log_debug=debug)
-        return nova_client
+        return self.nova_client
