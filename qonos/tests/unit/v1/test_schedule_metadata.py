@@ -42,6 +42,8 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
+            'schedule_metadata': [{'key': 'key1', 'value': 'value1'},
+                                  {'key': 'key2', 'value': 'value2'}]
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
@@ -56,8 +58,7 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
     def test_list_meta(self):
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'metadata': {'key1': 'value1', 'key2': 'value2'}}
-        actual = self.controller.update(request, self.schedule_1['id'],
-                                        fixture)
+        actual = self.controller.list(request, self.schedule_1['id'])
         self.assertEqual(actual, fixture)
 
     def test_update_metadata(self):
