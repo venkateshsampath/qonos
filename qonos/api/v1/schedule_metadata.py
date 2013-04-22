@@ -28,7 +28,10 @@ class ScheduleMetadataController(object):
         self.db_api = db_api or qonos.db.get_api()
 
     def list(self, request, schedule_id):
-        metadata = self.db_api.schedule_meta_get_all(schedule_id)
+        try:
+            metadata = self.db_api.schedule_meta_get_all(schedule_id)
+        except exception.NotFound, e:
+            raise webob.exc.HTTPNotFound(explanation=e)
         return {'metadata': api_utils.serialize_metadata(metadata)}
 
     def update(self, request, schedule_id, body):
