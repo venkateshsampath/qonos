@@ -56,6 +56,12 @@ class TestJobMetadataApi(test_utils.BaseTestCase):
         self.assertMetaInList(metadata['metadata'],
                               {self.meta_2['key']: self.meta_2['value']})
 
+    def test_list_meta_job_not_found(self):
+        request = unit_utils.get_fake_request(method='GET')
+        job_id = uuid.uuid4()
+        self.assertRaises(webob.exc.HTTPNotFound, self.controller.list,
+                          request, job_id)
+
     def test_update_metadata(self):
         request = unit_utils.get_fake_request(method='PUT')
         expected = {'metadata': {'key1': 'value1'}}

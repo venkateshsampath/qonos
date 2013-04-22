@@ -28,7 +28,10 @@ class JobMetadataController(object):
         self.db_api = db_api or qonos.db.get_api()
 
     def list(self, request, job_id):
-        metadata = self.db_api.job_meta_get_all_by_job_id(job_id)
+        try:
+            metadata = self.db_api.job_meta_get_all_by_job_id(job_id)
+        except exception.NotFound, e:
+            raise webob.exc.HTTPNotFound(explanation=e)
         return {'metadata': api_utils.serialize_metadata(metadata)}
 
     def update(self, request, job_id, body):
