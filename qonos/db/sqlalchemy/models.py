@@ -35,6 +35,7 @@ COMMON_TABLE_ARGS = {
     'mysql_charset': 'utf8'
 }
 
+
 class ModelBase(object):
     """Base class for Nova and Glance Models."""
     __table_args__ = COMMON_TABLE_ARGS
@@ -108,7 +109,8 @@ class Schedule(BASE, ModelBase):
 class ScheduleMetadata(BASE, ModelBase):
     """Represents metadata of a schedule in the datastore."""
     __tablename__ = 'schedule_metadata'
-    __table_args__ = (UniqueConstraint('schedule_id', 'key'), COMMON_TABLE_ARGS)
+    __table_args__ = (UniqueConstraint('schedule_id', 'key'),
+                      COMMON_TABLE_ARGS)
 
     schedule_id = Column(String(36),
                          ForeignKey('schedules.id'), nullable=False)

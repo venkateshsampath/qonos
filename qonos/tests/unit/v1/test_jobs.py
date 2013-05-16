@@ -96,6 +96,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'retry_count': 0,
         }
         self.job_1 = db_api.job_create(fixture)
+        timeout = now + datetime.timedelta(hours=2)
         fixture = {
             'id': unit_utils.JOB_UUID2,
             'schedule_id': self.schedule_2['id'],
@@ -252,6 +253,15 @@ class TestJobsApi(test_utils.BaseTestCase):
         jobs = self.controller.list(request).get('jobs')
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0]['id'], self.job_2['id'])
+
+    def test_list_with_timeout_filter(self):
+        timeout = timeutils.isotime(self.job_1['timeout'])
+        path = '?timeout=%s' % timeout
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_1['id'])
 
     def test_create(self):
 

@@ -605,7 +605,8 @@ def job_get_all(params={}):
                         'tenant',
                         'action',
                         'worker_id',
-                        'status']
+                        'status',
+                        'timeout']
 
     query = _filter_query_on_attributes(query,
                                         params,

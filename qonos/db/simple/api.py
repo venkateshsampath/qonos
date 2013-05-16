@@ -374,12 +374,20 @@ def job_get_all(params={}):
                         'tenant',
                         'action',
                         'worker_id',
-                        'status']
+                        'status',
+                        'timeout']
 
     for key in JOB_BASE_FILTERS:
         if key in params:
+            value = params.get(key)
+            if type(value) is datetime.datetime:
+                value = timeutils.normalize_time(value).replace(microsecond=0)
+
             for job in reversed(jobs):
-                if not (job.get(key) == params.get(key)):
+                job_value = job.get(key)
+                if job_value and type(job_value) is datetime.datetime:
+                    job_value = job_value.replace(microsecond=0)
+                if not (job_value == value):
                     del jobs[jobs.index(job)]
 
     for job in jobs:
