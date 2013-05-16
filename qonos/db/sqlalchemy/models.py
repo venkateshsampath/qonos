@@ -30,11 +30,14 @@ import qonos.db.sqlalchemy.api
 from qonos.openstack.common import uuidutils
 
 BASE = declarative_base()
-
+COMMON_TABLE_ARGS = {
+    'mysql_engine': 'InnoDB',
+    'mysql_charset': 'utf8'
+}
 
 class ModelBase(object):
     """Base class for Nova and Glance Models."""
-    __table_args__ = {'mysql_engine': 'InnoDB'}
+    __table_args__ = COMMON_TABLE_ARGS
     __table_initialized__ = False
 
     created_at = Column(DateTime, default=timeutils.utcnow,
@@ -105,7 +108,7 @@ class Schedule(BASE, ModelBase):
 class ScheduleMetadata(BASE, ModelBase):
     """Represents metadata of a schedule in the datastore."""
     __tablename__ = 'schedule_metadata'
-    __table_args__ = (UniqueConstraint('schedule_id', 'key'), {})
+    __table_args__ = (UniqueConstraint('schedule_id', 'key'), COMMON_TABLE_ARGS)
 
     schedule_id = Column(String(36),
                          ForeignKey('schedules.id'), nullable=False)
@@ -141,7 +144,7 @@ class Job(BASE, ModelBase):
 class JobMetadata(BASE, ModelBase):
     """Represents job metadata in the datastore."""
     __tablename__ = 'job_metadata'
-    __table_args__ = (UniqueConstraint('job_id', 'key'), {})
+    __table_args__ = (UniqueConstraint('job_id', 'key'), COMMON_TABLE_ARGS)
 
     job_id = Column(String(36), ForeignKey('jobs.id'), nullable=False)
     key = Column(String(255), nullable=False)
