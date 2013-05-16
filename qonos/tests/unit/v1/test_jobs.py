@@ -82,7 +82,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
         now = timeutils.utcnow()
         timeout = now + datetime.timedelta(hours=1)
-        hard_timeout = now + datetime.timedelta(hours=4)
+        hard_timeout = now + datetime.timedelta(hours=8)
 
         fixture = {
             'id': unit_utils.JOB_UUID1,
@@ -97,6 +97,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         }
         self.job_1 = db_api.job_create(fixture)
         timeout = now + datetime.timedelta(hours=2)
+        hard_timeout = now + datetime.timedelta(hours=4)
         fixture = {
             'id': unit_utils.JOB_UUID2,
             'schedule_id': self.schedule_2['id'],
@@ -257,6 +258,15 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_list_with_timeout_filter(self):
         timeout = timeutils.isotime(self.job_1['timeout'])
         path = '?timeout=%s' % timeout
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_1['id'])
+
+    def test_list_with_hard_timeout_filter(self):
+        hard_timeout = timeutils.isotime(self.job_1['hard_timeout'])
+        path = '?hard_timeout=%s' % hard_timeout
 
         request = unit_utils.get_fake_request(path=path, method='GET')
         jobs = self.controller.list(request).get('jobs')

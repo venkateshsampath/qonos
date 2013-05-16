@@ -49,6 +49,10 @@ class JobsController(object):
             timeout = timeutils.parse_isotime(params['timeout'])
             params['timeout'] = timeutils.normalize_time(timeout)
 
+        if 'hard_timeout' in params:
+            hard_timeout = timeutils.parse_isotime(params['hard_timeout'])
+            params['hard_timeout'] = timeutils.normalize_time(hard_timeout)
+
         try:
             jobs = self.db_api.job_get_all(params)
         except exception.NotFound:

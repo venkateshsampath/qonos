@@ -375,7 +375,8 @@ def job_get_all(params={}):
                         'action',
                         'worker_id',
                         'status',
-                        'timeout']
+                        'timeout',
+                        'hard_timeout']
 
     for key in JOB_BASE_FILTERS:
         if key in params:

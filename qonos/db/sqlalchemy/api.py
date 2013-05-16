@@ -606,7 +606,8 @@ def job_get_all(params={}):
                         'action',
                         'worker_id',
                         'status',
-                        'timeout']
+                        'timeout',
+                        'hard_timeout']
 
     query = _filter_query_on_attributes(query,
                                         params,
