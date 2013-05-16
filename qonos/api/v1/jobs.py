@@ -41,6 +41,10 @@ class JobsController(object):
             params = utils.get_pagination_limit(params)
         except exception.Invalid as e:
             raise webob.exc.HTTPBadRequest(explanation=str(e))
+
+        if 'status' in params:
+            params['status'] = str(params['status']).upper()
+
         try:
             jobs = self.db_api.job_get_all(params)
         except exception.NotFound:

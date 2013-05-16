@@ -590,7 +590,7 @@ def _filter_query_on_attributes(query, params, model, allowed_filters):
     for key in allowed_filters:
         if key in params:
             query = query.filter(
-                getattr(model, key) >= params[key])
+                getattr(model, key) == params[key])
             params.pop(key)
 
     return query
@@ -601,7 +601,11 @@ def job_get_all(params={}):
     session = get_session()
     query = session.query(models.Job)\
                    .options(sa_orm.subqueryload('job_metadata'))
-    JOB_BASE_FILTERS = ['schedule_id', 'tenant', 'action', 'worker_id']
+    JOB_BASE_FILTERS = ['schedule_id',
+                        'tenant',
+                        'action',
+                        'worker_id',
+                        'status']
 
     query = _filter_query_on_attributes(query,
                                         params,

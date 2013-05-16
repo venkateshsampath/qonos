@@ -914,6 +914,36 @@ class TestJobsDBApi(test_utils.BaseTestCase):
         expected = [job]
         self.assertEqual(expected, jobs)
 
+    def test_job_get_all_with_status_filter(self):
+        now = timeutils.utcnow()
+        timeout = now + datetime.timedelta(hours=1)
+        hard_timeout = now + datetime.timedelta(hours=4)
+        fixture = {
+            'action': 'test_action',
+            'tenant': unit_utils.TENANT3,
+            'schedule_id': unit_utils.SCHEDULE_UUID2,
+            'worker_id': unit_utils.WORKER_UUID3,
+            'status': 'cancelled',
+            'timeout': timeout,
+            'hard_timeout': hard_timeout,
+            'job_metadata': [
+                {
+                    'key': 'instance_id',
+                    'value': 'my_instance',
+                },
+            ],
+        }
+
+        job = self.db_api.job_create(fixture)
+
+        params = {}
+        params['status'] = 'cancelled'
+        jobs = self.db_api.job_get_all(params=params)
+        print jobs
+        self.assertEqual(len(jobs), 1)
+        expected = [job]
+        self.assertEqual(expected, jobs)
+
     def test_job_get_by_id(self):
         expected = self.job_1
         actual = self.db_api.job_get_by_id(self.job_1['id'])
