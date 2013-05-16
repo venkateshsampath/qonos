@@ -131,7 +131,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'schedule_id': self.schedule_1['id'],
             'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
-            'action': 'snapshot',
+            'action': 'test_action',
             'status': 'QUEUED',
             'timeout': timeout,
             'hard_timeout': hard_timeout,
@@ -208,18 +208,26 @@ class TestJobsApi(test_utils.BaseTestCase):
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_2[k]]))
 
-    def test_list_with_schedule_id(self):
+    def test_list_with_schedule_id_filter(self):
         path = '?schedule_id=%s' % unit_utils.SCHEDULE_UUID1
         request = unit_utils.get_fake_request(path=path, method='GET')
         jobs = self.controller.list(request).get('jobs')
         self.assertEqual(len(jobs), 3)
 
-    def test_list_with_tenant(self):
+    def test_list_with_tenant_filter(self):
         path = '?tenant=%s' % unit_utils.TENANT3
         request = unit_utils.get_fake_request(path=path, method='GET')
         jobs = self.controller.list(request).get('jobs')
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0]['id'], self.job_3['id'])
+
+    def test_list_with_action_filter(self):
+        path = '?action=%s' % 'test_action'
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_4['id'])
 
     def test_create(self):
 
