@@ -370,7 +370,7 @@ def job_create(job_values):
 
 def job_get_all(params={}):
     jobs = copy.deepcopy(DATA['jobs'].values())
-    JOB_BASE_FILTERS = ['schedule_id', 'tenant', 'action']
+    JOB_BASE_FILTERS = ['schedule_id', 'tenant', 'action', 'worker_id']
 
     for key in JOB_BASE_FILTERS:
         if key in params:
