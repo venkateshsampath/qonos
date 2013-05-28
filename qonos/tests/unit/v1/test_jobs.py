@@ -82,7 +82,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
         now = timeutils.utcnow()
         timeout = now + datetime.timedelta(hours=1)
-        hard_timeout = now + datetime.timedelta(hours=4)
+        hard_timeout = now + datetime.timedelta(hours=8)
 
         fixture = {
             'id': unit_utils.JOB_UUID1,
@@ -96,6 +96,8 @@ class TestJobsApi(test_utils.BaseTestCase):
             'retry_count': 0,
         }
         self.job_1 = db_api.job_create(fixture)
+        timeout = now + datetime.timedelta(hours=2)
+        hard_timeout = now + datetime.timedelta(hours=4)
         fixture = {
             'id': unit_utils.JOB_UUID2,
             'schedule_id': self.schedule_2['id'],
@@ -117,7 +119,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         fixture = {
             'id': unit_utils.JOB_UUID3,
             'schedule_id': self.schedule_1['id'],
-            'tenant': unit_utils.TENANT1,
+            'tenant': unit_utils.TENANT3,
             'worker_id': unit_utils.WORKER_UUID1,
             'action': 'snapshot',
             'status': 'QUEUED',
@@ -131,7 +133,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'schedule_id': self.schedule_1['id'],
             'tenant': unit_utils.TENANT1,
             'worker_id': unit_utils.WORKER_UUID1,
-            'action': 'snapshot',
+            'action': 'test_action',
             'status': 'QUEUED',
             'timeout': timeout,
             'hard_timeout': hard_timeout,
@@ -207,6 +209,69 @@ class TestJobsApi(test_utils.BaseTestCase):
         for k in JOB_ATTRS:
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_2[k]]))
+
+    def test_list_with_schedule_id_filter(self):
+        path = '?schedule_id=%s' % unit_utils.SCHEDULE_UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 3)
+
+    def test_list_with_tenant_filter(self):
+        path = '?tenant=%s' % unit_utils.TENANT3
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_3['id'])
+
+    def test_list_with_action_filter(self):
+        path = '?action=%s' % 'test_action'
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_4['id'])
+
+    def test_list_with_worker_id_filter(self):
+        path = '?worker_id=%s' % unit_utils.WORKER_UUID2
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_2['id'])
+
+    def test_list_with_status_filter(self):
+        path = '?status=ERROR'
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_2['id'])
+
+    def test_list_with_status_filter_case_insensitive(self):
+        path = '?status=Error'
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_2['id'])
+
+    def test_list_with_timeout_filter(self):
+        timeout = timeutils.isotime(self.job_1['timeout'])
+        path = '?timeout=%s' % timeout
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_1['id'])
+
+    def test_list_with_hard_timeout_filter(self):
+        hard_timeout = timeutils.isotime(self.job_1['hard_timeout'])
+        path = '?hard_timeout=%s' % hard_timeout
+
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        jobs = self.controller.list(request).get('jobs')
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['id'], self.job_1['id'])
 
     def test_create(self):
 
