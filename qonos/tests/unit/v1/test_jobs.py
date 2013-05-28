@@ -144,11 +144,20 @@ class TestJobsApi(test_utils.BaseTestCase):
     def test_list(self):
         self.config(api_limit_max=4, limit_param_default=2)
         request = unit_utils.get_fake_request(method='GET')
-        jobs = self.controller.list(request).get('jobs')
+        response = self.controller.list(request)
+        jobs = response.get('jobs')
+        links = response.get('jobs_links')
         self.assertEqual(len(jobs), 2)
         for k in JOB_ATTRS:
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_1[k], self.job_2[k]]))
+
+        self.assertTrue(links)
+        for item in links:
+            if item.get('rel') == 'next':
+                marker = self.job_2['id']
+                self.assertEqual(item.get('href'),
+                                 '/v1/jobs?marker=%s' % marker)
 
     def test_list_limit(self):
         path = '?limit=2'
@@ -209,6 +218,23 @@ class TestJobsApi(test_utils.BaseTestCase):
         for k in JOB_ATTRS:
             self.assertEqual(set([s[k] for s in jobs]),
                              set([self.job_2[k]]))
+
+    def test_list_jobs_links(self):
+        self.config(limit_param_default=2, api_limit_max=4)
+        path = '?marker=%s' % unit_utils.JOB_UUID1
+        request = unit_utils.get_fake_request(path=path, method='GET')
+        response = self.controller.list(request)
+        jobs = response.get('jobs')
+        links = response.get('jobs_links')
+        self.assertEqual(len(jobs), 2)
+        for k in JOB_ATTRS:
+            self.assertEqual(set([s[k] for s in jobs]),
+                             set([self.job_2[k], self.job_3[k]]))
+        for item in links:
+            if item.get('rel') == 'next':
+                marker = unit_utils.JOB_UUID3
+                self.assertEqual(item.get('href'), '/v1/jobs?marker=%s' %
+                                 marker)
 
     def test_list_with_schedule_id_filter(self):
         path = '?schedule_id=%s' % unit_utils.SCHEDULE_UUID1

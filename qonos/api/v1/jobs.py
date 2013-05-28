@@ -58,10 +58,18 @@ class JobsController(object):
         except exception.NotFound:
             raise webob.exc.HTTPNotFound()
 
+        limit = params.get('limit')
+        if len(jobs) != 0 and len(jobs) == limit:
+            next_page = '/v1/jobs?marker=%s' % jobs[-1].get('id')
+        else:
+            next_page = None
+
         for job in jobs:
             utils.serialize_datetimes(job)
             api_utils.serialize_job_metadata(job)
-        return {'jobs': jobs}
+
+        links = [{'rel': 'next', 'href': next_page}]
+        return {'jobs': jobs, 'jobs_links': links}
 
     def create(self, request, body):
         if (body is None or body.get('job') is None or
