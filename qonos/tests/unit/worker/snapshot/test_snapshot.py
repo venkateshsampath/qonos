@@ -213,10 +213,38 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
-    def test_process_job_should_not_continue_when_in_bad_status(self):
+    def test_process_job_should_not_create_on_job_error_image_ok(self):
         timeutils.set_time_override()
         self.job['metadata']['image_id'] = IMAGE_ID
         self.job['status'] = 'ERROR'
+
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('SAVING'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
+
+        mock_retention = MockRetention()
+        self.nova_client.rax_scheduled_images_python_novaclient_ext.\
+            get(mox.IsA(str)).AndReturn(mock_retention)
+
+        self._simple_prepare_worker_mock(skip_metadata_update=True)
+
+        self.mox.ReplayAll()
+
+        processor = TestableSnapshotProcessor(self.nova_client)
+        processor.init_processor(self.worker)
+
+        processor.process_job(self.job)
+
+        self.mox.VerifyAll()
+
+    def test_process_job_should_create_on_job_error_image_failed(self):
+        timeutils.set_time_override()
+        self.job['metadata']['image_id'] = IMAGE_ID
+        self.job['status'] = 'ERROR'
+
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('KILLED'))
 
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),
