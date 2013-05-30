@@ -90,11 +90,13 @@ class SnapshotProcessor(worker.JobProcessor):
         LOG.debug(_("Worker %(worker_id)s Processing job: %(job)s") %
                     {'worker_id': self.worker.worker_id,
                      'job': str(job)})
+
         payload = {'job': job}
         if job['status'] == 'QUEUED':
             self.send_notification_start(payload)
         else:
             self.send_notification_retry(payload)
+
         job_id = job['id']
         if not self._check_schedule_exists(job):
             msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
@@ -120,36 +122,30 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_cancelled(job_id, msg)
             return
 
-        if ('image_id' in job['metadata'] and
-            job['status'] in ['PROCESSING', 'TIMED_OUT']):
+        should_create = True
+
+        if ('image_id' in job['metadata']):
             image_id = job['metadata']['image_id']
-            LOG.info(_("Worker %(worker_id)s Resuming image: %(image_id)s") %
-                      {'worker_id': self.worker.worker_id,
-                       'image_id': image_id})
-        else:
-            metadata = {
-                "org.openstack__1__created-by": "scheduled_images_service"
-                }
+            if (job['status'] in ['PROCESSING', 'TIMED_OUT']):
+                should_create = False
+                LOG.info(_("Worker %(worker_id)s Resuming image: %(image_id)s")
+                         % {'worker_id': self.worker.worker_id,
+                            'image_id': image_id})
+            elif (job['status'] == 'ERROR'):
+                status = self._get_image_status(image_id)
+                if (status['job_status'] in ['PROCESSING', 'DONE']):
+                    LOG.info(_("Worker %(worker_id)s "
+                               "Previous image %(image_id)s failed with status"
+                               " %(image_status)s. Retrying.")
+                         % {'worker_id': self.worker.worker_id,
+                            'image_id': image_id,
+                            'image_status': status['image_status']})
+                    should_create = False
 
-            try:
-                server_name = self._get_nova_client().servers.\
-                    get(instance_id).name
-                image_id = self._get_nova_client().servers.create_image(
-                    instance_id,
-                    self.generate_image_name(server_name),
-                    metadata)
-            except exceptions.NotFound:
-                msg = ('Instance %(instance_id)s specified by job %(job_id)s '
-                       'was not found.' %
-                     {'instance_id': instance_id, 'job_id': job_id})
-                self._job_cancelled(job_id, msg)
+        if should_create:
+            image_id = self._create_image(job_id, instance_id)
+            if image_id is None:
                 return
-
-            LOG.info(_("Worker %(worker_id)s Started create image: "
-                       " %(image_id)s") % {'worker_id': self.worker.worker_id,
-                                          'image_id': image_id})
-
-            self._add_job_metadata(image_id=image_id)
 
         image_status = None
         active = False
@@ -186,6 +182,33 @@ class SnapshotProcessor(worker.JobProcessor):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def _create_image(self, job_id, instance_id):
+        metadata = {
+            "org.openstack__1__created-by": "scheduled_images_service"
+            }
+
+        image_id = None
+        try:
+            server_name = self._get_nova_client().servers.\
+                get(instance_id).name
+            image_id = self._get_nova_client().servers.create_image(
+                instance_id,
+                self.generate_image_name(server_name),
+                metadata)
+        except exceptions.NotFound:
+            msg = ('Instance %(instance_id)s specified by job %(job_id)s '
+                   'was not found.' %
+                   {'instance_id': instance_id, 'job_id': job_id})
+            self._job_cancelled(job_id, msg)
+            return None
+
+        LOG.info(_("Worker %(worker_id)s Started create image: "
+                   " %(image_id)s") % {'worker_id': self.worker.worker_id,
+                                       'image_id': image_id})
+
+        self._add_job_metadata(image_id=image_id)
+        return image_id
 
     def generate_image_name(self, server_name):
         """
