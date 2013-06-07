@@ -343,11 +343,9 @@ class SnapshotProcessor(worker.JobProcessor):
         self.update_job(job_id, 'TIMED_OUT')
 
     def _job_failed(self, job_id, error_message):
-        last_backoff_factor = self._get_last_backoff_factor(self.current_job)
         backoff_factor = (self.job_timeout_backoff_factor
-                          * last_backoff_factor)
+                          ** int(self.current_job['retry_count']))
         timeout_increment = self.timeout_increment * backoff_factor
-        self._add_job_metadata(last_backoff_factor=str(backoff_factor))
 
         now = self._get_utcnow()
         timeout = now + timeout_increment
@@ -384,13 +382,6 @@ class SnapshotProcessor(worker.JobProcessor):
     def _get_username(self, job):
         metadata = job['metadata']
         return metadata.get('user_name')
-
-    def _get_last_backoff_factor(self, job):
-        metadata = job['metadata']
-        last_backoff_factor = metadata.get('last_backoff_factor')
-        if last_backoff_factor:
-            return int(last_backoff_factor)
-        return 1
 
     def _check_schedule_exists(self, job):
         qonosclient = self.get_qonos_client()

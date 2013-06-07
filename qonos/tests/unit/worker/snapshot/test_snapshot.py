@@ -503,14 +503,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         metadata = copy.copy(job['metadata'])
         metadata['image_id'] = IMAGE_ID
 
-        last_backoff_factor = 1
-        if 'last_backoff_factor' in metadata:
-            last_backoff_factor = int(metadata['last_backoff_factor'])
-        backoff_factor = last_backoff_factor * DEFAULT_BACKOFF_FACTOR
-        metadata['last_backoff_factor'] = str(backoff_factor)
-        self.worker.update_job_metadata(fakes.JOB_ID, metadata).\
-            AndReturn(metadata)
-
+        backoff_factor = DEFAULT_BACKOFF_FACTOR ** job['retry_count']
         timeout = time_seq[-1] + datetime.timedelta(minutes=
                                                     DEFAULT_TIMEOUT_INCR *
                                                     backoff_factor)
@@ -539,15 +532,14 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         status = MockImageStatus('ERROR')
         job = copy.deepcopy(self.job)
         self._do_test_process_job_should_update_image_error(status, job=job)
-        self.assertEqual(job['metadata']['last_backoff_factor'], "2")
         self._reset_mocks()
         new_now = timeutils.utcnow() + datetime.timedelta(minutes=120)
         timeutils.clear_time_override()
         timeutils.set_time_override(new_now)
         job['status'] = 'ERROR'
+        job['retry_count'] = 2
         self._do_test_process_job_should_update_image_error(status,
             include_create=False, include_queued=False, is_retry=True, job=job)
-        self.assertEqual(job['metadata']['last_backoff_factor'], "4")
 
     def test_process_job_should_update_image_error(self):
         status = MockImageStatus('ERROR')
