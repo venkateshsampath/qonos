@@ -86,6 +86,9 @@ class SchedulesController(object):
         if not 'schedule' in body:
             msg = _('The request body must contain a "schedule" entity')
             raise webob.exc.HTTPBadRequest(explanation=msg)
+        if not body['schedule'].get('tenant'):
+            msg = _('The request body must contain a "tenant" entity')
+            raise webob.exc.HTTPBadRequest(explanation=msg)
 
         api_utils.deserialize_schedule_metadata(body['schedule'])
         values = {}
