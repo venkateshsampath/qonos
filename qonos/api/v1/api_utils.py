@@ -20,7 +20,7 @@ from qonos.api import api
 from qonos.common import exception
 from qonos.common import timeutils
 from qonos.common import utils
-
+from qonos.openstack.common.gettextutils import _
 
 CONF = api.CONF
 
@@ -38,11 +38,16 @@ def deserialize_metadata(metadata):
 
 
 def check_read_only_properties(values):
-    _read_only_properties = ['created_at', 'updated_at']
+    _read_only_properties = ['created_at', 'updated_at', 'last_scheduled']
+    bad_keys = []
     for key in values.keys():
         if key in _read_only_properties:
-            msg = "%s is a read only attribute" % key
-            raise exception.Forbidden(explanation=unicode(msg))
+            bad_keys.append(key)
+
+    if bad_keys:
+        msg = _("Cannot update the following read-only attributes: %s") \
+                % ', '.join(bad_keys)
+        raise exception.Forbidden(message=unicode(msg))
 
     return values
 
