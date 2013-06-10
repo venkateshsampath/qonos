@@ -35,6 +35,20 @@ class TestAPIUtils(test_utils.BaseTestCase):
         self.assertRaises(exc.Forbidden,
             api_utils.check_read_only_properties, values)
 
+    def test_check_read_only_properties_exception_last_scheduled(self):
+        values = {'name': '1', 'last_scheduled': '2013-02-02 10:10:23'}
+        self.assertRaises(exc.Forbidden,
+            api_utils.check_read_only_properties, values)
+
+    def test_multiple_check_read_only_properties_exception(self):
+        values = {
+            'name': '1',
+            'last_scheduled': '2013-02-02 10:10:23',
+            'updated_at': '2013-02-02 10:10:23'
+        }
+        self.assertRaises(exc.Forbidden,
+            api_utils.check_read_only_properties, values)
+
     def test_schedule_to_next_run(self):
         timeutils.set_time_override()
 
