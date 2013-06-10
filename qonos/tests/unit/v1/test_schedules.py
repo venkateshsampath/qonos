@@ -299,6 +299,29 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
                           request, {'minute': '5'})
 
+    def test_create_blank_tenant(self):
+        fixture = {'schedule': {
+            'id': unit_utils.SCHEDULE_UUID5,
+            'tenant': '',
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': 2,
+        }}
+        
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
+                          fixture)
+
+    def test_create_no_tenant(self):
+        fixture = {'schedule': {
+            'id': unit_utils.SCHEDULE_UUID5,
+            'action': 'snapshot',
+            'minute': 30,
+            'hour': 2,
+        }}
+
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
+                          fixture)
+
     def test_delete(self):
         request = unit_utils.get_fake_request(method='GET')
         request = unit_utils.get_fake_request(method='DELETE')
