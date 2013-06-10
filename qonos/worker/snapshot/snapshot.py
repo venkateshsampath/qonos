@@ -47,6 +47,8 @@ snapshot_worker_opts = [
     cfg.IntOpt('job_timeout_max_updates', default=3,
                help=_('How many times to update the timeout before '
                       'considering the job to be failed')),
+    cfg.IntOpt('job_timeout_backoff_factor', default=2,
+               help=_('Timeout multiplier to use when an error occurs')),
 ]
 
 CONF = cfg.CONF
@@ -77,6 +79,8 @@ class SnapshotProcessor(worker.JobProcessor):
         self.timeout_increment = datetime.timedelta(
             minutes=CONF.snapshot_worker.job_timeout_update_increment_min)
         self.image_poll_interval = CONF.snapshot_worker.image_poll_interval_sec
+        self.job_timeout_backoff_factor = (CONF.snapshot_worker
+                                           .job_timeout_backoff_factor)
 
         if not nova_client_factory:
             nova_client_factory = importutils.import_object(
@@ -123,7 +127,6 @@ class SnapshotProcessor(worker.JobProcessor):
             return
 
         should_create = True
-
         if ('image_id' in job['metadata']):
             image_id = job['metadata']['image_id']
             if (job['status'] in ['PROCESSING', 'TIMED_OUT']):
@@ -340,7 +343,14 @@ class SnapshotProcessor(worker.JobProcessor):
         self.update_job(job_id, 'TIMED_OUT')
 
     def _job_failed(self, job_id, error_message):
-        self.update_job(job_id, 'ERROR', error_message=error_message)
+        backoff_factor = (self.job_timeout_backoff_factor
+                          ** int(self.current_job['retry_count']))
+        timeout_increment = self.timeout_increment * backoff_factor
+
+        now = self._get_utcnow()
+        timeout = now + timeout_increment
+        self.update_job(job_id, 'ERROR', timeout=timeout,
+                        error_message=error_message)
 
     def _job_cancelled(self, job_id, message):
         self.update_job(job_id, 'CANCELLED', error_message=message)
@@ -352,6 +362,7 @@ class SnapshotProcessor(worker.JobProcessor):
             # Out of timeouts?
             if self.timeout_count >= self.timeout_max_updates:
                 return False
+
             self.next_timeout = self.next_timeout + self.timeout_increment
             self.timeout_count += 1
             self.update_job(job_id, status, self.next_timeout)

@@ -30,6 +30,8 @@ from qonos.worker.snapshot import snapshot
 
 
 IMAGE_ID = '66666666-6666-6666-6666-66666666'
+DEFAULT_BACKOFF_FACTOR = 2
+DEFAULT_TIMEOUT_INCR = 60
 
 
 class TestSnapshotProcessor(test_utils.BaseTestCase):
@@ -37,6 +39,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
     def setUp(self):
         super(TestSnapshotProcessor, self).setUp()
         self.job = copy.deepcopy(fakes.JOB['job'])
+        self._reset_mocks()
+
+    def _reset_mocks(self):
         self.mox = mox.Mox()
 
         self.nova_client = MockNovaClient()
@@ -439,7 +444,11 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
-    def _do_test_process_job_should_update_image_error(self, error_status):
+    def _do_test_process_job_should_update_image_error(self, error_status,
+                                                       include_create=True,
+                                                       include_queued=True,
+                                                       is_retry=False,
+                                                       job=None):
         base_time = timeutils.utcnow()
         time_seq = [
             base_time,
@@ -452,14 +461,25 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             ]
         timeutils.set_time_override_seq(time_seq)
 
-        job = copy.deepcopy(self.job)
+        if job is None:
+            job = copy.deepcopy(self.job)
+
         job['timeout'] = base_time + datetime.timedelta(minutes=60)
 
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
-        self.nova_client.servers.create_image(mox.IsA(str),
-            mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
-        self.nova_client.images.get(IMAGE_ID).AndReturn(
-            MockImageStatus('QUEUED'))
+        if include_create:
+            self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
+            self.nova_client.servers.create_image(mox.IsA(str),
+                mox.IsA(str), self.snapshot_meta).AndReturn(IMAGE_ID)
+
+        if include_queued:
+            self.nova_client.images.get(IMAGE_ID).AndReturn(
+                MockImageStatus('QUEUED'))
+        else:
+            self.nova_client.images.get(IMAGE_ID).AndReturn(
+                MockImageStatus('SAVING'))
+            self.nova_client.images.get(IMAGE_ID).AndReturn(
+                MockImageStatus('SAVING'))
+
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('SAVING'))
         self.nova_client.images.get(IMAGE_ID).AndReturn(
@@ -469,7 +489,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             error_status)
 
-        self._init_worker_mock()
+        self._init_worker_mock(skip_metadata_update=(not include_create))
+
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
                                error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
@@ -478,12 +499,26 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'PROCESSING', timeout=None,
                                error_message=None)
-        self.worker.update_job(fakes.JOB_ID, 'ERROR', timeout=None,
+
+        metadata = copy.copy(job['metadata'])
+        metadata['image_id'] = IMAGE_ID
+
+        backoff_factor = DEFAULT_BACKOFF_FACTOR ** job['retry_count']
+        timeout = time_seq[-1] + datetime.timedelta(minutes=
+                                                    DEFAULT_TIMEOUT_INCR *
+                                                    backoff_factor)
+        self.worker.update_job(fakes.JOB_ID, 'ERROR', timeout=timeout,
                                error_message=mox.IsA(str))
 
         self.mox.StubOutWithMock(utils, 'generate_notification')
-        utils.generate_notification(None, 'qonos.job.run.start', mox.IsA(dict),
-                                    mox.IsA(str))
+
+        if not is_retry:
+            utils.generate_notification(None, 'qonos.job.run.start',
+                                        mox.IsA(dict), mox.IsA(str))
+        else:
+            utils.generate_notification(None, 'qonos.job.retry',
+                                        mox.IsA(dict), mox.IsA(str))
+
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -492,6 +527,19 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         processor.process_job(job)
 
         self.mox.VerifyAll()
+
+    def test_process_job_should_exponentially_increates_timeout(self):
+        status = MockImageStatus('ERROR')
+        job = copy.deepcopy(self.job)
+        self._do_test_process_job_should_update_image_error(status, job=job)
+        self._reset_mocks()
+        new_now = timeutils.utcnow() + datetime.timedelta(minutes=120)
+        timeutils.clear_time_override()
+        timeutils.set_time_override(new_now)
+        job['status'] = 'ERROR'
+        job['retry_count'] = 2
+        self._do_test_process_job_should_update_image_error(status,
+            include_create=False, include_queued=False, is_retry=True, job=job)
 
     def test_process_job_should_update_image_error(self):
         status = MockImageStatus('ERROR')

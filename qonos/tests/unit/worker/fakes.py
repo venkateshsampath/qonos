@@ -40,7 +40,7 @@ JOB = {
         'worker_id': WORKER_ID,
         'status': 'QUEUED',
         'action': 'snapshot',
-        'retry_count': 3,
+        'retry_count': 1,
         'timeout': TIMEOUT,
         'hard_timeout': HARD_TIMEOUT,
         'metadata': {
