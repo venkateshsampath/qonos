@@ -36,12 +36,17 @@ class ScheduleMetadataController(object):
 
     def update(self, request, schedule_id, body):
         metadata = body['metadata']
-        new_meta = api_utils.deserialize_metadata(metadata)
+        try:
+            new_meta = api_utils.deserialize_metadata(metadata)
+        except exception.MissingValue, e:
+            raise webob.exc.HTTPBadRequest(explanation=e)
+
         try:
             updated_meta = self.db_api.schedule_metadata_update(schedule_id,
                                                                 new_meta)
         except exception.NotFound, e:
             raise webob.exc.HTTPNotFound(explanation=e)
+
         return {'metadata': api_utils.serialize_metadata(updated_meta)}
 
 

@@ -33,9 +33,18 @@ def serialize_metadata(metadata):
 
 
 def deserialize_metadata(metadata):
-    return [{'key': key, 'value': value}
-            for key, value in metadata.iteritems()]
+    to_return = []
+    for key, value in metadata.iteritems():
+        dict_entry = {}
+        if len(key.strip()):
+            dict_entry['key'] = key
+            dict_entry['value'] = value
+            to_return.append(dict_entry)
+        else:
+            msg = _("Metadata value '%s' is missing key" % value)
+            raise exception.MissingValue(message=unicode(msg))
 
+    return to_return
 
 def check_read_only_properties(values):
     _read_only_properties = ['created_at', 'updated_at', 'last_scheduled']
