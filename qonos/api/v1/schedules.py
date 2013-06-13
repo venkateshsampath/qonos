@@ -127,8 +127,14 @@ class SchedulesController(object):
         if not body:
             msg = _('The request body must not be empty')
             raise webob.exc.HTTPBadRequest(explanation=msg)
-        if not 'schedule' in body:
+        elif not 'schedule' in body:
             msg = _('The request body must contain a "schedule" entity')
+            raise webob.exc.HTTPBadRequest(explanation=msg)
+        # NOTE(jculp): only raise if a blank tenant is passed
+        # passing no tenant at all is perfectly fine.
+        elif ('tenant' in body['schedule'] and not
+            body['schedule']['tenant'].strip()):
+            msg = _('The request body has not specified a "tenant" entity')
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
         api_utils.deserialize_schedule_metadata(body['schedule'])

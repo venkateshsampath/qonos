@@ -560,6 +560,32 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         self.assertEqual(updated['next_run'],
                          timeutils.isotime(self.schedule_1['next_run']))
 
+    def test_update_blank_tenant(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        schedule_id = self.schedule_1['id']
+        update_fixture = {'schedule': {'tenant': ''}}
+        
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, update_fixture)
+
+    def test_update_whitespace_tenant(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        schedule_id = self.schedule_1['id']
+        update_fixture = {'schedule': {'tenant': '   '}}
+
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, update_fixture)
+
+    def test_update_no_tenant(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {'action': 'snapshot'}}
+        old_tenant = self.schedule_1['tenant']
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertEqual(updated.get('tenant'), old_tenant)
+
     def test_update_ignore_read_only(self):
         request = unit_utils.get_fake_request(method='PUT')
         schedule_id = self.schedule_1['id']
