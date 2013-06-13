@@ -83,6 +83,30 @@ class TestScheduleMetadataApi(test_utils.BaseTestCase):
 
         self.assertEqual(expected, actual)
 
+    def test_update_metadata_empty_key(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        schedule_id = self.schedule_1['id']
+        fixture = {'metadata': {'': 'value'}}
+
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, fixture)
+
+    def test_update_metadata_whitespace_key(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        schedule_id = self.schedule_1['id']
+        fixture = {'metadata': {'   ': 'value'}}
+
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, fixture)
+
+    def test_update_metadata_empty_and_nonempty_keys(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        schedule_id = self.schedule_1['id']
+        fixture = {'metadata': {'key': 'value', '': 'value2'}}
+
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, schedule_id, fixture)
+
     def test_update_meta_schedule_not_found(self):
         request = unit_utils.get_fake_request(method='PUT')
         schedule_id = uuid.uuid4()
