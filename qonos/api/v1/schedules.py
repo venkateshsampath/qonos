@@ -146,6 +146,7 @@ class SchedulesController(object):
         except exception.Forbidden as e:
             raise webob.exc.HTTPForbidden(explanation=unicode(e))
 
+        request_next_run = body['schedule'].get('next_run')
         times = {
             'minute': None,
             'hour': None,
@@ -164,6 +165,12 @@ class SchedulesController(object):
             # since the schedule has changed
             values.update(times)
             values['next_run'] = api_utils.schedule_to_next_run(times)
+        elif request_next_run:
+            try:
+                timeutils.parse_isotime(request_next_run)
+            except ValueError as e:
+                msg = _('Invalid "next_run" value. Must be ISO 8601 format')
+                raise webob.exc.HTTPBadRequest(explanation=msg)
 
         try:
             schedule = self.db_api.schedule_update(schedule_id, values)
