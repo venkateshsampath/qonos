@@ -102,6 +102,7 @@ class SnapshotProcessor(worker.JobProcessor):
             self.send_notification_retry(payload)
 
         job_id = job['id']
+
         if not self._check_schedule_exists(job):
             msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
                    {'schedule_id': job['schedule_id'], 'job_id': job_id})
@@ -146,7 +147,8 @@ class SnapshotProcessor(worker.JobProcessor):
                     should_create = False
 
         if should_create:
-            image_id = self._create_image(job_id, instance_id)
+            image_id = self._create_image(job_id, instance_id,
+                                          job['schedule_id'])
             if image_id is None:
                 return
 
@@ -173,7 +175,7 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_timed_out(job_id)
 
         if active:
-            self._process_retention(instance_id)
+            self._process_retention(instance_id, job['schedule_id'])
             self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
@@ -186,7 +188,7 @@ class SnapshotProcessor(worker.JobProcessor):
         """
         pass
 
-    def _create_image(self, job_id, instance_id):
+    def _create_image(self, job_id, instance_id, schedule_id):
         metadata = {
             "org.openstack__1__created-by": "scheduled_images_service"
             }
@@ -203,7 +205,9 @@ class SnapshotProcessor(worker.JobProcessor):
             msg = ('Instance %(instance_id)s specified by job %(job_id)s '
                    'was not found.' %
                    {'instance_id': instance_id, 'job_id': job_id})
+
             self._job_cancelled(job_id, msg)
+            self._delete_schedule(schedule_id, instance_id)
             return None
 
         LOG.info(_("Worker %(worker_id)s Started create image: "
@@ -239,7 +243,7 @@ class SnapshotProcessor(worker.JobProcessor):
         self.current_job['metadata'] = self.update_job_metadata(
             self.current_job['id'], metadata)
 
-    def _process_retention(self, instance_id):
+    def _process_retention(self, instance_id, schedule_id):
         LOG.debug(_("Processing retention."))
         retention = self._get_retention(instance_id)
 
@@ -262,6 +266,8 @@ class SnapshotProcessor(worker.JobProcessor):
                                '%(image_id)s')
                               % {'worker_id': self.worker.worker_id,
                                  'image_id': image_id})
+        else:
+            self._delete_schedule(schedule_id, instance_id)
 
     def _get_retention(self, instance_id):
         ret_str = None
@@ -275,6 +281,7 @@ class SnapshotProcessor(worker.JobProcessor):
             msg = _('Could not retrieve retention for server %s: either the'
                     ' server was deleted or scheduled images for'
                     ' the server was disabled.') % instance_id
+
             LOG.warn(msg)
         except Exception, e:
             msg = _('Error getting retention for server %s: ')
@@ -390,6 +397,19 @@ class SnapshotProcessor(worker.JobProcessor):
             return True
         except qonos_ex.NotFound, ex:
             return False
+
+    def _delete_schedule(self, schedule_id, instance_id):
+        qonosclient = self.get_qonos_client()
+        try:
+            qonosclient.delete_schedule(schedule_id)
+
+            LOG.info(_("Deleted schedule: %(schedule_id)s for"
+                        " instance: %(instance_id)s") %
+                        {'schedule_id': schedule_id,
+                         'instance_id': instance_id})
+        except qonos_ex.NotFound, ex:
+            LOG.info(_("There is no schedule to delete for"
+                       " deleted instance: %s") % instance_id)
 
     # Seam for testing
     def _get_utcnow(self):

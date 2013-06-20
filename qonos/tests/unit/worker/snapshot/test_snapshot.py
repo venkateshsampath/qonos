@@ -161,6 +161,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                error_message=None)
         self.worker.update_job(fakes.JOB_ID, 'CANCELLED', timeout=None,
                                error_message=mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -186,6 +188,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -208,7 +212,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             get(mox.IsA(str)).AndReturn(mock_retention)
 
         self._simple_prepare_worker_mock(skip_metadata_update=True)
-
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -234,6 +239,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self._simple_prepare_worker_mock(skip_metadata_update=True)
 
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -262,7 +269,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             get(mox.IsA(str)).AndReturn(mock_retention)
 
         self._simple_prepare_worker_mock()
-
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -294,6 +302,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -337,6 +347,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -387,6 +399,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -609,6 +623,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -636,6 +652,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
@@ -663,6 +681,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
+        self.worker.get_qonos_client().AndReturn(self.qonos_client)
+        self.qonos_client.delete_schedule(mox.IsA(str))
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
