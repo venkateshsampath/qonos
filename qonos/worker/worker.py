@@ -90,6 +90,7 @@ class Worker(object):
         self.worker_id = self._register_worker()
 
         while self.running:
+            time_before = time.time()
             job = self._poll_for_next_job(poll_once)
             if job:
                 LOG.debug(_('Processing job: %s') % job)
@@ -102,6 +103,13 @@ class Worker(object):
                                          'job': job['id']})
                     self.update_job(job['id'], 'ERROR',
                                     error_message=unicode(e))
+
+                time_after = time.time()
+
+                # Ensure that we wait at least job_poll_interval between jobs
+                time_delta = time_after - time_before
+                if time_delta < CONF.worker.job_poll_interval:
+                    time.sleep(CONF.worker.job_poll_interval - time_delta)
 
             if run_once:
                 self.running = False
