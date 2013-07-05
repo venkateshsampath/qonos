@@ -21,7 +21,7 @@ api_port = 7667
 nova_client_factory_class = 'qonos.worker.snapshot.simple_nova_client_factory.NovaClientFactory'
 
 # How often to poll Nova for the image status
-image_poll_interval_sec = 10
+image_poll_interval_sec = 30
 
 # How often to update the job status, in seconds
 job_update_interval_sec = 300

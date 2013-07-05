@@ -36,7 +36,7 @@ snapshot_worker_opts = [
     cfg.StrOpt('nova_client_factory_class',
                default='qonos.worker.snapshot.simple_nova_client_factory.'
                        'NovaClientFactory'),
-    cfg.IntOpt('image_poll_interval_sec', default=0,
+    cfg.IntOpt('image_poll_interval_sec', default=30,
                help=_('How often to poll Nova for the image status')),
     cfg.IntOpt('job_update_interval_sec', default=300,
                help=_('How often to update the job status, in seconds')),
