@@ -85,7 +85,11 @@ class JobsController(object):
         # Check integrity of schedule and update next run
         expected_next_run = job.get('next_run')
         if expected_next_run:
-            expected_next_run = timeutils.parse_isotime(job.get('next_run'))
+            try:
+                expected_next_run = timeutils.parse_isotime(job.get('next_run'))
+            except ValueError as e:
+                msg = _('Invalid "next_run" value. Must be ISO 8601 format')
+                raise webob.exc.HTTPBadRequest(explanation=msg)
 
         next_run = api_utils.schedule_to_next_run(schedule, timeutils.utcnow())
         try:

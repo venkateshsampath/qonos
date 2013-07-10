@@ -396,6 +396,27 @@ class TestSchedulesApi(test_utils.BaseTestCase):
                          updated['tenant'])
         self.assertEqual(updated['next_run'], expected_next_run)
 
+    def test_update_invalid_next_run(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        update_fixture = {'schedule': {
+                          'next_run': '12345'
+                         }}
+
+        self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
+                          request, self.schedule_1['id'], update_fixture)
+
+    def test_update_valid_next_run(self):
+        request = unit_utils.get_fake_request(method='PUT')
+        expected_next_run = '1989-01-19T12:00:00Z'
+        update_fixture = {'schedule': {
+                          'next_run': expected_next_run
+                         }}
+
+        updated = self.controller.update(request, self.schedule_1['id'],
+                                         update_fixture)['schedule']
+
+        self.assertEqual(updated['next_run'], expected_next_run)
+
     def test_update_with_hour(self):
 
         expected_next_run = '1989-01-19T12:00:00Z'

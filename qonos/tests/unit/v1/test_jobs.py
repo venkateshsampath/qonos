@@ -375,6 +375,16 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertRaises(webob.exc.HTTPConflict,
                           self.controller.create, request, fixture)
 
+    def test_create_next_run_invalid_format(self):
+        expected_next_run = '1234'
+        self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
+                                 'INFO')
+        request = unit_utils.get_fake_request(method='POST')
+        fixture = {'job': {'schedule_id': self.schedule_1['id'],
+                           'next_run': expected_next_run}}
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          self.controller.create, request, fixture)
+
     def test_create_with_metadata(self):
         self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
                                  'INFO')
