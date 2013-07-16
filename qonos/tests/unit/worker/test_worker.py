@@ -103,6 +103,27 @@ class TestWorker(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
+    def test_job_poll_interval(self):
+        self.prepare_client_mock(job=fakes.JOB, empty_jobs=0)
+        self.mox.ReplayAll()
+
+        poll_interval = 1e-3 # dont want this test to take forever!
+        self.config(job_poll_interval=poll_interval, group='worker')
+        self.config(action_type='snapshot', group='worker')
+
+        time_before = time.time()
+
+        self.worker.run(run_once=True, poll_once=True)
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.was_process_job_called(1))
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
+
+        time_after = time.time()
+        time_delta = time_after - time_before
+        self.assertTrue(time_delta >= poll_interval)
+
+        self.mox.VerifyAll()
+
     def test_register_retries_on_error(self):
         self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndRaise(Exception())
