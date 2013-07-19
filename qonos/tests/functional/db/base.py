@@ -1271,6 +1271,36 @@ class TestJobsDBGetNextJobApi(test_utils.BaseTestCase):
 
     def test_get_next_job_skip_done(self):
         now = timeutils.utcnow()
+        timeout = now - datetime.timedelta(hours=1)
+        new_timeout = now + datetime.timedelta(hours=3)
+        hard_timeout = now + datetime.timedelta(hours=4)
+        retries = 2
+        job_fixture = {
+            'id': 'fake-id',
+            'action': 'snapshot',
+            'tenant': unit_utils.TENANT1,
+            'schedule_id': unit_utils.SCHEDULE_UUID2,
+            'worker_id': unit_utils.WORKER_UUID2,
+            'status': 'DEFERRED',
+            'timeout': timeout,
+            'hard_timeout': hard_timeout,
+            'retry_count': 1,
+        }
+
+        self._create_jobs(10, job_fixture)
+        job = db_api.job_get_and_assign_next_by_action('snapshot',
+                                                       unit_utils.WORKER_UUID1,
+                                                       retries,
+                                                       new_timeout)
+        expected = job_fixture
+        self.assertEqual(job['id'], expected['id'])
+        self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
+        self.assertEqual(job['status'], expected['status'])
+        # does not increase retry_count
+        self.assertEqual(job['retry_count'], expected['retry_count'])
+
+    def test_get_next_job_deferred_same_retry_count(self):
+        now = timeutils.utcnow()
         new_timeout = now + datetime.timedelta(hours=3)
         retries = 2
         self._create_jobs(10, self.job_fixture_3, self.job_fixture_1)

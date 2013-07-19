@@ -662,11 +662,14 @@ def job_get_and_assign_next_by_action(action, worker_id, max_retry,
     # Make sure the job has not changed unexpectedly since
     # retrieving it
     try:
+        updated_job_info = {'worker_id': worker_id,
+                            'timeout': new_timeout}
+        if job_ref['status'] != 'DEFERRED':
+            updated_job_info['retry_count'] = job_ref['retry_count'] + 1
+
         query = session.query(models.Job).filter_by(id=job_ref['id'])\
                        .filter_by(updated_at=job_ref['updated_at'])\
-                       .update({'worker_id': worker_id,
-                                'timeout': new_timeout,
-                                'retry_count': job_ref['retry_count'] + 1})
+                       .update(updated_job_info)
     except sa_orm.exc.NoResultFound:
         #In case the job was deleted during assignment return nothing
         return None

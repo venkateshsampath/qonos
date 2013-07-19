@@ -209,6 +209,12 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_cancelled(job_id, msg)
             self._delete_schedule(schedule_id, instance_id)
             return None
+        except exceptions.Conflict:
+            msg = ('Instance %(instance_id)s specified by job %(job_id)s '
+                   'is in conflicting state.' %
+                   {'instance_id': instance_id, 'job_id': job_id})
+            self.update_job(job_id, 'DEFERRED')
+            return None
 
         LOG.info(_("Worker %(worker_id)s Started create image: "
                    " %(image_id)s") % {'worker_id': self.worker.worker_id,
