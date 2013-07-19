@@ -14,18 +14,61 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import fakes
+import mock
 import mox
 import time
 
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests import utils as test_utils
+from qonos.tests.unit.worker import fakes
 from qonos.worker import worker
-
 
 class TestWorker(test_utils.BaseTestCase):
     def setUp(self):
         super(TestWorker, self).setUp()
+        self.client_factory = mock.Mock()
+        self.client = mock.Mock()
+        self.client_factory.return_value = self.client
+        self.processor = mock.Mock()
+        self.worker = worker.Worker(self.client_factory,
+                                    self.processor)
+
+    def tearDown(self):
+        super(TestWorker, self).tearDown()
+
+    def test_init_worker(self):
+        self.assertFalse(self.worker.pid)
+        self.assertFalse(self.worker.running)
+        self.client.create_worker.return_value = {"id": 1}
+
+        self.worker.init_worker()
+
+        self.assertEquals(self.worker.worker_id, 1)
+        self.assertTrue(self.worker.pid)
+        self.assertTrue(self.worker.running)
+        self.processor.init_processor.assert_called_once_with(self.worker)
+        self.client.create_worker.assert_called_once()
+
+    def test_worker_process_job(self):
+        self.worker.process_job(fakes.JOB['job'])
+        self.processor.process_job.assert_called_once_with(fakes.JOB['job'])
+
+    def test_worker_process_job_with_exception(self):
+        job = fakes.JOB['job']
+        self.processor.process_job.side_effect = Exception('Boom!')
+
+        self.worker.process_job(job)
+
+        self.processor.process_job.assert_called_once_with(job)
+        self.client.update_job_status.assert_called_once_with(job['id'],
+                                                              'ERROR',
+                                                              None,
+                                                              mock.ANY)
+
+
+class TestWorkerWithMox(test_utils.BaseTestCase):
+    def setUp(self):
+        super(TestWorkerWithMox, self).setUp()
         self.mox = mox.Mox()
         self.client = self.mox.CreateMockAnything()
 
@@ -38,7 +81,7 @@ class TestWorker(test_utils.BaseTestCase):
 
     def tearDown(self):
         self.mox.UnsetStubs()
-        super(TestWorker, self).tearDown()
+        super(TestWorkerWithMox, self).tearDown()
 
     def prepare_client_mock(self, job=fakes.JOB_NONE, empty_jobs=0):
         self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
