@@ -21,6 +21,7 @@ import time
 
 from oslo.config import cfg
 
+from qonos.common import exception
 from qonos.common import utils
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
@@ -94,6 +95,8 @@ class Worker(object):
         LOG.debug(_('Processing job: %s') % job)
         try:
             self.processor.process_job(job)
+        except exception.PollingException as e:
+            LOG.exception(e)
         except Exception as e:
             msg = _("Worker %(worker_id)s Error processing job:"
                     " %(job)s")
@@ -107,16 +110,17 @@ class Worker(object):
 
         while self.running:
             time_before = time.time()
+
             job = self._poll_for_next_job(poll_once)
             if job:
                 self.process_job(job)
 
-                time_after = time.time()
+            time_after = time.time()
 
-                # Ensure that we wait at least job_poll_interval between jobs
-                time_delta = time_after - time_before
-                if time_delta < CONF.worker.job_poll_interval:
-                    time.sleep(CONF.worker.job_poll_interval - time_delta)
+            # Ensure that we wait at least job_poll_interval between jobs
+            time_delta = time_after - time_before
+            if time_delta < CONF.worker.job_poll_interval:
+                time.sleep(CONF.worker.job_poll_interval - time_delta)
 
             if run_once:
                 self.running = False

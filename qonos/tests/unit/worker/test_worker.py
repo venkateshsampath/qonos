@@ -18,9 +18,10 @@ import mock
 import mox
 import time
 
+from qonos.common import exception
 from qonos.tests.unit import utils as unit_utils
-from qonos.tests import utils as test_utils
 from qonos.tests.unit.worker import fakes
+from qonos.tests import utils as test_utils
 from qonos.worker import worker
 
 class TestWorker(test_utils.BaseTestCase):
@@ -65,6 +66,14 @@ class TestWorker(test_utils.BaseTestCase):
                                                               None,
                                                               mock.ANY)
 
+    def test_worker_process_job_with_polling_exception(self):
+        job = fakes.JOB['job']
+        self.processor.process_job.side_effect = exception. \
+                                                 PollingException('Boom!')
+
+        self.worker.process_job(job)
+
+        self.processor.process_job.assert_called_once_with(job)
 
 class TestWorkerWithMox(test_utils.BaseTestCase):
     def setUp(self):
