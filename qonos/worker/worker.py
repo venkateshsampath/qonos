@@ -21,6 +21,7 @@ import time
 
 from oslo.config import cfg
 
+from qonos.common import exception
 from qonos.common import utils
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
@@ -61,6 +62,7 @@ class Worker(object):
         self.worker_id = None
         self.host = socket.gethostname()
         self.running = False
+        self.pid = None
 
     def run(self, run_once=False, poll_once=False):
         LOG.info(_('Starting qonos worker service'))
@@ -83,33 +85,42 @@ class Worker(object):
             signal.SIGHUP: self._terminate,
         }
 
-    def _run_loop(self, run_once=False, poll_once=False):
+    def init_worker(self):
         self.running = True
         self.pid = os.getpid()
         self.processor.init_processor(self)
         self.worker_id = self._register_worker()
 
+    def process_job(self, job):
+        LOG.debug(_('Processing job: %s') % job)
+        try:
+            self.processor.process_job(job)
+        except exception.PollingException as e:
+            LOG.exception(e)
+        except Exception as e:
+            msg = _("Worker %(worker_id)s Error processing job:"
+                    " %(job)s")
+            LOG.exception(msg % {'worker_id': self.worker_id,
+                                 'job': job['id']})
+            self.update_job(job['id'], 'ERROR',
+                            error_message=unicode(e))
+
+    def _run_loop(self, run_once=False, poll_once=False):
+        self.init_worker()
+
         while self.running:
             time_before = time.time()
+
             job = self._poll_for_next_job(poll_once)
             if job:
-                LOG.debug(_('Processing job: %s') % job)
-                try:
-                    self.processor.process_job(job)
-                except Exception as e:
-                    msg = _("Worker %(worker_id)s Error processing job:"
-                            " %(job)s")
-                    LOG.exception(msg % {'worker_id': self.worker_id,
-                                         'job': job['id']})
-                    self.update_job(job['id'], 'ERROR',
-                                    error_message=unicode(e))
+                self.process_job(job)
 
-                time_after = time.time()
+            time_after = time.time()
 
-                # Ensure that we wait at least job_poll_interval between jobs
-                time_delta = time_after - time_before
-                if time_delta < CONF.worker.job_poll_interval:
-                    time.sleep(CONF.worker.job_poll_interval - time_delta)
+            # Ensure that we wait at least job_poll_interval between jobs
+            time_delta = time_after - time_before
+            if time_delta < CONF.worker.job_poll_interval:
+                time.sleep(CONF.worker.job_poll_interval - time_delta)
 
             if run_once:
                 self.running = False

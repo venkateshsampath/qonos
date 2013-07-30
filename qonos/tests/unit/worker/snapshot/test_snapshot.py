@@ -20,6 +20,7 @@ import mox
 
 from novaclient import exceptions
 
+from qonos.common import exception
 from qonos.common import timeutils
 from qonos.common import utils
 from qonos.openstack.common import uuidutils
@@ -39,6 +40,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
     def setUp(self):
         super(TestSnapshotProcessor, self).setUp()
         self.job = copy.deepcopy(fakes.JOB['job'])
+        # override any config value for image_poll_interval so tests are fast
+        self.config(image_poll_interval_sec=0.01, group='snapshot_worker')
         self._reset_mocks()
 
     def _reset_mocks(self):
@@ -522,7 +525,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                                     DEFAULT_TIMEOUT_INCR *
                                                     backoff_factor)
         self.worker.update_job(fakes.JOB_ID, 'ERROR', timeout=timeout,
-                               error_message=mox.IsA(str))
+                               error_message=mox.IsA(unicode))
 
         self.mox.StubOutWithMock(utils, 'generate_notification')
 
@@ -538,7 +541,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         processor = TestableSnapshotProcessor(self.nova_client)
         processor.init_processor(self.worker)
 
-        processor.process_job(job)
+        self.assertRaises(exception.PollingException,
+                          processor.process_job,
+                          job)
 
         self.mox.VerifyAll()
 

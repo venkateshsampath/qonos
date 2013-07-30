@@ -49,3 +49,6 @@ class MissingValue(QonosException):
 
 class Invalid(QonosException):
     message = _('The input provided was invalid.')
+
+class PollingException(QonosException):
+    message = _('An error occured when polling.')
