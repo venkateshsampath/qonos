@@ -163,8 +163,11 @@ class SnapshotProcessor(worker.JobProcessor):
             if status['job_status'] == 'ERROR':
                 instance_id = self._get_instance_id(self.current_job)
                 msg = _("Error occured while polling snapshot (status ERROR). "
-                        "Instance: %s, image_id: %s threw error msg: %s."
-                        % (instance_id, image_id, status['error_msg']))
+                        "Instance: %(instance)s, image_id: %(image)s threw "
+                        "error msg: %(error)s.")
+                msg = msg % {'instance': instance_id,
+                             'image': image_id,
+                             'error': status['error_msg']}
                 timeout = self._get_updated_job_timeout(self.current_job['id'])
                 self.update_job(job['id'], 'ERROR', timeout=timeout,
                                 error_message=msg)
@@ -337,7 +340,7 @@ class SnapshotProcessor(worker.JobProcessor):
             msg = ("Auth error: %s" % e)
             image_status = 'ERROR'
         except Exception as e:
-            msg = _("Error (image may have been killed): %s" % e)
+            msg = _("Error (image may have been killed): %s") % e
             image_status = 'KILLED'
         else:
             image_status = 'ERROR'

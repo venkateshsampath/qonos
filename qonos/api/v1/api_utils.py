@@ -41,10 +41,11 @@ def deserialize_metadata(metadata):
             dict_entry['value'] = value
             to_return.append(dict_entry)
         else:
-            msg = _("Metadata value '%s' is missing key" % value)
+            msg = _("Metadata value '%s' is missing key") % value
             raise exception.MissingValue(message=unicode(msg))
 
     return to_return
+
 
 def check_read_only_properties(values):
     _read_only_properties = ['created_at', 'updated_at', 'last_scheduled']

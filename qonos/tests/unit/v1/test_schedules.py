@@ -307,7 +307,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'minute': 30,
             'hour': 2,
         }}
-        
+
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
                           fixture)
 
@@ -329,7 +329,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
             'minute': 30,
             'hour': 2,
         }}
-        
+
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.create,
                           fixture)
 
@@ -585,7 +585,7 @@ class TestSchedulesApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='PUT')
         schedule_id = self.schedule_1['id']
         update_fixture = {'schedule': {'tenant': ''}}
-        
+
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
                           request, schedule_id, update_fixture)
 

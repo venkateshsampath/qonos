@@ -90,7 +90,7 @@ class SchedulesController(object):
                 invalid_params.append('request body needs "tenant" entity')
             if not body['schedule'].get('action'):
                 invalid_params.append('request body needs "action" entity')
-        
+
         if invalid_params:
             msg = _('The following errors occured with your request: %s') \
                     % ', '.join(invalid_params)
