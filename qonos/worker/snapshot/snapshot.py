@@ -184,6 +184,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
         if active:
             self._process_retention(instance_id, job['schedule_id'])
+            payload['job'] = job
             self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
