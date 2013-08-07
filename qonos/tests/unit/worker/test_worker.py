@@ -24,6 +24,7 @@ from qonos.tests.unit.worker import fakes
 from qonos.tests import utils as test_utils
 from qonos.worker import worker
 
+
 class TestWorker(test_utils.BaseTestCase):
     def setUp(self):
         super(TestWorker, self).setUp()
@@ -74,6 +75,7 @@ class TestWorker(test_utils.BaseTestCase):
         self.worker.process_job(job)
 
         self.processor.process_job.assert_called_once_with(job)
+
 
 class TestWorkerWithMox(test_utils.BaseTestCase):
     def setUp(self):
@@ -159,7 +161,7 @@ class TestWorkerWithMox(test_utils.BaseTestCase):
         self.prepare_client_mock(job=fakes.JOB, empty_jobs=0)
         self.mox.ReplayAll()
 
-        poll_interval = 1e-3 # dont want this test to take forever!
+        poll_interval = 1e-3  # dont want this test to take forever!
         self.config(job_poll_interval=poll_interval, group='worker')
         self.config(action_type='snapshot', group='worker')
 
