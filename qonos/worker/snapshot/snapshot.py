@@ -162,10 +162,14 @@ class SnapshotProcessor(worker.JobProcessor):
             status = self._get_image_status(image_id)
             if status['job_status'] == 'ERROR':
                 instance_id = self._get_instance_id(self.current_job)
-                msg = _("Error occured while polling snapshot (status ERROR). "
+                msg = _("Error occured while polling snapshot. "
+                        "Job status: %(job_status)s. "
+                        "Image status: %(image_status)s. "
                         "Instance: %(instance)s, image_id: %(image)s threw "
                         "error msg: %(error)s.")
-                msg = msg % {'instance': instance_id,
+                msg = msg % {'job_status': status['job_status'],
+                             'image_status': status['image_status'],
+                             'instance': instance_id,
                              'image': image_id,
                              'error': status['error_msg']}
                 timeout = self._get_updated_job_timeout(self.current_job['id'])
