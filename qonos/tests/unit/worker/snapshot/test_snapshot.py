@@ -591,7 +591,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             get(mox.IsA(str)).AndReturn(mock_retention)
         mock_server = MockServer()
         image_list = self._create_images_list(mock_server.id, 3)
-        self.nova_client.images.list(detailed=True).AndReturn(image_list)
+        self.nova_client.images.list(detailed=True, status='active').\
+            AndReturn(image_list)
         self._init_worker_mock()
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
@@ -710,7 +711,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             get(mox.IsA(str)).AndReturn(mock_retention)
         mock_server = MockServer(instance_id=instance_id)
         image_list = self._create_images_list(mock_server.id, 5)
-        self.nova_client.images.list(detailed=True).AndReturn(image_list)
+        self.nova_client.images.list(detailed=True, status='active').\
+            AndReturn(image_list)
         # The image list happens to be in descending created order
         self.nova_client.images.delete(image_list[-2].id)
         self.nova_client.images.delete(image_list[-1].id)
@@ -747,7 +749,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         to_delete = image_list[3:]
         image_list.extend(self._create_images_list(
                 uuidutils.generate_uuid(), 3))
-        self.nova_client.images.list(detailed=True).AndReturn(image_list)
+        self.nova_client.images.list(detailed=True, status='active').\
+            AndReturn(image_list)
         # The image list happens to be in descending created order
         self.nova_client.images.delete(to_delete[0].id)
         self.nova_client.images.delete(to_delete[1].id)
