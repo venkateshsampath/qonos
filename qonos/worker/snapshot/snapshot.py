@@ -306,8 +306,7 @@ class SnapshotProcessor(worker.JobProcessor):
         return retention
 
     def _find_scheduled_images_for_server(self, instance_id):
-        images = self._get_nova_client().images.list(detailed=True,
-                                                     status='active')
+        images = self._get_nova_client().images.list(detailed=True)
         scheduled_images = []
         for image in images:
             metadata = image.metadata
