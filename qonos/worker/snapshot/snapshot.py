@@ -310,9 +310,14 @@ class SnapshotProcessor(worker.JobProcessor):
         scheduled_images = []
         for image in images:
             metadata = image.metadata
+            # Note(Hemanth): In the following condition,
+            # 'image.status.upper() == "ACTIVE"' is a temporary hack to
+            # incorporate rm2400. Ideally, this filtering should be performed
+            # by passing an appropriate filter to the novaclient.
             if (metadata.get("org.openstack__1__created_by")
                 == "scheduled_images_service" and
-                metadata.get("instance_uuid") == instance_id):
+                metadata.get("instance_uuid") == instance_id and
+                image.status.upper() == "ACTIVE"):
                 scheduled_images.append(image)
 
         scheduled_images = sorted(scheduled_images,
