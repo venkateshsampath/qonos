@@ -76,10 +76,10 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         return images
 
     def _create_image(self, instance_id, created, image_id=None,
-                      scheduled=True):
+                      scheduled=True, status='ACTIVE'):
         image_id = image_id or uuidutils.generate_uuid()
 
-        image = MockImage(image_id, created, instance_id)
+        image = MockImage(image_id, created, instance_id, status)
 
         if scheduled:
             image.metadata['org.openstack__1__created_by'] =\
@@ -808,9 +808,10 @@ class MockImageStatus(object):
 
 
 class MockImage(object):
-    def __init__(self, image_id, created, instance_id):
+    def __init__(self, image_id, created, instance_id, status='ACTIVE'):
         self.id = image_id
         self.created = created
+        self.status = status
         self.metadata = {
             'instance_uuid': instance_id,
             }
