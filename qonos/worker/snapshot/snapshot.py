@@ -335,19 +335,11 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def _get_image_status(self, image_id):
         """
-        Grab image status from novaclient
-        Update image status, unless an error occurs (capture details)
-
-        Possible errors fit into two clases:
-            1. Auth error
-            2. All other errors
+        Get image status with novaclient
         """
         msg = None
         try:
             image = self._get_nova_client().images.get(image_id)
-        except exceptions.Unauthenticated as e:
-            msg = ("Auth error: %s" % e)
-            image_status = 'ERROR'
         except Exception as e:
             msg = _("Error (image may have been killed): %s") % e
             image_status = 'KILLED'
