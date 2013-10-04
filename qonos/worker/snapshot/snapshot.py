@@ -161,7 +161,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
             active = image_status == 'ACTIVE'
             if active:
-                self._job_succeeded(job_id)
+                pass
             else:
                 retry = self._try_update(job_id, "PROCESSING")
 
@@ -174,6 +174,7 @@ class SnapshotProcessor(worker.JobProcessor):
         if active:
             self._process_retention(instance_id, job['schedule_id'])
             payload['job'] = job
+            self._job_succeeded(job_id)
             self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
