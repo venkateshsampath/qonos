@@ -209,6 +209,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         # Note NO call to create_image is expected
         self.nova_client.images.get(IMAGE_ID).AndReturn(
             MockImageStatus('ACTIVE'))
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ACTIVE'))
 
         mock_retention = MockRetention()
         self.nova_client.rax_scheduled_images_python_novaclient_ext.\
