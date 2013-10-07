@@ -338,6 +338,7 @@ class SnapshotProcessor(worker.JobProcessor):
         Get image status with novaclient
         """
         msg = None
+        image = None
         try:
             image = self._get_nova_client().images.get(image_id)
         except Exception as e:
