@@ -455,7 +455,7 @@ def _jobs_get_sorted():
     for job_id in jobs:
         sorted_jobs.append(jobs[job_id])
 
-    sorted_jobs = sorted(sorted_jobs, key=operator.itemgetter('created_at'))
+    sorted_jobs = sorted(sorted_jobs, key=operator.itemgetter('updated_at'))
     return sorted_jobs
 
 

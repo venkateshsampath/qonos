@@ -687,7 +687,7 @@ def _job_get_next_by_action(session, now, action, max_retry):
                            models.Job.status == None))\
         .filter(sa_sql.or_(models.Job.worker_id == None,
                            models.Job.timeout <= now))\
-        .order_by(models.Job.created_at.asc())\
+        .order_by(models.Job.updated_at.asc())\
         .first()
     return job_ref
 
