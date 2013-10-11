@@ -55,19 +55,12 @@ snapshot_worker_opts = [
 CONF = cfg.CONF
 CONF.register_opts(snapshot_worker_opts, group='snapshot_worker')
 
+_FAILED_IMAGE_STATUSES = ['KILLED', 'DELETED', 'PENDING_DELETE', 'ERROR']
+
 
 class SnapshotProcessor(worker.JobProcessor):
     def __init__(self):
         super(SnapshotProcessor, self).__init__()
-        self.status_map = {
-            "QUEUED": "PROCESSING",
-            "SAVING": "PROCESSING",
-            "ACTIVE": "DONE",
-            "KILLED": "ERROR",
-            "DELETED": "ERROR",
-            "PENDING_DELETE": "ERROR",
-            "ERROR": "ERROR"
-        }
 
     def init_processor(self, worker, nova_client_factory=None):
         super(SnapshotProcessor, self).init_processor(worker)
@@ -128,62 +121,47 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_cancelled(job_id, msg)
             return
 
-        should_create = True
+        create_new_image = True
         if ('image_id' in job['metadata']):
             image_id = job['metadata']['image_id']
-            if (job['status'] in ['PROCESSING', 'TIMED_OUT']):
-                should_create = False
-                LOG.info(_("Worker %(worker_id)s Resuming image: %(image_id)s")
-                         % {'worker_id': self.worker.worker_id,
-                            'image_id': image_id})
-            elif (job['status'] == 'ERROR'):
-                status = self._get_image_status(image_id)
-                if (status['job_status'] in ['PROCESSING', 'DONE']):
-                    LOG.info(_("Worker %(worker_id)s "
-                               "Previous image %(image_id)s failed with status"
-                               " %(image_status)s. Retrying.")
-                         % {'worker_id': self.worker.worker_id,
-                            'image_id': image_id,
-                            'image_status': status['image_status']})
-                    should_create = False
+            image_status, error_msg = self._get_image_status(image_id)
+            if not (image_status in _FAILED_IMAGE_STATUSES):
+                create_new_image = False
 
-        if should_create:
+        if create_new_image:
             image_id = self._create_image(job_id, instance_id,
                                           job['schedule_id'])
             if image_id is None:
                 return
+        else:
+            LOG.info(_("Worker %(worker_id)s Resuming image: %(image_id)s")
+                     % {'worker_id': self.worker.worker_id,
+                        'image_id': image_id})
 
-        image_status = None
         active = False
         retry = True
 
         status = None
         while retry and not active:
-            status = self._get_image_status(image_id)
-            if status['job_status'] == 'ERROR':
+            image_status, error_msg = self._get_image_status(image_id)
+            if (image_status in _FAILED_IMAGE_STATUSES):
                 instance_id = self._get_instance_id(self.current_job)
                 msg = _("Error occured while polling snapshot. "
-                        "Job status: %(job_status)s. "
                         "Image status: %(image_status)s. "
                         "Instance: %(instance)s, image_id: %(image)s threw "
                         "error msg: %(error)s.")
-                msg = msg % {'job_status': status['job_status'],
-                             'image_status': status['image_status'],
+                msg = msg % {'image_status': image_status,
                              'instance': instance_id,
                              'image': image_id,
-                             'error': status['error_msg']}
+                             'error': error_msg}
                 timeout = self._get_updated_job_timeout(self.current_job['id'])
                 self.update_job(job['id'], 'ERROR', timeout=timeout,
                                 error_message=msg)
                 raise exc.PollingException(msg)
 
-            active = self._is_active_status(status)
-            if active:
-                self._job_succeeded(job_id)
-            else:
-                retry = self._try_update(job_id, status['job_status'])
-
+            active = image_status == 'ACTIVE'
             if not active:
+                retry = self._try_update(job_id, "PROCESSING")
                 time.sleep(self.image_poll_interval)
 
         if (not active) and (not retry):
@@ -192,6 +170,7 @@ class SnapshotProcessor(worker.JobProcessor):
         if active:
             self._process_retention(instance_id, job['schedule_id'])
             payload['job'] = job
+            self._job_succeeded(job_id)
             self.send_notification_end(payload)
 
         LOG.debug("Snapshot complete")
@@ -337,6 +316,7 @@ class SnapshotProcessor(worker.JobProcessor):
         """
         Get image status with novaclient
         """
+        image_status = None
         msg = None
         image = None
         try:
@@ -344,16 +324,11 @@ class SnapshotProcessor(worker.JobProcessor):
         except Exception as e:
             msg = _("Error (image may have been killed): %s") % e
             image_status = 'KILLED'
-        else:
-            image_status = 'ERROR'
 
         if image is not None:
             image_status = image.status
 
-        return {'image_id': image_id,
-                'image_status': image_status,
-                'job_status': self.status_map[image_status],
-                'error_msg': msg}
+        return image_status or 'ERROR', msg
 
     def _get_nova_client(self):
         nova_client = self.nova_client_factory.get_nova_client(
