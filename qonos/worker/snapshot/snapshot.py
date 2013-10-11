@@ -160,12 +160,8 @@ class SnapshotProcessor(worker.JobProcessor):
                 raise exc.PollingException(msg)
 
             active = image_status == 'ACTIVE'
-            if active:
-                pass
-            else:
-                retry = self._try_update(job_id, "PROCESSING")
-
             if not active:
+                retry = self._try_update(job_id, "PROCESSING")
                 time.sleep(self.image_poll_interval)
 
         if (not active) and (not retry):
