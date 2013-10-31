@@ -255,9 +255,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
         self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
-                               error_message=None)
-         
         self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE',
                 error_message=None, timeout=None).AndReturn(None)
