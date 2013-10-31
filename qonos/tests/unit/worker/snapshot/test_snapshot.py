@@ -256,6 +256,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         self.worker.get_qonos_client().AndReturn(self.qonos_client)
         self.qonos_client.delete_schedule(mox.IsA(str))
+        self.worker.update_job(fakes.JOB_ID, 'DONE',
+                error_message=None, timeout=None).AndReturn(None)
+
         self.mox.ReplayAll()
 
         processor = TestableSnapshotProcessor(self.nova_client)
