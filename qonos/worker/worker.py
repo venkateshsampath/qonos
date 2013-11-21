@@ -174,9 +174,9 @@ class Worker(object):
     def update_job(self, job_id, status, timeout=None, error_message=None):
         msg = (_("Worker: [%(worker_id)s] updating "
                "job [%(job_id)s] Status: %(status)s") %
-                {'worker_id': self.worker_id,
-                 'job_id': job_id,
-                 'status': status})
+               {'worker_id': self.worker_id,
+                'job_id': job_id,
+                'status': status})
 
         if timeout:
             msg += _(" Timeout: %s") % str(timeout)
@@ -186,8 +186,8 @@ class Worker(object):
 
         LOG.debug(msg)
         try:
-            self.client.update_job_status(job_id, status, timeout,
-                                          error_message)
+            return self.client.update_job_status(job_id, status, timeout,
+                                                 error_message)
         except Exception:
             LOG.exception(_("Failed to update job status."))
 
@@ -205,6 +205,9 @@ class JobProcessor(object):
     def send_notification(self, event_type, payload, level='INFO'):
         utils.generate_notification(None, event_type, payload, level)
 
+    def send_notification_job_update(self, payload, level='INFO'):
+        self.send_notification('qonos.job.update', payload, level)
+
     def send_notification_start(self, payload, level='INFO'):
         self.send_notification('qonos.job.run.start', payload, level)
 
@@ -215,8 +218,8 @@ class JobProcessor(object):
         self.send_notification('qonos.job.retry', payload, level)
 
     def update_job(self, job_id, status, timeout=None, error_message=None):
-        self.worker.update_job(job_id, status, timeout=timeout,
-                               error_message=error_message)
+        return self.worker.update_job(job_id, status, timeout=timeout,
+                                      error_message=error_message)
 
     def update_job_metadata(self, job_id, metadata):
         return self.worker.update_job_metadata(job_id, metadata)

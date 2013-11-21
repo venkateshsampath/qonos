@@ -83,11 +83,11 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def process_job(self, job):
         LOG.info(_("Worker %(worker_id)s Processing job: %(job)s") %
-                    {'worker_id': self.worker.worker_id,
+                 {'worker_id': self.worker.worker_id,
                      'job': job['id']})
         LOG.debug(_("Worker %(worker_id)s Processing job: %(job)s") %
-                    {'worker_id': self.worker.worker_id,
-                     'job': str(job)})
+                  {'worker_id': self.worker.worker_id,
+                   'job': str(job)})
 
         payload = {'job': job}
         if job['status'] == 'QUEUED':
@@ -100,25 +100,25 @@ class SnapshotProcessor(worker.JobProcessor):
         if not self._check_schedule_exists(job):
             msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
                    {'schedule_id': job['schedule_id'], 'job_id': job_id})
-            self._job_cancelled(job_id, msg)
+            self._job_cancelled(job, msg)
 
             LOG.info(_('Worker %(worker_id)s Job cancelled: %(msg)s') %
-                      {'worker_id': self.worker.worker_id,
-                       'msg': msg})
+                     {'worker_id': self.worker.worker_id,
+                      'msg': msg})
             return
 
         self.current_job = job
 
         now = self._get_utcnow()
         self.next_timeout = now + self.timeout_increment
-        self.update_job(job_id, 'PROCESSING', timeout=self.next_timeout)
+        self._job_processing(job, self.next_timeout)
         self.next_update = self._get_utcnow() + self.update_interval
 
         instance_id = self._get_instance_id(job)
         if not instance_id:
             msg = ('Job %s does not specify an instance_id in its metadata.'
                    % job_id)
-            self._job_cancelled(job_id, msg)
+            self._job_cancelled(job, msg)
             return
 
         create_new_image = True
@@ -129,7 +129,7 @@ class SnapshotProcessor(worker.JobProcessor):
                 create_new_image = False
 
         if create_new_image:
-            image_id = self._create_image(job_id, instance_id,
+            image_id = self._create_image(job, instance_id,
                                           job['schedule_id'])
             if image_id is None:
                 return
@@ -141,7 +141,6 @@ class SnapshotProcessor(worker.JobProcessor):
         active = False
         retry = True
 
-        status = None
         while retry and not active:
             image_status, error_msg = self._get_image_status(image_id)
             if (image_status in _FAILED_IMAGE_STATUSES):
@@ -165,14 +164,11 @@ class SnapshotProcessor(worker.JobProcessor):
                 time.sleep(self.image_poll_interval)
 
         if (not active) and (not retry):
-            self._job_timed_out(job_id)
+            self._job_timed_out(job)
 
         if active:
             self._process_retention(instance_id, job['schedule_id'])
-            payload['job'] = job
-            self._job_succeeded(job_id)
-            self.send_notification_end(payload)
-
+            self._job_succeeded(job)
         LOG.debug("Snapshot complete")
 
     def cleanup_processor(self):
@@ -183,10 +179,9 @@ class SnapshotProcessor(worker.JobProcessor):
         """
         pass
 
-    def _create_image(self, job_id, instance_id, schedule_id):
+    def _create_image(self, job, instance_id, schedule_id):
         metadata = {
-            "org.openstack__1__created_by": "scheduled_images_service"
-            }
+            "org.openstack__1__created_by": "scheduled_images_service"}
 
         image_id = None
         try:
@@ -199,9 +194,9 @@ class SnapshotProcessor(worker.JobProcessor):
         except exceptions.NotFound:
             msg = ('Instance %(instance_id)s specified by job %(job_id)s '
                    'was not found.' %
-                   {'instance_id': instance_id, 'job_id': job_id})
+                   {'instance_id': instance_id, 'job_id': job['id']})
 
-            self._job_cancelled(job_id, msg)
+            self._job_cancelled(job, msg)
             self._delete_schedule(schedule_id, instance_id)
             return None
 
@@ -335,11 +330,24 @@ class SnapshotProcessor(worker.JobProcessor):
             self.current_job)
         return nova_client
 
-    def _job_succeeded(self, job_id):
-        self.update_job(job_id, 'DONE')
+    def _job_succeeded(self, job):
+        response = self.update_job(job['id'], 'DONE')
+        if response:
+            self._update_job_with_response(job, response)
+        self.send_notification_end({'job': job})
 
-    def _job_timed_out(self, job_id):
-        self.update_job(job_id, 'TIMED_OUT')
+    def _job_processing(self, job, timeout):
+        response = self.update_job(job['id'], 'PROCESSING',
+                                   timeout=self.next_timeout)
+        if response:
+            self._update_job_with_response(job, response)
+        self.send_notification_job_update({'job': job})
+
+    def _job_timed_out(self, job):
+        response = self.update_job(job['id'], 'TIMED_OUT')
+        if response:
+            self._update_job_with_response(job, response)
+        self.send_notification_job_update({'job': job})
 
     def _get_updated_job_timeout(self, job_id):
         backoff_factor = (self.job_timeout_backoff_factor
@@ -350,8 +358,16 @@ class SnapshotProcessor(worker.JobProcessor):
         timeout = now + timeout_increment
         return timeout
 
-    def _job_cancelled(self, job_id, message):
-        self.update_job(job_id, 'CANCELLED', error_message=message)
+    def _job_cancelled(self, job, message):
+        response = self.update_job(job['id'], 'CANCELLED',
+                                   error_message=message)
+        if response:
+            self._update_job_with_response(job, response)
+        self.send_notification_job_update({'job': job})
+
+    def _update_job_with_response(self, job, resp):
+        job['status'] = resp.get('status')
+        job['timeout'] = resp.get('timeout')
 
     def _try_update(self, job_id, status):
         now = self._get_utcnow()
