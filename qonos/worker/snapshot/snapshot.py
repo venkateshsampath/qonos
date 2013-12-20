@@ -185,7 +185,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def _create_image(self, job_id, instance_id, schedule_id):
         metadata = {
-            "org.openstack__1__created-by": "scheduled_images_service"
+            "org.openstack__1__created_by": "scheduled_images_service"
             }
 
         image_id = None

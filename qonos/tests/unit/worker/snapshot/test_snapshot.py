@@ -58,7 +58,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.worker = self.mox.CreateMockAnything()
         self.worker.get_qonos_client().AndReturn(self.qonos_client)
         self.snapshot_meta = {
-            "org.openstack__1__created-by": "scheduled_images_service"
+            "org.openstack__1__created_by": "scheduled_images_service"
             }
 
     def tearDown(self):
