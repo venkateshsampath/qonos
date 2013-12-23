@@ -80,7 +80,7 @@ def _get_deployment_config_file():
     absolute pathname.def parse_args(args=None, usage=None,
     default_config_files=None):
     return CONF(args=args,
-                project='glance',
+                project='qonos',
                 version=version.deferred_version_string(prefix="%prog "),
                 usage=usage,
                 default_config_files=default_config_files)

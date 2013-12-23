@@ -16,7 +16,7 @@
 #    under the License.
 
 """
-SQLAlchemy models for glance data
+SQLAlchemy models for qonos data
 """
 
 from sqlalchemy import Column, Integer, String
@@ -26,7 +26,6 @@ from sqlalchemy.orm import relationship, backref, object_mapper
 from sqlalchemy import UniqueConstraint
 
 from qonos.common import timeutils
-import qonos.db.sqlalchemy.api
 from qonos.openstack.common import uuidutils
 
 BASE = declarative_base()
@@ -37,7 +36,7 @@ COMMON_TABLE_ARGS = {
 
 
 class ModelBase(object):
-    """Base class for Nova and Glance Models."""
+    """Base class for Qonos Models."""
     __table_args__ = COMMON_TABLE_ARGS
     __table_initialized__ = False
 
@@ -49,13 +48,17 @@ class ModelBase(object):
 
     def save(self, session=None):
         """Save this object."""
-        session = session or qonos.db.sqlalchemy.api.get_session()
+        # import api here to prevent circular dependency problem
+        import qonos.db.sqlalchemy.api as db_api
+        session = session or db_api.get_session()
         session.add(self)
         session.flush()
 
     def delete(self, session=None):
         """Delete this object."""
-        session = session or qonos.db.sqlalchemy.api.get_session()
+        # import api here to prevent circular dependency problem
+        import qonos.db.sqlalchemy.api as db_api
+        session = session or db_api.get_session()
         session.delete(self)
         session.flush()
 

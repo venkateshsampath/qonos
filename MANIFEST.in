@@ -1,0 +1,3 @@
+include qonos/db/sqlalchemy/migrate_repo/migrate.cfg
+include qonos/db/sqlalchemy/migrate_repo/README
+global-exclude *.pyc

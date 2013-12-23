@@ -30,6 +30,7 @@ import sqlalchemy.sql as sa_sql
 from qonos.common import exception
 from qonos.common import timeutils
 import qonos.db.db_utils as db_utils
+from qonos.db.sqlalchemy import migration
 from qonos.db.sqlalchemy import models
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as os_logging
@@ -165,6 +166,11 @@ def configure_db():
         if CONF.db_auto_create:
             LOG.info('auto-creating qonos DB')
             models.register_models(_ENGINE)
+            try:
+                migration.version_control()
+            except exception.DatabaseMigrationError:
+                # only arises when the DB exists and is under version control
+                pass
         else:
             LOG.info('not auto-creating qonos DB')
 

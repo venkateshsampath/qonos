@@ -53,3 +53,7 @@ class Invalid(QonosException):
 
 class PollingException(QonosException):
     message = _('An error occured when polling.')
+
+
+class DatabaseMigrationError(QonosException):
+    message = _("There was an error migrating the database.")
