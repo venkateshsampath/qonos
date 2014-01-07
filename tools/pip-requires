@@ -15,6 +15,7 @@ argparse
 iso8601>=0.1.4
 croniter
 oslo.config
+sqlalchemy-migrate>=0.7.2
 
 #Client only reqs
 docopt==0.6.1

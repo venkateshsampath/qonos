@@ -46,5 +46,6 @@ setuptools.setup(
         'Environment :: OpenStack',
     ],
     scripts=['bin/qonos-api', 'bin/qonos-scheduler',
-             'bin/qonos-worker', 'qonos/qonosclient/bin/qonos'],
+             'bin/qonos-worker', 'qonos/qonosclient/bin/qonos',
+             'bin/qonos-manage'],
     py_modules=[])
