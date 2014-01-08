@@ -16,7 +16,7 @@
 
 import inspect
 import stubout
-import unittest
+import unittest2
 
 from oslo.config import cfg
 
@@ -26,7 +26,7 @@ from qonos.common import config
 CONF = cfg.CONF
 
 
-class BaseTestCase(unittest.TestCase):
+class BaseTestCase(unittest2.TestCase):
 
     def setUp(self):
         super(BaseTestCase, self).setUp()
