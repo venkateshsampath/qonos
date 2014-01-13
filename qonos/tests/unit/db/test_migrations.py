@@ -785,3 +785,32 @@ class TestMigrations(utils.BaseTestCase):
     def _post_downgrade_007(self, engine):
         jobs = get_table(engine, 'jobs')
         self.assertFalse('version_id' in jobs.c.keys())
+
+    def _check_008(self, engine, data):
+        table = "schedules"
+        index = "next_run_idx"
+        columns = ["next_run"]
+
+        meta = sqlalchemy.MetaData()
+        meta.bind = engine
+
+        new_table = sqlalchemy.Table(table, meta, autoload=True)
+
+        index_data = [(idx.name, idx.columns.keys())
+                      for idx in new_table.indexes]
+
+        self.assertIn((index, columns), index_data)
+
+    def _check_009(self, engine, data):
+        table = "jobs"
+        index = "hard_timeout_idx"
+        columns = ["hard_timeout"]
+        meta = sqlalchemy.MetaData()
+        meta.bind = engine
+
+        new_table = sqlalchemy.Table(table, meta, autoload=True)
+
+        index_data = [(idx.name, idx.columns.keys())
+                      for idx in new_table.indexes]
+
+        self.assertIn((index, columns), index_data)
