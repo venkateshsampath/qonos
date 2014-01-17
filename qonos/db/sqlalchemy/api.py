@@ -669,12 +669,14 @@ def job_get_and_assign_next_by_action(action, worker_id, max_retry,
     # retrieving it
     try:
         query = session.query(models.Job).filter_by(id=job_ref['id'])\
-                       .filter_by(updated_at=job_ref['updated_at'])\
                        .update({'worker_id': worker_id,
                                 'timeout': new_timeout,
                                 'retry_count': job_ref['retry_count'] + 1})
     except sa_orm.exc.NoResultFound:
         #In case the job was deleted during assignment return nothing
+        return None
+    except sa_orm.exc.StaleDataError:
+        #In case the job was picked up by another transaction return nothing
         return None
 
     if not query:

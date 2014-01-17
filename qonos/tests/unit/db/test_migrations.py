@@ -777,3 +777,11 @@ class TestMigrations(utils.BaseTestCase):
     def _post_downgrade_006(self, engine):
         self.assertRaises(sqlalchemy.exc.NoSuchTableError,
                           get_table, engine, 'job_faults')
+
+    def _check_007(self, engine, data):
+        jobs = get_table(engine, 'jobs')
+        self.assertTrue('version_id' in jobs.c.keys())
+
+    def _post_downgrade_007(self, engine):
+        jobs = get_table(engine, 'jobs')
+        self.assertFalse('version_id' in jobs.c.keys())

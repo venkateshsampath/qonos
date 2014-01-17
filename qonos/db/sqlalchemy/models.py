@@ -144,6 +144,12 @@ class Job(BASE, ModelBase):
     retry_count = Column(Integer, nullable=False, default=0)
     timeout = Column(DateTime, nullable=False)
     hard_timeout = Column(DateTime, nullable=False)
+    version_id = Column(String(36))
+
+    __mapper_args__ = {
+        'version_id_col': version_id,
+        'version_id_generator': lambda version: uuidutils.generate_uuid()
+    }
 
 
 class JobMetadata(BASE, ModelBase):
