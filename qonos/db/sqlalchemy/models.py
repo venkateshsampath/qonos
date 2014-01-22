@@ -19,7 +19,7 @@
 SQLAlchemy models for qonos data
 """
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship, backref, object_mapper
@@ -97,6 +97,7 @@ class ModelBase(object):
 class Schedule(BASE, ModelBase):
     """Represents a schedule in the datastore."""
     __tablename__ = 'schedules'
+    __table_args__ = (Index('next_run_idx', 'next_run'),)
 
     tenant = Column(String(255), nullable=False)
     action = Column(String(255), nullable=False)
@@ -106,7 +107,7 @@ class Schedule(BASE, ModelBase):
     month = Column(Integer, nullable=True)
     day_of_week = Column(Integer, nullable=True)
     last_scheduled = Column(DateTime, nullable=True)
-    next_run = Column(DateTime, nullable=True)
+    next_run = Column(DateTime, nullable=True, index=True)
 
 
 class ScheduleMetadata(BASE, ModelBase):
@@ -135,6 +136,7 @@ class Worker(BASE, ModelBase):
 class Job(BASE, ModelBase):
     """Represents a job in the datastore."""
     __tablename__ = 'jobs'
+    __table_args__ = (Index('hard_timeout_idx', 'hard_timeout'),)
 
     schedule_id = Column(String(36))
     tenant = Column(String(255), nullable=False)
@@ -143,7 +145,7 @@ class Job(BASE, ModelBase):
     action = Column(String(255), nullable=False)
     retry_count = Column(Integer, nullable=False, default=0)
     timeout = Column(DateTime, nullable=False)
-    hard_timeout = Column(DateTime, nullable=False)
+    hard_timeout = Column(DateTime, nullable=False, index=True)
     version_id = Column(String(36))
 
     __mapper_args__ = {
