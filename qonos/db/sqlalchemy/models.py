@@ -97,7 +97,8 @@ class ModelBase(object):
 class Schedule(BASE, ModelBase):
     """Represents a schedule in the datastore."""
     __tablename__ = 'schedules'
-    __table_args__ = (Index('next_run_idx', 'next_run'),)
+    __table_args__ = (Index('next_run_idx', 'next_run'),
+                      COMMON_TABLE_ARGS)
 
     tenant = Column(String(255), nullable=False)
     action = Column(String(255), nullable=False)
@@ -136,7 +137,8 @@ class Worker(BASE, ModelBase):
 class Job(BASE, ModelBase):
     """Represents a job in the datastore."""
     __tablename__ = 'jobs'
-    __table_args__ = (Index('hard_timeout_idx', 'hard_timeout'),)
+    __table_args__ = (Index('hard_timeout_idx', 'hard_timeout'),
+                      COMMON_TABLE_ARGS)
 
     schedule_id = Column(String(36))
     tenant = Column(String(255), nullable=False)
