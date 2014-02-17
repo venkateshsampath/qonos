@@ -37,6 +37,22 @@ _REPOSITORY = None
 get_engine = db_api.get_engine
 
 
+def _check_and_init_version_control(meta):
+    try:
+        for table in ('schedules', 'schedule_metadata',
+                      'jobs', 'job_metadata', 'job_faults',
+                      'workers'):
+            assert table in meta.tables
+
+        # NOTE(venkatesh): if the existing db has already got the base tables,
+        # set the version for migration to '6' as the first six version_scripts
+        # are used for creating the base tables.
+        return version_control(6)
+    except AssertionError:
+        msg = _("Unable to get the db_version. Reason: Unknown DB State.")
+        raise exception.QonosException(msg)
+
+
 def db_version():
     """
     Return the database's current migration number
@@ -51,18 +67,11 @@ def db_version():
         engine = get_engine()
         meta.reflect(bind=engine)
         tables = meta.tables
+
         if len(tables) == 0:
             return version_control(0)
         else:
-            try:
-                for table in ('schedules', 'schedule_metadata',
-                              'jobs', 'job_metadata', 'job_faults',
-                              'workers'):
-                    assert table in meta.tables
-                return version_control(6)
-            except AssertionError:
-                LOG.warn((_("Upgrade DB by running 'db_sync' command")))
-                return version_control(0)
+            return _check_and_init_version_control(meta)
 
 
 def upgrade(version=None):
@@ -75,8 +84,7 @@ def upgrade(version=None):
     db_version()  # Ensure db is under migration control
     repository = _get_migrate_repo()
     version_str = version or 'latest'
-    LOG.info(_("Upgrading database to version %s") %
-             version_str)
+    LOG.info(_("Upgrading database to version %s") % version_str)
     return versioning_api.upgrade(get_engine(), repository, version)
 
 
@@ -89,8 +97,7 @@ def downgrade(version):
     """
     db_version()  # Ensure db is under migration control
     repository = _get_migrate_repo()
-    LOG.info(_("Downgrading database to version %s") %
-             version)
+    LOG.info(_("Downgrading database to version %s") % version)
     return versioning_api.downgrade(get_engine(), repository, version)
 
 
