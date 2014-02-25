@@ -82,6 +82,16 @@ class SnapshotProcessor(worker.JobProcessor):
         self.nova_client_factory = nova_client_factory
 
     def process_job(self, job):
+        try:
+            self._process_job(job)
+        except Exception as e:
+            timeout = None
+            if isinstance(e, exc.PollingException):
+                timeout = self._get_updated_job_timeout(self.current_job['id'])
+            self._job_failed(job, timeout=timeout, error_message=unicode(e))
+            raise e
+
+    def _process_job(self, job):
         LOG.info(_("Worker %(worker_id)s Processing job: %(job)s") %
                  {'worker_id': self.worker.worker_id,
                      'job': job['id']})
@@ -153,9 +163,6 @@ class SnapshotProcessor(worker.JobProcessor):
                              'instance': instance_id,
                              'image': image_id,
                              'error': error_msg}
-                timeout = self._get_updated_job_timeout(self.current_job['id'])
-                self.update_job(job['id'], 'ERROR', timeout=timeout,
-                                error_message=msg)
                 raise exc.PollingException(msg)
 
             active = image_status == 'ACTIVE'
@@ -335,6 +342,13 @@ class SnapshotProcessor(worker.JobProcessor):
         if response:
             self._update_job_with_response(job, response)
         self.send_notification_end({'job': job})
+
+    def _job_failed(self, job, timeout=None, error_message=None):
+        response = self.update_job(job['id'], 'ERROR', timeout=timeout,
+                                   error_message=error_message)
+        if response:
+            self._update_job_with_response(job, response)
+        self.send_notification_job_update({'job': job}, level='ERROR')
 
     def _job_processing(self, job, timeout):
         response = self.update_job(job['id'], 'PROCESSING',

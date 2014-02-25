@@ -120,10 +120,9 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.mox.StubOutWithMock(utils, 'generate_notification')
         utils.generate_notification(None, 'qonos.job.run.start', mox.IsA(dict),
                                     mox.IsA(str))
+        response = {'status': 'CANCELLED', 'timeout': self.job['timeout']}
         self.worker.update_job(fakes.JOB_ID, 'CANCELLED', timeout=None,
-                               error_message=mox.IsA(str)).AndReturn(
-                                {'status': 'CANCELLED',
-                                 'timeout': self.job['timeout']})
+                               error_message=mox.IsA(str)).AndReturn(response)
         expected_payload = {'job': {'status': 'CANCELLED',
                    'hard_timeout': self.job['hard_timeout'],
                    'created_at': self.job['created_at'],
@@ -701,9 +700,14 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                                     DEFAULT_TIMEOUT_INCR *
                                                     backoff_factor)
         self.worker.update_job(fakes.JOB_ID, 'ERROR', timeout=timeout,
-                               error_message=mox.IsA(unicode))
+                               error_message=mox.IsA(unicode)).AndReturn(
+                                {'status': 'ERROR', 'timeout': job['timeout']})
 
         self.mox.StubOutWithMock(utils, 'generate_notification')
+
+        expected_job = copy.deepcopy(job)
+        expected_job['status'] = 'ERROR'
+        expected_job['metadata'] = metadata
 
         if not is_retry:
             utils.generate_notification(None, 'qonos.job.run.start',
@@ -711,8 +715,12 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         else:
             utils.generate_notification(None, 'qonos.job.retry',
                                         mox.IsA(dict), mox.IsA(str))
+
         utils.generate_notification(None, 'qonos.job.update', mox.IsA(dict),
                                     mox.IsA(str))
+
+        utils.generate_notification(None, 'qonos.job.update',
+                                    {'job': expected_job}, 'ERROR')
 
         self.mox.ReplayAll()
 
@@ -737,6 +745,30 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         job['retry_count'] = 2
         self._do_test_process_job_should_update_image_error(status,
             include_create=False, include_queued=False, is_retry=True, job=job)
+
+    def test_process_job_should_update_job_as_error_on_exception(self):
+        processor = TestableSnapshotProcessor(self.nova_client)
+        job = copy.deepcopy(self.job)
+
+        bad_request = qonos_ex.BadRequest('Bad Request!')
+        self.qonos_client.get_schedule(
+            job['schedule_id']).AndRaise(bad_request)
+
+        resp = {'status': 'ERROR'}
+        self.worker.update_job(fakes.JOB_ID,
+                               'ERROR',
+                               timeout=None,
+                               error_message=mox.IsA(unicode)).AndReturn(resp)
+
+        self.mox.StubOutWithMock(processor, 'send_notification_job_update')
+        processor.send_notification_job_update({'job': job}, level='ERROR')
+
+        self.mox.ReplayAll()
+
+        processor.init_processor(self.worker)
+        self.assertRaises(qonos_ex.BadRequest, processor.process_job, job)
+
+        self.mox.VerifyAll()
 
     def test_process_job_should_update_image_error(self):
         status = MockImageStatus('ERROR')

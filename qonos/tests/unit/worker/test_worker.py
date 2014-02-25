@@ -18,7 +18,6 @@ import mock
 import mox
 import time
 
-from qonos.common import exception
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests.unit.worker import fakes
 from qonos.tests import utils as test_utils
@@ -54,27 +53,6 @@ class TestWorker(test_utils.BaseTestCase):
     def test_worker_process_job(self):
         self.worker.process_job(fakes.JOB['job'])
         self.processor.process_job.assert_called_once_with(fakes.JOB['job'])
-
-    def test_worker_process_job_with_exception(self):
-        job = fakes.JOB['job']
-        self.processor.process_job.side_effect = Exception('Boom!')
-
-        self.worker.process_job(job)
-
-        self.processor.process_job.assert_called_once_with(job)
-        self.client.update_job_status.assert_called_once_with(job['id'],
-                                                              'ERROR',
-                                                              None,
-                                                              mock.ANY)
-
-    def test_worker_process_job_with_polling_exception(self):
-        job = fakes.JOB['job']
-        self.processor.process_job.side_effect = exception. \
-                                                 PollingException('Boom!')
-
-        self.worker.process_job(job)
-
-        self.processor.process_job.assert_called_once_with(job)
 
 
 class TestWorkerWithMox(test_utils.BaseTestCase):
@@ -225,26 +203,6 @@ class TestWorkerWithMox(test_utils.BaseTestCase):
         self.assertTrue(self.processor.was_init_processor_called(1))
         self.assertTrue(self.processor.was_process_job_called(1))
         self.assertTrue(self.processor.was_cleanup_processor_called(1))
-
-        self.mox.VerifyAll()
-
-    def test_error_reported_when_processing_job(self):
-        self.prepare_client_mock(job=fakes.JOB)
-
-        def fake_process_job(*args, **kwargs):
-            raise Exception()
-
-        self.stubs.Set(self.processor, 'process_job', fake_process_job)
-
-        self.client.update_job(mox.IsA(str),
-                               'ERROR',
-                               error_message=mox.IsA(str))
-        self.mox.ReplayAll()
-
-        fake_sleep = lambda x: None
-        self.stubs.Set(time, 'sleep', fake_sleep)
-
-        self.worker.run(run_once=True, poll_once=True)
 
         self.mox.VerifyAll()
 

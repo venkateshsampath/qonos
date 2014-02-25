@@ -21,7 +21,6 @@ import time
 
 from oslo.config import cfg
 
-from qonos.common import exception
 from qonos.common import utils
 from qonos.openstack.common.gettextutils import _
 from qonos.openstack.common import importutils
@@ -95,15 +94,11 @@ class Worker(object):
         LOG.debug(_('Processing job: %s') % job)
         try:
             self.processor.process_job(job)
-        except exception.PollingException as e:
-            LOG.exception(e)
-        except Exception as e:
+        except Exception:
             msg = _("Worker %(worker_id)s Error processing job:"
                     " %(job)s")
             LOG.exception(msg % {'worker_id': self.worker_id,
                                  'job': job['id']})
-            self.update_job(job['id'], 'ERROR',
-                            error_message=unicode(e))
 
     def _run_loop(self, run_once=False, poll_once=False):
         self.init_worker()
