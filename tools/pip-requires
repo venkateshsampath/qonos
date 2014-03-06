@@ -12,7 +12,7 @@ routes
 webob==1.2.3
 wsgiref
 argparse
-iso8601>=0.1.4
+iso8601>=0.1.8
 croniter
 oslo.config
 sqlalchemy-migrate>=0.7.2

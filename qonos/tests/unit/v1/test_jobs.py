@@ -376,7 +376,7 @@ class TestJobsApi(test_utils.BaseTestCase):
                           self.controller.create, request, fixture)
 
     def test_create_next_run_invalid_format(self):
-        expected_next_run = '1234'
+        expected_next_run = '12345'
         self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
                                  'INFO')
         request = unit_utils.get_fake_request(method='POST')
