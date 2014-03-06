@@ -23,15 +23,34 @@ import os
 from migrate import exceptions as versioning_exceptions
 from migrate.versioning import api as versioning_api
 from migrate.versioning import repository as versioning_repository
-from oslo.config import cfg
+import sqlalchemy
 
 from qonos.common import exception
+from qonos.db.sqlalchemy import api as db_api
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as logging
 
 LOG = logging.getLogger(__name__)
 
-CONF = cfg.CONF
+_REPOSITORY = None
+
+get_engine = db_api.get_engine
+
+
+def _check_and_init_version_control(meta):
+    try:
+        for table in ('schedules', 'schedule_metadata',
+                      'jobs', 'job_metadata', 'job_faults',
+                      'workers'):
+            assert table in meta.tables
+
+        # NOTE(venkatesh): if the existing db has already got the base tables,
+        # set the version for migration to '6' as the first six version_scripts
+        # are used for creating the base tables.
+        return version_control(6)
+    except AssertionError:
+        msg = _("Unable to get the db_version. Reason: Unknown DB State.")
+        raise exception.QonosException(msg)
 
 
 def db_version():
@@ -40,13 +59,19 @@ def db_version():
 
     :retval version number
     """
-    repo_path = get_migrate_repo_path()
-    sql_connection = CONF.sql_connection
+    repository = _get_migrate_repo()
     try:
-        return versioning_api.db_version(sql_connection, repo_path)
-    except versioning_exceptions.DatabaseNotControlledError as e:
-        msg = (_("database is not under migration control"))
-        raise exception.DatabaseMigrationError(msg)
+        return versioning_api.db_version(get_engine(), repository)
+    except versioning_exceptions.DatabaseNotControlledError:
+        meta = sqlalchemy.MetaData()
+        engine = get_engine()
+        meta.reflect(bind=engine)
+        tables = meta.tables
+
+        if len(tables) == 0:
+            return version_control(0)
+        else:
+            return _check_and_init_version_control(meta)
 
 
 def upgrade(version=None):
@@ -57,12 +82,10 @@ def upgrade(version=None):
     :retval version number
     """
     db_version()  # Ensure db is under migration control
-    repo_path = get_migrate_repo_path()
-    sql_connection = CONF.sql_connection
+    repository = _get_migrate_repo()
     version_str = version or 'latest'
-    LOG.info(_("Upgrading database to version %s") %
-             version_str)
-    return versioning_api.upgrade(sql_connection, repo_path, version)
+    LOG.info(_("Upgrading database to version %s") % version_str)
+    return versioning_api.upgrade(get_engine(), repository, version)
 
 
 def downgrade(version):
@@ -73,11 +96,9 @@ def downgrade(version):
     :retval version number
     """
     db_version()  # Ensure db is under migration control
-    repo_path = get_migrate_repo_path()
-    sql_connection = CONF.sql_connection
-    LOG.info(_("Downgrading database to version %s") %
-             version)
-    return versioning_api.downgrade(sql_connection, repo_path, version)
+    repository = _get_migrate_repo()
+    LOG.info(_("Downgrading database to version %s") % version)
+    return versioning_api.downgrade(get_engine(), repository, version)
 
 
 def version_control(version=None):
@@ -85,7 +106,7 @@ def version_control(version=None):
     Place a database under migration control
     """
     try:
-        _version_control(version)
+        return _version_control(version)
     except versioning_exceptions.DatabaseAlreadyControlledError as e:
         msg = (_("database is already under migration control"))
         raise exception.DatabaseMigrationError(msg)
@@ -98,30 +119,30 @@ def _version_control(version):
     This will only set the specific version of a database, it won't
     run any migrations.
     """
-    repo_path = get_migrate_repo_path()
-    sql_connection = CONF.sql_connection
+    repository = _get_migrate_repo()
     if version is None:
-        version = versioning_repository.Repository(repo_path).latest
-    return versioning_api.version_control(sql_connection, repo_path, version)
+        version = repository.latest
+    versioning_api.version_control(get_engine(), repository, version)
+    return version
 
 
-def db_sync(version=None, current_version=None):
+def db_sync(version=None):
     """
     Place a database under migration control and perform an upgrade
 
     :retval version number
     """
-    try:
-        _version_control(current_version or 0)
-    except versioning_exceptions.DatabaseAlreadyControlledError as e:
-        pass
+    if version is not None:
+        try:
+            version = int(version)
+        except ValueError:
+            raise exception.QonosException(_("version should be an integer"))
 
-    if current_version is None:
-        current_version = int(db_version())
-    if version is not None and int(version) < current_version:
-        downgrade(version=version)
-    elif version is None or int(version) > current_version:
-        upgrade(version=version)
+    current_version = int(db_version())
+    if version is None or version > current_version:
+        return upgrade(version=version)
+    else:
+        return downgrade(version=version)
 
 
 def get_migrate_repo_path():
@@ -130,3 +151,11 @@ def get_migrate_repo_path():
                         'migrate_repo')
     assert os.path.exists(path)
     return path
+
+
+def _get_migrate_repo():
+    """Get the path for the migrate repository."""
+    global _REPOSITORY
+    if _REPOSITORY is None:
+        _REPOSITORY = versioning_repository.Repository(get_migrate_repo_path())
+    return _REPOSITORY

@@ -186,7 +186,7 @@ def register_models(engine):
     """
     Creates database tables for all models with the given engine.
     """
-    models = (Schedule, ScheduleMetadata, Worker, Job, JobFault)
+    models = (Schedule, ScheduleMetadata, Worker, Job, JobMetadata, JobFault)
     for model in models:
         model.metadata.create_all(engine)
 
@@ -195,6 +195,6 @@ def unregister_models(engine):
     """
     Drops database tables for all models with the given engine.
     """
-    models = (Schedule, ScheduleMetadata, Worker, Job, JobFault)
+    models = (Schedule, ScheduleMetadata, Worker, Job, JobMetadata, JobFault)
     for model in models:
         model.metadata.drop_all(engine)

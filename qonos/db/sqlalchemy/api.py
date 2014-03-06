@@ -30,7 +30,6 @@ import sqlalchemy.sql as sa_sql
 from qonos.common import exception
 from qonos.common import timeutils
 import qonos.db.db_utils as db_utils
-from qonos.db.sqlalchemy import migration
 from qonos.db.sqlalchemy import models
 from qonos.openstack.common.gettextutils import _
 import qonos.openstack.common.log as os_logging
@@ -132,8 +131,35 @@ def configure_db():
     Establish the database, create an engine if needed, and
     register the models.
     """
-    global _ENGINE, sa_logger, _MAX_RETRIES, _RETRY_INTERVAL
+    global _ENGINE, sa_logger
     LOG.debug("Initializing DB")
+    if not _ENGINE:
+        _ENGINE = get_engine()
+
+        sa_logger = logging.getLogger('sqlalchemy.engine')
+        if CONF.debug:
+            sa_logger.setLevel(logging.DEBUG)
+
+        if CONF.db_auto_create:
+            LOG.info('auto-creating qonos DB')
+            models.register_models(_ENGINE)
+            try:
+                from qonos.db.sqlalchemy import migration
+                migration.version_control()
+            except exception.DatabaseMigrationError:
+                # only arises when the DB exists and is under version control
+                pass
+        else:
+            LOG.info('not auto-creating qonos DB')
+
+
+def reset():
+    models.unregister_models(_ENGINE)
+    models.register_models(_ENGINE)
+
+
+def get_engine():
+    global _ENGINE, _MAX_RETRIES, _RETRY_INTERVAL
     if not _ENGINE:
         sql_connection = CONF.sql_connection
         _MAX_RETRIES = CONF.sql_max_retries
@@ -158,26 +184,7 @@ def configure_db():
                     "Got error:\n%(err)s") % locals()
             LOG.error(msg)
             raise
-
-        sa_logger = logging.getLogger('sqlalchemy.engine')
-        if CONF.debug:
-            sa_logger.setLevel(logging.DEBUG)
-
-        if CONF.db_auto_create:
-            LOG.info('auto-creating qonos DB')
-            models.register_models(_ENGINE)
-            try:
-                migration.version_control()
-            except exception.DatabaseMigrationError:
-                # only arises when the DB exists and is under version control
-                pass
-        else:
-            LOG.info('not auto-creating qonos DB')
-
-
-def reset():
-    models.unregister_models(_ENGINE)
-    models.register_models(_ENGINE)
+    return _ENGINE
 
 
 def get_session(autocommit=True, expire_on_commit=False):

@@ -68,8 +68,7 @@ def do_db_sync():
     Place a database under migration control and upgrade,
     creating first if necessary.
     """
-    qonos.db.sqlalchemy.migration.db_sync(CONF.command.version,
-                                           CONF.command.current_version)
+    qonos.db.sqlalchemy.migration.db_sync(CONF.command.version)
 
 
 def add_command_parsers(subparsers):
@@ -91,7 +90,6 @@ def add_command_parsers(subparsers):
     parser = subparsers.add_parser('db_sync')
     parser.set_defaults(func=do_db_sync)
     parser.add_argument('version', nargs='?')
-    parser.add_argument('current_version', nargs='?')
 
 
 command_opt = cfg.SubCommandOpt('command',
