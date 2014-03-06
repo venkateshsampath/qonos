@@ -122,7 +122,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'CANCELLED', timeout=None,
                                error_message=mox.IsA(str)).AndReturn(
-                                {'status': 'CANCELLED', 'timeout': self.job['timeout']})
+                                {'status': 'CANCELLED',
+                                 'timeout': self.job['timeout']})
         expected_payload = {'job': {'status': 'CANCELLED',
                    'hard_timeout': self.job['hard_timeout'],
                    'created_at': self.job['created_at'],
