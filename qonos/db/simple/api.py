@@ -222,7 +222,8 @@ def schedule_test_and_set_next_run(schedule_id, expected_next_run, next_run):
             current_next_run = current_next_run.replace(tzinfo=None)
         if expected_next_run != current_next_run:
             raise exception.NotFound()
-
+    if next_run:
+        next_run = next_run.replace(tzinfo=None)
     schedule['next_run'] = next_run
 
 
