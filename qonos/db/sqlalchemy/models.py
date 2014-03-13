@@ -23,6 +23,7 @@ from sqlalchemy import Column, Integer, String, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship, backref, object_mapper
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy import UniqueConstraint
 
 from qonos.common import timeutils
@@ -33,6 +34,19 @@ COMMON_TABLE_ARGS = {
     'mysql_engine': 'InnoDB',
     'mysql_charset': 'utf8'
 }
+
+
+class NoTZDateTime(TypeDecorator):
+    """Represents an DateTime without Time Zone."""
+
+    impl = DateTime
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return value.replace(tzinfo=None)
+
+    def process_result_value(self, value, dialect):
+        return value
 
 
 class ModelBase(object):
@@ -108,7 +122,7 @@ class Schedule(BASE, ModelBase):
     month = Column(Integer, nullable=True)
     day_of_week = Column(Integer, nullable=True)
     last_scheduled = Column(DateTime, nullable=True)
-    next_run = Column(DateTime, nullable=True, index=True)
+    next_run = Column(NoTZDateTime, nullable=True, index=True)
 
 
 class ScheduleMetadata(BASE, ModelBase):
