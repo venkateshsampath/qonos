@@ -55,15 +55,13 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.stubs.Set(utils, 'generate_notification', fake_gen_notify)
 
     def _create_jobs(self):
-        next_run = timeutils.parse_isotime('2012-11-27T02:30:00Z').\
-                             replace(tzinfo=None)
         fixture = {
             'id': unit_utils.SCHEDULE_UUID1,
             'tenant': unit_utils.TENANT1,
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': next_run,
+            'next_run': timeutils.parse_isotime('2012-11-27T02:30:00Z')
         }
         self.schedule_1 = db_api.schedule_create(fixture)
         fixture = {
@@ -72,7 +70,7 @@ class TestJobsApi(test_utils.BaseTestCase):
             'action': 'snapshot',
             'minute': '30',
             'hour': '2',
-            'next_run': next_run,
+            'next_run': timeutils.parse_isotime('2012-11-27T02:30:00Z'),
             'schedule_metadata': [
                     {
                     'key': 'instance_id',
@@ -303,8 +301,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def test_create(self):
 
-        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z').\
-                                      replace(tzinfo=None)
+        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
         self._stub_notifications(None, 'qonos.job.create', 'fake-payload',
                                  'INFO')
 
@@ -335,8 +332,7 @@ class TestJobsApi(test_utils.BaseTestCase):
 
     def test_create_with_next_run(self):
 
-        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z').\
-                                      replace(tzinfo=None)
+        expected_next_run = timeutils.parse_isotime('1989-01-19T12:00:00Z')
 
         def fake_schedule_to_next_run(_schedule, start_time=None):
             self.assertEqual(timeutils.utcnow(), start_time)
@@ -350,7 +346,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
                            'next_run':
-                           timeutils.isotime(self.schedule_1['next_run']),}}
+                           timeutils.isotime(self.schedule_1['next_run'])}}
         job = self.controller.create(request, fixture).get('job')
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
