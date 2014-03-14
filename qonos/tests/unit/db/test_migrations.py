@@ -40,6 +40,7 @@ import qonos.db.migration as migration
 import qonos.db.sqlalchemy.migrate_repo
 from qonos.db.sqlalchemy.migration import versioning_api as migration_api
 from qonos.openstack.common import log as logging
+from qonos.openstack.common import uuidutils
 from qonos.tests import utils
 
 
@@ -814,3 +815,62 @@ class TestMigrations(utils.BaseTestCase):
                       for idx in new_table.indexes]
 
         self.assertIn((index, columns), index_data)
+
+    def _pre_upgrade_010(self, engine):
+        initial_values = [
+            ('JOB-1', uuidutils.generate_uuid()),
+            ('JOB-2', uuidutils.generate_uuid()),
+            ('JOB-3', None),
+            ('JOB-4', None),
+            ('JOB-5', None),
+        ]
+
+        jobs_table = get_table(engine, 'jobs')
+        for job_id, version_id in initial_values:
+            now = datetime.datetime.now()
+            new_job = {
+                'id': job_id,
+                'schedule_id': 'SCHD-1',
+                'tenant': 'OWNER-1',
+                'worker_id': 'WORKER-1',
+                'status': 'success',
+                'action': 'snapshot',
+                'retry_count': 3,
+                'timeout': now,
+                'hard_timeout': now,
+                'version_id': version_id,
+                'created_at': now,
+                'updated_at': now
+            }
+
+            jobs_table.insert().values(new_job).execute()
+
+        return initial_values
+
+    def _check_010(self, engine, data):
+        values = dict((jid, vid) for jid, vid in data)
+
+        jobs = get_table(engine, 'jobs')
+        for row in jobs.select().execute():
+            if row['id'] in values:
+                version_id = values.pop(row['id']) or row['id']
+                self.assertEqual(row['version_id'], version_id)
+
+        self.assertEqual(len(values), 0)
+
+    def _post_downgrade_010(self, engine):
+        jobs = get_table(engine, 'jobs')
+
+        # for jobs with no version_id
+        expected_job_ids = set(['JOB-3', 'JOB-4', 'JOB-5'])
+        results = jobs.select().where(
+            jobs.c.version_id == None).execute().fetchall()
+        actual_job_ids = set(row['id'] for row in results)
+        self.assertEqual(actual_job_ids, expected_job_ids)
+
+        # for jobs with version_id
+        expected_job_ids = set(['JOB-1', 'JOB-2'])
+        results = jobs.select().where(
+            jobs.c.version_id != None).execute().fetchall()
+        actual_job_ids = set(row['id'] for row in results)
+        self.assertEqual(actual_job_ids, expected_job_ids)
