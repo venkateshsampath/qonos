@@ -143,12 +143,6 @@ def configure_db():
         if CONF.db_auto_create:
             LOG.info('auto-creating qonos DB')
             models.register_models(_ENGINE)
-            try:
-                from qonos.db.sqlalchemy import migration
-                migration.version_control()
-            except exception.DatabaseMigrationError:
-                # only arises when the DB exists and is under version control
-                pass
         else:
             LOG.info('not auto-creating qonos DB')
 
