@@ -350,7 +350,7 @@ class TestJobsApi(test_utils.BaseTestCase):
         request = unit_utils.get_fake_request(method='POST')
         fixture = {'job': {'schedule_id': self.schedule_1['id'],
                            'next_run':
-                           timeutils.isotime(self.schedule_1['next_run']),}}
+                           timeutils.isotime(self.schedule_1['next_run'])}}
         job = self.controller.create(request, fixture).get('job')
         self.assertNotEqual(job, None)
         self.assertNotEqual(job.get('id'), None)
