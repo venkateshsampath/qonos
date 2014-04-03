@@ -55,8 +55,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.qonos_client = self.mox.CreateMockAnything()
         self.worker = self.mox.CreateMockAnything()
-
         self.worker.get_qonos_client().AndReturn(self.qonos_client)
+
         self.snapshot_meta = {
             "org.openstack__1__created_by": "scheduled_images_service"
             }
@@ -203,68 +203,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
-    def test_process_job_should_cancel_if_instance_not_found(self):
-        self._init_qonos_client(schedule=MockSchedule())
-        self.mox.StubOutWithMock(utils, 'generate_notification')
-        utils.generate_notification(None, 'qonos.job.run.start', mox.IsA(dict),
-                                    mox.IsA(str))
-        self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
-        self.nova_client.servers.create_image(mox.IsA(str), mox.IsA(str),
-            self.snapshot_meta).AndRaise(exceptions.NotFound("404"))
-
-        self.worker.update_job(fakes.JOB_ID, 'PROCESSING',
-                               timeout=mox.IsA(datetime.datetime),
-                               error_message=None).\
-            AndReturn({'status': 'PROCESSING', 'timeout': 'new_timeout'})
-        self.worker.update_job(fakes.JOB_ID, 'CANCELLED', timeout=None,
-                               error_message=mox.IsA(str)).\
-            AndReturn({'status': 'CANCELLED', 'timeout': self.job['timeout']})
-        expected_processing_payload = \
-            {'job': {'status': 'PROCESSING',
-                     'hard_timeout': self.job['hard_timeout'],
-                     'created_at': self.job['created_at'],
-                     'modified_at': self.job['modified_at'],
-                     'retry_count': 1,
-                     'schedule_id': '33333333-3333-3333-3333-33333333',
-                     'worker_id': '11111111-1111-1111-1111-11111111',
-                     'timeout': 'new_timeout',
-                     'action': 'snapshot',
-                     'id': '22222222-2222-2222-2222-22222222',
-                     'tenant': '44444444-4444-4444-4444-44444444',
-                     'metadata': {'instance_id':
-                                  '55555555-5555-5555-5555-55555555'}}}
-
-        expected_cancelled_payload = \
-            {'job': {'status': 'CANCELLED',
-                     'hard_timeout': self.job['hard_timeout'],
-                     'created_at': self.job['created_at'],
-                     'modified_at': self.job['modified_at'],
-                     'retry_count': 1,
-                     'schedule_id': '33333333-3333-3333-3333-33333333',
-                     'worker_id': '11111111-1111-1111-1111-11111111',
-                     'timeout': self.job['timeout'],
-                     'action': 'snapshot',
-                     'id': '22222222-2222-2222-2222-22222222',
-                     'tenant': '44444444-4444-4444-4444-44444444',
-                     'metadata': {'instance_id':
-                                  '55555555-5555-5555-5555-55555555'}}}
-        utils.generate_notification(None, 'qonos.job.update',
-                                    expected_processing_payload,
-                                    mox.IsA(str))
-        utils.generate_notification(None, 'qonos.job.update',
-                                    expected_cancelled_payload,
-                                    mox.IsA(str))
-
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
-        self.mox.ReplayAll()
-
-        processor = TestableSnapshotProcessor(self.nova_client)
-        processor.init_processor(self.worker)
-        processor.process_job(self.job)
-
-        self.mox.VerifyAll()
-
     def test_process_job_should_succeed_immediately(self):
         timeutils.set_time_override()
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
@@ -302,8 +240,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
 
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         processor = TestableSnapshotProcessor(self.nova_client)
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None).\
@@ -330,8 +266,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             get(mox.IsA(str)).AndReturn(mock_retention)
 
         self._simple_prepare_worker_mock(skip_metadata_update=True)
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -369,8 +303,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE',
                 error_message=None, timeout=None).AndReturn(None)
 
@@ -399,8 +331,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self._simple_prepare_worker_mock(skip_metadata_update=True)
 
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.StubOutWithMock(utils, 'generate_notification')
@@ -434,8 +364,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
             get(mox.IsA(str)).AndReturn(mock_retention)
 
         self._simple_prepare_worker_mock()
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -471,8 +399,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -520,8 +446,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -574,8 +498,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -808,8 +730,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -839,8 +759,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()
@@ -870,8 +788,6 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                                     mox.IsA(str)).MultipleTimes()
         utils.generate_notification(None, 'qonos.job.run.end', mox.IsA(dict),
                                     mox.IsA(str))
-        self.worker.get_qonos_client().AndReturn(self.qonos_client)
-        self.qonos_client.delete_schedule(mox.IsA(str))
         self.worker.update_job(fakes.JOB_ID, 'DONE', timeout=None,
                                error_message=None)
         self.mox.ReplayAll()

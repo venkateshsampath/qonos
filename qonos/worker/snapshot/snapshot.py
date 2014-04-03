@@ -185,8 +185,14 @@ class SnapshotProcessor(worker.JobProcessor):
 
         image_id = None
         try:
+            instance_name_msg = ("Attempting to get the instance name for "
+                               "instance_id %s" % instance_id)
+            LOG.info(instance_name_msg)
             server_name = self._get_nova_client().servers.\
                 get(instance_id).name
+            msg = ("Attempting to create an image for instance "
+                   "%s" % server_name)
+            LOG.info(msg)
             image_id = self._get_nova_client().servers.create_image(
                 instance_id,
                 self.generate_image_name(server_name),
@@ -196,8 +202,9 @@ class SnapshotProcessor(worker.JobProcessor):
                    'was not found.' %
                    {'instance_id': instance_id, 'job_id': job['id']})
 
-            self._job_cancelled(job, msg)
-            self._delete_schedule(schedule_id, instance_id)
+            timeout = self._get_updated_job_timeout(job['id'])
+            self.update_job(job['id'], 'ERROR', timeout=timeout,
+                            error_message=msg)
             return None
 
         LOG.info(_("Worker %(worker_id)s Started create image: "
@@ -257,7 +264,11 @@ class SnapshotProcessor(worker.JobProcessor):
                               % {'worker_id': self.worker.worker_id,
                                  'image_id': image_id})
         else:
-            self._delete_schedule(schedule_id, instance_id)
+            msg = ("Retention %(retention)s is found for for schedule "
+                   "%(sched)s for %(instance)s" % {'retention': retention,
+                                                   'sched': schedule_id,
+                                                   'instance': instance_id})
+            LOG.info(msg)
 
     def _get_retention(self, instance_id):
         ret_str = None
@@ -404,19 +415,6 @@ class SnapshotProcessor(worker.JobProcessor):
             return True
         except qonos_ex.NotFound, ex:
             return False
-
-    def _delete_schedule(self, schedule_id, instance_id):
-        qonosclient = self.get_qonos_client()
-        try:
-            qonosclient.delete_schedule(schedule_id)
-
-            LOG.info(_("Deleted schedule: %(schedule_id)s for"
-                        " instance: %(instance_id)s") %
-                        {'schedule_id': schedule_id,
-                         'instance_id': instance_id})
-        except qonos_ex.NotFound, ex:
-            LOG.info(_("There is no schedule to delete for"
-                       " deleted instance: %s") % instance_id)
 
     # Seam for testing
     def _get_utcnow(self):
