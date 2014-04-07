@@ -52,7 +52,9 @@ class NovaClientFactory(object):
             self.current_job_id == job['id']):
             return self.nova_client
 
-        self.current_job_id = job['id']
+        self.current_job_id = None
+        self.nova_client = None
+
         auth_protocol = CONF.nova_client_factory.auth_protocol
         auth_host = CONF.nova_client_factory.auth_host
         auth_port = CONF.nova_client_factory.auth_port
@@ -78,4 +80,6 @@ class NovaClientFactory(object):
                                     insecure=insecure,
                                     extensions=[sched_image_ext],
                                     http_log_debug=debug)
+        self.current_job_id = job['id']
+
         return self.nova_client
