@@ -356,6 +356,7 @@ def job_create(job_values):
     if not 'retry_count' in values:
         values['retry_count'] = 0
     job['worker_id'] = None
+    job['version_id'] = str(uuid.uuid4())
 
     job.update(values)
     item_id = values.get('id')
@@ -444,6 +445,7 @@ def job_get_and_assign_next_by_action(action, worker_id, max_retry,
     DATA['jobs'][job_id]['worker_id'] = worker_id
     DATA['jobs'][job_id]['timeout'] = new_timeout
     DATA['jobs'][job_id]['retry_count'] = job_ref['retry_count'] + 1
+    DATA['jobs'][job_id]['version_id'] = str(uuid.uuid4())
     job = copy.deepcopy(DATA['jobs'][job_id])
     job['job_metadata'] = job_meta_get_all_by_job_id(job_id)
 
@@ -493,6 +495,7 @@ def job_update(job_id, job_values):
         #NOTE(ameade): This must come before update specified values since
         # we may be trying to manually set updated_at
         job['updated_at'] = timeutils.utcnow()
+        job['version_id'] = str(uuid.uuid4())
         job.update(values)
 
     if metadata is not None:

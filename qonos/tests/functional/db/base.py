@@ -1240,6 +1240,31 @@ class TestJobsDBGetNextJobApi(test_utils.BaseTestCase):
         self.assertEqual(job['hard_timeout'], expected['hard_timeout'])
         self.assertEqual(job['retry_count'], expected['retry_count'] + 1)
 
+    def test_get_next_job_with_version_id_updated(self):
+        now = timeutils.utcnow()
+        new_timeout = now + datetime.timedelta(hours=3)
+
+        retries = 2
+        self._create_jobs(10, self.job_fixture_1)
+
+        actual_job = db_api.job_get_by_id(self.jobs[0]['id'])
+        actual_job_version_id = actual_job['version_id']
+        self.assertIsNotNone(actual_job_version_id)
+
+        job = db_api.job_get_and_assign_next_by_action('snapshot',
+                                                       unit_utils.WORKER_UUID1,
+                                                       retries,
+                                                       new_timeout)
+        expected_job = self.jobs[0]
+        self.assertEqual(job['id'], expected_job['id'])
+        self.assertEqual(job['worker_id'], unit_utils.WORKER_UUID1)
+        self.assertEqual(job['timeout'], new_timeout)
+        self.assertEqual(job['hard_timeout'], expected_job['hard_timeout'])
+        self.assertEqual(job['retry_count'], expected_job['retry_count'] + 1)
+
+        updated_job_version_id = job['version_id']
+        self.assertNotEqual(updated_job_version_id, actual_job_version_id)
+
     def test_get_next_job_assigned_once_due_to_timeout(self):
         now = timeutils.utcnow()
         timeout = now - datetime.timedelta(hours=1)

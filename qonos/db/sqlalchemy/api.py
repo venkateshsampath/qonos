@@ -666,24 +666,37 @@ def job_get_and_assign_next_by_action(action, worker_id, max_retry,
     if not job_ref:
         return None
 
-    # Make sure the job has not changed unexpectedly since
-    # retrieving it
+    job_id = job_ref['id']
     try:
-        query = session.query(models.Job).filter_by(id=job_ref['id'])\
-                       .update({'worker_id': worker_id,
-                                'timeout': new_timeout,
-                                'retry_count': job_ref['retry_count'] + 1})
+        job_values = {'worker_id': worker_id,
+                      'timeout': new_timeout,
+                      'retry_count': job_ref['retry_count'] + 1}
+
+        job_ref.update(job_values)
+        job_ref.save(session=session)
     except sa_orm.exc.NoResultFound:
         #In case the job was deleted during assignment return nothing
+        LOG.warn(_('[JOB2WORKER] NoResultFound:'
+                   ' Could not assign the job to worker_id: %(worker_id)s'
+                   ' NoResultFound for job_id: %(job_id)s.')
+                 % {'worker_id': job_values['worker_id'],
+                    'job_id': job_id})
         return None
     except sa_orm.exc.StaleDataError:
         #In case the job was picked up by another transaction return nothing
+        LOG.warn(_('[JOB2WORKER] StaleDataError:'
+                   ' Could not assign the job to worker_id: %(worker_id)s'
+                   ' Job already assigned to another worker,'
+                   ' job_id: %(job_id)s.')
+                 % {'worker_id': job_values['worker_id'],
+                    'job_id': job_id})
         return None
 
-    if not query:
-        return None
+    LOG.info(_('[JOB2WORKER] Assigned Job: %(job_id)s'
+               ' To Worker: %(worker_id)s')
+             % {'job_id': job_id, 'worker_id': job_values['worker_id']})
 
-    return _job_get_by_id(job_ref['id'])
+    return _job_get_by_id(job_id)
 
 
 def _job_get_next_by_action(session, now, action, max_retry):
