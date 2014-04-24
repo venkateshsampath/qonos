@@ -64,9 +64,10 @@ class TestableSnapshotProcessor(snapshot.SnapshotProcessor):
         self.qonosclient = mock.MagicMock()
 
         def update_job(job_id, status, timeout=None, error_message=None):
-            self.update_job_calls.append(status)
-            return {'job_id': job_id, 'status': status,
-                    'timeout': timeout, 'error_message': error_message}
+            job_update = {'job_id': job_id, 'status': status,
+                          'timeout': timeout, 'error_message': error_message}
+            self.update_job_calls.append(job_update)
+            return job_update
 
         def update_job_metadata(job_id, metadata):
             return metadata
@@ -175,9 +176,14 @@ class BaseTestSnapshotProcessor(utils.BaseTestCase):
         :param processor: the snapshot processor that processes the job
         :expected_job_states:
         """
-        actual_job_statuses = (map(lambda x: x,
+        actual_job_statuses = (map(lambda x: x['status'],
                                    processor.update_job_calls))
         self.assertEqual(expected_job_statuses, actual_job_statuses)
+
+    def assert_error_job_update_with_timeout(self, processor):
+        error_job_update = processor.update_job_calls[-1]
+        self.assertIsNotNone(error_job_update['timeout'])
+        self.assertIsNotNone(error_job_update['error_message'])
 
     def assert_job_notification_events(self, processor, expected_events):
         """
@@ -258,6 +264,45 @@ class TestSnapshotProcessorJobProcessing(BaseTestSnapshotProcessor):
             self.assertTrue(processor.nova_client.servers.create_image.called)
             self.assertEqual(recreated_active_image.id,
                              job['metadata']['image_id'])
+            self.assertEqual('DONE', job['status'])
+
+    def test_process_job_should_error_if_get_existing_image_detail_fails(self):
+        server = self.server_instance_fixture('INSTANCE_ID', "test")
+        job = self.job_fixture(server.id)
+        job['metadata']['image_id'] = 'IMAGE_ID01'
+
+        with TestableSnapshotProcessor(job,
+                                       server, []) as processor:
+            exc = exceptions.NotFound('Instance not found!!')
+            processor.nova_client.images.get = mock.Mock(mock.ANY,
+                                                         side_effect=exc)
+            with self.assertRaises(exception.PollingException) as cm:
+                processor.process_job(job)
+
+            expected_err_msg = ("ERROR get_image_id():"
+                                " job_id: %s, image_id: %s" %
+                                (job['id'], job['metadata']['image_id']))
+            self.assertTrue(str(cm.exception).startswith(expected_err_msg))
+            self.assert_update_job_statuses(processor, ['PROCESSING', 'ERROR'])
+            self.assert_error_job_update_with_timeout(processor)
+
+    def test_process_job_shouldnt_create_img_if_curr_img_status_is_none(self):
+        server = self.server_instance_fixture('INSTANCE_ID', "test")
+        job = self.job_fixture(server.id)
+        images = [
+            self.image_fixture('IMAGE_ID01', None, server.id),
+            self.image_fixture('IMAGE_ID01', 'ACTIVE', server.id)
+        ]
+        job['metadata']['image_id'] = 'IMAGE_ID01'
+
+        with TestableSnapshotProcessor(job, server, images) as processor:
+            processor.nova_client.images.list = mock.Mock(
+                mock.ANY,
+                return_value=[self.image_fixture(
+                    'IMAGE_ID01', 'ACTIVE', server.id)])
+            processor.process_job(job)
+
+            self.assertFalse(processor.nova_client.servers.create_image.called)
             self.assertEqual('DONE', job['status'])
 
     def test_process_job_should_cancel_if_create_image_fails(self):
@@ -348,6 +393,26 @@ class TestSnapshotProcessorPolling(BaseTestSnapshotProcessor):
                 self.assertEqual(0, processor.timeout_count)
                 self.assert_update_job_statuses(processor,
                                                 ['PROCESSING', 'ERROR'])
+                self.assert_error_job_update_with_timeout(processor)
+
+    def test_polling_job_failure_on_image_status_returned_as_none(self):
+        server = self.server_instance_fixture("INSTANCE_ID", "test")
+        job = self.job_fixture(server.id)
+        job['metadata']['image_id'] = 'IMAGE_ID01'
+        image_status = None
+        images = [
+            self.image_fixture('IMAGE_ID01', image_status, server.id),
+            self.image_fixture('IMAGE_ID01', image_status, server.id)
+        ]
+
+        with TestableSnapshotProcessor(job, server, images) as processor:
+            self.assertRaises(exception.PollingException,
+                              processor.process_job, job)
+
+            self.assertEqual(0, processor.timeout_count)
+            self.assert_update_job_statuses(processor,
+                                            ['PROCESSING', 'ERROR'])
+            self.assert_error_job_update_with_timeout(processor)
 
     def test_polling_job_failure_on_failed_image_statuses_while_polling(self):
         server = self.server_instance_fixture("INSTANCE_ID", "test")
@@ -363,6 +428,7 @@ class TestSnapshotProcessorPolling(BaseTestSnapshotProcessor):
                 self.assertEqual(0, processor.timeout_count)
                 self.assert_update_job_statuses(processor,
                                                 ['PROCESSING', 'ERROR'])
+                self.assert_error_job_update_with_timeout(processor)
 
     def test_polling_job_timeout_after_max_retries(self):
         decrement_for_timeout = -10
