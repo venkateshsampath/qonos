@@ -283,8 +283,8 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.job['status'] = 'ERROR'
 
         #make an error checking the previous image
-        self.nova_client.images.get(IMAGE_ID).AndRaise(
-            Exception())
+        self.nova_client.images.get(IMAGE_ID).AndReturn(
+            MockImageStatus('ERROR'))
 
         self.nova_client.servers.get(mox.IsA(str)).AndReturn(MockServer())
         self.nova_client.servers.create_image(mox.IsA(str),

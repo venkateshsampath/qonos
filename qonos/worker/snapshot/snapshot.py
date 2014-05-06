@@ -17,7 +17,9 @@
 import calendar
 import datetime
 from operator import attrgetter
+import sys
 import time
+import traceback as tb
 
 from novaclient import exceptions
 from oslo.config import cfg
@@ -121,14 +123,8 @@ class SnapshotProcessor(worker.JobProcessor):
             self._job_cancelled(job, msg)
             return
 
-        create_new_image = True
-        if ('image_id' in job['metadata']):
-            image_id = job['metadata']['image_id']
-            image_status, error_msg = self._get_image_status(image_id)
-            if not (image_status in _FAILED_IMAGE_STATUSES):
-                create_new_image = False
-
-        if create_new_image:
+        image_id = self._get_image_id(job)
+        if image_id is None:
             image_id = self._create_image(job, instance_id,
                                           job['schedule_id'])
             if image_id is None:
@@ -142,21 +138,7 @@ class SnapshotProcessor(worker.JobProcessor):
         retry = True
 
         while retry and not active:
-            image_status, error_msg = self._get_image_status(image_id)
-            if (image_status in _FAILED_IMAGE_STATUSES):
-                instance_id = self._get_instance_id(self.current_job)
-                msg = _("Error occured while polling snapshot. "
-                        "Image status: %(image_status)s. "
-                        "Instance: %(instance)s, image_id: %(image)s threw "
-                        "error msg: %(error)s.")
-                msg = msg % {'image_status': image_status,
-                             'instance': instance_id,
-                             'image': image_id,
-                             'error': error_msg}
-                timeout = self._get_updated_job_timeout(self.current_job['id'])
-                self.update_job(job['id'], 'ERROR', timeout=timeout,
-                                error_message=msg)
-                raise exc.PollingException(msg)
+            image_status = self._poll_image_status(job, image_id)
 
             active = image_status == 'ACTIVE'
             if not active:
@@ -178,6 +160,29 @@ class SnapshotProcessor(worker.JobProcessor):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def _get_image_id(self, job):
+        image_id = None
+        if 'image_id' in job['metadata']:
+            image_id = job['metadata']['image_id']
+            try:
+                image_status = self._get_image_status(image_id)
+                if image_status in _FAILED_IMAGE_STATUSES:
+                    return None
+            except Exception:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                org_err_msg = tb.format_exception_only(exc_type, exc_value)
+                err_val = {"job_id": job['id'],
+                           "image_id": image_id,
+                           "org_err_msg": org_err_msg}
+                err_msg = _("ERROR get_image_id():"
+                            " job_id: %(job_id)s, image_id: %(image_id)s"
+                            " err:%(org_err_msg)s") % err_val
+                LOG.exception("Error getting snapshot image details. %s",
+                              err_msg)
+                self._update_job_error(job, error_msg=err_msg)
+                raise exc.PollingException(err_msg)
+        return image_id
 
     def _create_image(self, job, instance_id, schedule_id):
         metadata = {
@@ -239,6 +244,34 @@ class SnapshotProcessor(worker.JobProcessor):
 
         self.current_job['metadata'] = self.update_job_metadata(
             self.current_job['id'], metadata)
+
+    def _poll_image_status(self, job, image_id):
+        try:
+            image_status = self._get_image_status(image_id)
+        except Exception:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            org_err_msg = tb.format_exception_only(exc_type, exc_value)
+            err_val = {'job_id': job['id'],
+                       'image_id': image_id,
+                       'org_err_msg': org_err_msg}
+            err_msg = (
+                _("PollingExc: image: %(image_id)s, err: %(org_err_msg)s") %
+                err_val)
+            LOG.exception(err_msg)
+            self._update_job_error(job, error_msg=err_msg)
+            raise exc.PollingException(err_msg)
+
+        if image_status is None or image_status in _FAILED_IMAGE_STATUSES:
+            err_val = {'image_id': image_id,
+                       "image_status": image_status,
+                       "job_id": job['id']}
+            err_msg = (
+                _("PollingErr: Got failed image status. Details:"
+                  " image_id: %(image_id)s, 'image_status': %(image_status)s"
+                  " job_id: %(job_id)s") % err_val)
+            self._update_job_error(job, error_msg=err_msg)
+            raise exc.PollingException(err_msg)
+        return image_status
 
     def _process_retention(self, instance_id, schedule_id):
         LOG.debug(_("Processing retention."))
@@ -323,18 +356,12 @@ class SnapshotProcessor(worker.JobProcessor):
         Get image status with novaclient
         """
         image_status = None
-        msg = None
-        image = None
-        try:
-            image = self._get_nova_client().images.get(image_id)
-        except Exception as e:
-            msg = _("Error (image may have been killed): %s") % e
-            image_status = 'KILLED'
+        image = self._get_nova_client().images.get(image_id)
 
         if image is not None:
             image_status = image.status
 
-        return image_status or 'ERROR', msg
+        return image_status
 
     def _get_nova_client(self):
         nova_client = self.nova_client_factory.get_nova_client(
@@ -375,6 +402,11 @@ class SnapshotProcessor(worker.JobProcessor):
         if response:
             self._update_job_with_response(job, response)
         self.send_notification_job_update({'job': job})
+
+    def _update_job_error(self, job, error_msg=None):
+        timeout = self._get_updated_job_timeout(self.current_job['id'])
+        self.update_job(job['id'], 'ERROR',
+                        timeout=timeout, error_message=error_msg)
 
     def _update_job_with_response(self, job, resp):
         job['status'] = resp.get('status')
