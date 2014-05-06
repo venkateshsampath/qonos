@@ -151,6 +151,7 @@ class Worker(object):
     def _terminate(self, signum, frame):
         LOG.debug(_('Received signal %s - will exit') % str(signum))
         self.running = False
+        self.processor.stop_processor()
 
     def _poll_for_next_job(self, poll_once=False):
         job = None
@@ -198,6 +199,7 @@ class Worker(object):
 class JobProcessor(object):
     def __init__(self):
         self.worker = None
+        self._stopping = False
 
     def get_qonos_client(self):
         return self.worker.get_qonos_client()
@@ -249,3 +251,10 @@ class JobProcessor(object):
         Called AFTER the worker is unregistered from QonoS.
         """
         pass
+
+    def stop_processor(self):
+        self._stopping = True
+
+    @property
+    def stopping(self):
+        return self._stopping

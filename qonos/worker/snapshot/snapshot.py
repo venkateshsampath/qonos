@@ -59,10 +59,15 @@ CONF.register_opts(snapshot_worker_opts, group='snapshot_worker')
 
 _FAILED_IMAGE_STATUSES = ['KILLED', 'DELETED', 'PENDING_DELETE', 'ERROR']
 
+# How far in the future to timeout the job when the worker shuts down so
+# it will get picked up again fairly quickly
+_WORKER_STOP_TIMEOUT_SEC = 300
+
 
 class SnapshotProcessor(worker.JobProcessor):
     def __init__(self):
         super(SnapshotProcessor, self).__init__()
+        self.current_job = None
 
     def init_processor(self, worker, nova_client_factory=None):
         super(SnapshotProcessor, self).init_processor(worker)
@@ -137,7 +142,7 @@ class SnapshotProcessor(worker.JobProcessor):
         active = False
         retry = True
 
-        while retry and not active:
+        while retry and not active and not self.stopping:
             image_status = self._poll_image_status(job, image_id)
 
             active = image_status == 'ACTIVE'
@@ -145,12 +150,20 @@ class SnapshotProcessor(worker.JobProcessor):
                 retry = self._try_update(job_id, "PROCESSING")
                 time.sleep(self.image_poll_interval)
 
-        if (not active) and (not retry):
-            self._job_timed_out(job)
-
         if active:
-            self._process_retention(instance_id, job['schedule_id'])
-            self._job_succeeded(job)
+            self._process_retention(instance_id,
+                                    self.current_job['schedule_id'])
+            self._job_succeeded(self.current_job)
+        elif not active and not retry:
+            self._job_timed_out(self.current_job)
+        elif self.stopping:
+            # Timeout job so it gets picked up again quickly rather than
+            # queuing up behind a bunch of new jobs, but not so soon that
+            # another worker will pick it up before everything is shut down
+            # and thus burn through the retries
+            timeout = self._get_utcnow() + _WORKER_STOP_TIMEOUT_SEC
+            self._job_processing(job_id, timeout=timeout)
+
         LOG.debug("Snapshot complete")
 
     def cleanup_processor(self):
@@ -374,9 +387,11 @@ class SnapshotProcessor(worker.JobProcessor):
             self._update_job_with_response(job, response)
         self.send_notification_end({'job': job})
 
-    def _job_processing(self, job, timeout):
+    def _job_processing(self, job, timeout=None):
+        if timeout is None:
+            timeout = self.next_timeout
         response = self.update_job(job['id'], 'PROCESSING',
-                                   timeout=self.next_timeout)
+                                   timeout=timeout)
         if response:
             self._update_job_with_response(job, response)
         self.send_notification_job_update({'job': job})
