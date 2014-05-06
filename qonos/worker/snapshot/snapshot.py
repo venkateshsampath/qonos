@@ -180,7 +180,7 @@ class SnapshotProcessor(worker.JobProcessor):
                             " err:%(org_err_msg)s") % err_val
                 LOG.exception("Error getting snapshot image details. %s",
                               err_msg)
-                self._update_job_error(job, error_msg=err_msg)
+                self._job_failed(job, error_message=err_msg)
                 raise exc.PollingException(err_msg)
         return image_id
 
@@ -207,9 +207,7 @@ class SnapshotProcessor(worker.JobProcessor):
                    'was not found.' %
                    {'instance_id': instance_id, 'job_id': job['id']})
 
-            timeout = self._get_updated_job_timeout(job['id'])
-            self.update_job(job['id'], 'ERROR', timeout=timeout,
-                            error_message=msg)
+            self._job_failed(job, error_message=msg)
             return None
 
         LOG.info(_("Worker %(worker_id)s Started create image: "
@@ -258,7 +256,7 @@ class SnapshotProcessor(worker.JobProcessor):
                 _("PollingExc: image: %(image_id)s, err: %(org_err_msg)s") %
                 err_val)
             LOG.exception(err_msg)
-            self._update_job_error(job, error_msg=err_msg)
+            self._job_failed(job, error_message=err_msg)
             raise exc.PollingException(err_msg)
 
         if image_status is None or image_status in _FAILED_IMAGE_STATUSES:
@@ -269,7 +267,7 @@ class SnapshotProcessor(worker.JobProcessor):
                 _("PollingErr: Got failed image status. Details:"
                   " image_id: %(image_id)s, 'image_status': %(image_status)s"
                   " job_id: %(job_id)s") % err_val)
-            self._update_job_error(job, error_msg=err_msg)
+            self._job_failed(job, error_message=err_msg)
             raise exc.PollingException(err_msg)
         return image_status
 
@@ -374,6 +372,15 @@ class SnapshotProcessor(worker.JobProcessor):
             self._update_job_with_response(job, response)
         self.send_notification_end({'job': job})
 
+    def _job_failed(self, job, error_message=None):
+        timeout = self._get_updated_job_timeout(job['id'])
+        response = self.update_job(job['id'], 'ERROR', timeout=timeout,
+                                   error_message=error_message)
+        if response:
+            self._update_job_with_response(job, response)
+        #TODO: need to append the error message?
+        self.send_notification_job_update({'job': job}, level='ERROR')
+
     def _job_processing(self, job, timeout):
         response = self.update_job(job['id'], 'PROCESSING',
                                    timeout=self.next_timeout)
@@ -402,11 +409,6 @@ class SnapshotProcessor(worker.JobProcessor):
         if response:
             self._update_job_with_response(job, response)
         self.send_notification_job_update({'job': job})
-
-    def _update_job_error(self, job, error_msg=None):
-        timeout = self._get_updated_job_timeout(self.current_job['id'])
-        self.update_job(job['id'], 'ERROR',
-                        timeout=timeout, error_message=error_msg)
 
     def _update_job_with_response(self, job, resp):
         job['status'] = resp.get('status')

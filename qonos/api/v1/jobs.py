@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import webob.exc
 
 from qonos.api import api
@@ -174,6 +175,7 @@ class JobsController(object):
         if status['status'].upper() in ['ERROR', 'CANCELLED']:
             values = self._get_error_values(status, job)
             self.db_api.job_fault_create(values)
+            self.notify_job_failure_if_no_retry(job)
 
         return {'status': {'status': job['status'],
                            'timeout': job['timeout']}}
@@ -201,6 +203,18 @@ class JobsController(object):
         if group not in CONF:
             group = 'action_default'
         return CONF.get(group).timeout_seconds
+
+    def notify_job_failure_if_no_retry(self, job_payload):
+        job = copy.deepcopy(job_payload)
+        max_retry = api.job_get_max_retry(job['action'])
+        now = timeutils.utcnow()
+        if job['retry_count'] >= max_retry or job['hard_timeout'] <= now:
+            utils.serialize_datetimes(job)
+            job = {'job': job}
+            utils.generate_notification(None,
+                                        'qonos.job.failed',
+                                        job,
+                                        'ERROR')
 
 
 def create_resource():

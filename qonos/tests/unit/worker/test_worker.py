@@ -66,6 +66,8 @@ class TestWorker(test_utils.BaseTestCase):
                                                               'ERROR',
                                                               None,
                                                               mock.ANY)
+        self.processor.send_notification_job_update.assert_called_once_with(
+            {'job': job}, level='ERROR')
 
     def test_worker_process_job_with_polling_exception(self):
         job = fakes.JOB['job']
@@ -75,6 +77,8 @@ class TestWorker(test_utils.BaseTestCase):
         self.worker.process_job(job)
 
         self.processor.process_job.assert_called_once_with(job)
+        self.assertFalse(self.client.update_job_status.called)
+        self.assertFalse(self.processor.send_notification_job_update.called)
 
 
 class TestWorkerWithMox(test_utils.BaseTestCase):
@@ -245,6 +249,28 @@ class TestWorkerWithMox(test_utils.BaseTestCase):
         self.stubs.Set(time, 'sleep', fake_sleep)
 
         self.worker.run(run_once=True, poll_once=True)
+
+        self.mox.VerifyAll()
+
+    def test_run_loop_continues_when_exception_from_process_job(self):
+        self.prepare_client_mock(job=fakes.JOB)
+        self.processor.process_job = mock.Mock(
+            side_effect=[Exception('Boom!')])
+        self.processor.send_notification_job_update = mock.Mock(
+            side_effect=Exception('error!'))
+
+        self.mox.ReplayAll()
+
+        self.config(job_poll_interval=5, group='worker')
+        self.config(action_type='snapshot', group='worker')
+
+        fake_sleep = lambda x: None
+        self.stubs.Set(time, 'sleep', fake_sleep)
+
+        self.worker.run(run_once=True, poll_once=False)
+        self.assertTrue(self.processor.was_init_processor_called(1))
+        self.assertTrue(self.processor.process_job.call_count == 1)
+        self.assertTrue(self.processor.was_cleanup_processor_called(1))
 
         self.mox.VerifyAll()
 

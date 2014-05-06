@@ -46,6 +46,13 @@ CONF.register_opts(api_opts, group='api')
 CONF.register_opts(action_opts, group='action_default')
 
 
+def job_get_max_retry(action):
+    group = 'action_' + action
+    if group not in CONF:
+        group = 'action_default'
+    return CONF.get(group).max_retry
+
+
 class API(object):
     def __init__(self, app):
         self.app = app

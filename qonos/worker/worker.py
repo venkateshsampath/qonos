@@ -102,8 +102,15 @@ class Worker(object):
                     " %(job)s")
             LOG.exception(msg % {'worker_id': self.worker_id,
                                  'job': job['id']})
-            self.update_job(job['id'], 'ERROR',
-                            error_message=unicode(e))
+            response = self.update_job(job['id'], 'ERROR',
+                                       error_message=unicode(e))
+            if self.processor:
+                if response:
+                    job['status'] = response.get('status')
+                    job['timeout'] = response.get('timeout')
+                #TODO: need to append the error message?
+                self.processor.send_notification_job_update({'job': job},
+                                                            level='ERROR')
 
     def _run_loop(self, run_once=False, poll_once=False):
         self.init_worker()
@@ -113,7 +120,10 @@ class Worker(object):
 
             job = self._poll_for_next_job(poll_once)
             if job:
-                self.process_job(job)
+                try:
+                    self.process_job(job)
+                except Exception as e:
+                    LOG.exception(e)
 
             time_after = time.time()
 
