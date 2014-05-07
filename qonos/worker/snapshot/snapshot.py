@@ -416,7 +416,7 @@ class SnapshotProcessor(worker.JobProcessor):
                                    error_message=message)
         if response:
             self._update_job_with_response(job, response)
-        self.send_notification_job_update({'job': job})
+        self.send_notification_job_failed({'job': job})
 
     def _update_job_error(self, job, error_msg=None):
         timeout = self._get_updated_job_timeout(self.current_job['id'])
