@@ -106,6 +106,10 @@ class TestWorkerWithMox(test_utils.BaseTestCase):
             AndReturn(job)
         self.client.delete_worker(str(fakes.WORKER_ID))
 
+    def test_stop_processor(self):
+        self.worker._terminate(42, None)
+        self.assertTrue(self.processor.stopping)
+
     def test_run_loop_no_jobs(self):
         self.prepare_client_mock()
         self.mox.ReplayAll()
