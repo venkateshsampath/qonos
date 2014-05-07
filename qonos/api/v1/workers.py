@@ -82,7 +82,7 @@ class WorkersController(object):
             msg = _('Worker %s could not be found.') % worker_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-        max_retry = self._job_get_max_retry(action)
+        max_retry = api.job_get_max_retry(action)
         new_timeout = api_utils.get_new_timeout_by_action(action)
 
         job = self.db_api.job_get_and_assign_next_by_action(
@@ -91,12 +91,6 @@ class WorkersController(object):
             utils.serialize_datetimes(job)
             api_utils.serialize_job_metadata(job)
         return {'job': job}
-
-    def _job_get_max_retry(self, action):
-        group = 'action_' + action
-        if group not in CONF:
-            group = 'action_default'
-        return CONF.get(group).max_retry
 
 
 def create_resource():
