@@ -219,6 +219,9 @@ class JobProcessor(object):
     def send_notification_retry(self, payload, level='INFO'):
         self.send_notification('qonos.job.retry', payload, level)
 
+    def send_notification_job_failed(self, payload, level='ERROR'):
+        self.send_notification('qonos.job.failed', payload, level)
+
     def update_job(self, job_id, status, timeout=None, error_message=None):
         return self.worker.update_job(job_id, status, timeout=timeout,
                                       error_message=error_message)

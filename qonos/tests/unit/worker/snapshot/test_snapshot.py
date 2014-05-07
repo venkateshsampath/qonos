@@ -137,7 +137,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
                    'tenant': '44444444-4444-4444-4444-44444444',
                    'metadata': {'instance_id':
                    '55555555-5555-5555-5555-55555555'}}}
-        utils.generate_notification(None, 'qonos.job.update', expected_payload,
+        utils.generate_notification(None, 'qonos.job.failed', expected_payload,
                                     mox.IsA(str))
         self.mox.ReplayAll()
 
@@ -190,7 +190,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         utils.generate_notification(None, 'qonos.job.update',
                                     expected_processing_payload,
                                     mox.IsA(str))
-        utils.generate_notification(None, 'qonos.job.update',
+        utils.generate_notification(None, 'qonos.job.failed',
                                     expected_cancelled_payload,
                                     mox.IsA(str))
 
