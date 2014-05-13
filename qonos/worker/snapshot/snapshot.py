@@ -75,6 +75,9 @@ class SnapshotProcessor(worker.JobProcessor):
         self.timeout_count = 0
         self.timeout_max_updates = CONF.snapshot_worker.job_timeout_max_updates
         self.next_timeout = None
+        self.next_window_timeout = None
+        self.window_timeout_increment = datetime.timedelta(
+            minutes=CONF.snapshot_worker.job_timeout_update_interval_min)
         self.update_interval = datetime.timedelta(
             seconds=CONF.snapshot_worker.job_update_interval_sec)
         self.timeout_increment = datetime.timedelta(
@@ -118,6 +121,7 @@ class SnapshotProcessor(worker.JobProcessor):
 
         now = self._get_utcnow()
         self.next_timeout = now + self.timeout_increment
+        self.next_window_timeout = now + self.window_timeout_increment
         self._job_processing(job, self.next_timeout)
         self.next_update = self._get_utcnow() + self.update_interval
 
@@ -430,12 +434,13 @@ class SnapshotProcessor(worker.JobProcessor):
     def _try_update(self, job_id, status):
         now = self._get_utcnow()
         # Time for a timeout update?
-        if now >= self.next_timeout:
+        if now >= self.next_window_timeout:
             # Out of timeouts?
             if self.timeout_count >= self.timeout_max_updates:
                 return False
 
-            self.next_timeout = self.next_timeout + self.timeout_increment
+            self.next_timeout = now + self.timeout_increment
+            self.next_window_timeout = now + self.window_timeout_increment
             self.timeout_count += 1
             self.update_job(job_id, status, self.next_timeout)
             return True

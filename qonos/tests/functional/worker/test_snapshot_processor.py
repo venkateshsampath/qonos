@@ -432,7 +432,7 @@ class TestSnapshotProcessorPolling(BaseTestSnapshotProcessor):
 
     def test_polling_job_timeout_after_max_retries(self):
         decrement_for_timeout = -10
-        self.config(job_timeout_update_increment_min=decrement_for_timeout,
+        self.config(job_timeout_update_interval_min=decrement_for_timeout,
                     group='snapshot_worker')
         self.config(job_timeout_max_updates=3, group='snapshot_worker')
 
@@ -445,17 +445,63 @@ class TestSnapshotProcessorPolling(BaseTestSnapshotProcessor):
 
         with TestableSnapshotProcessor(job, server, images) as processor:
             processor.process_job(job)
-
             self.assertEqual(3, processor.timeout_count)
             self.assert_update_job_statuses(
                 processor, (['PROCESSING'] * 4 + ['TIMED_OUT']))
             self.assertEqual('TIMED_OUT', job['status'])
 
+    def test_polling_job_sliding_window_next_timeout_with_max_retries(self):
+        window_timeout_increment = 60
+        job_timeout_max_updates_count = 3
+
+        self.config(job_timeout_update_interval_min=window_timeout_increment,
+                    group='snapshot_worker')
+        self.config(job_timeout_max_updates=job_timeout_max_updates_count,
+                    group='snapshot_worker')
+        self.config(job_timeout_update_increment_min=180,
+                    group='snapshot_worker')
+
+        server = self.server_instance_fixture("INSTANCE_ID", "test")
+        job = self.job_fixture(server.id)
+        images = [self.image_fixture('IMAGE_ID', 'QUEUED', server.id),
+                  self.image_fixture('IMAGE_ID', 'SAVING', server.id),
+                  self.image_fixture('IMAGE_ID', 'SAVING', server.id),
+                  self.image_fixture('IMAGE_ID', 'SAVING', server.id)]
+
+        now = timeutils.utcnow()
+        timeutils.set_time_override(now)
+        timeutils.advance_time_delta(
+            datetime.timedelta(minutes=window_timeout_increment))
+
+        with TestableSnapshotProcessor(job, server, images) as pcr:
+            pcr.next_timeout = now + pcr.timeout_increment
+            pcr.next_window_timeout = now + pcr.window_timeout_increment
+            pcr.next_update = now + pcr.update_interval
+
+            #NOTE(venkatesh): unfortunately had to use a protected method for
+            # testing. Else there seems to be no easier way to test this
+            # scenario. we need to fix this as part of refactoring
+            # SnapshotJobProcessor.
+            while pcr._try_update(job['id'], 'PROCESSING'):
+                timeutils.advance_time_delta(
+                    datetime.timedelta(minutes=window_timeout_increment))
+
+            total_sliding_window_duration = datetime.timedelta(
+                minutes=(
+                    window_timeout_increment * job_timeout_max_updates_count
+                )
+            )
+            self.assertEqual(
+                now + (pcr.timeout_increment + total_sliding_window_duration),
+                pcr.next_timeout
+            )
+            self.assertEqual(3, pcr.timeout_count)
+
     def test_polling_job_is_successful_after_first_timeout(self):
         server = self.server_instance_fixture("INSTANCE_ID", "test")
 
         decrement_for_timeout = -10
-        self.config(job_timeout_update_increment_min=decrement_for_timeout,
+        self.config(job_timeout_update_interval_min=decrement_for_timeout,
                     group='snapshot_worker')
         self.config(job_timeout_max_updates=3, group='snapshot_worker')
 
@@ -793,7 +839,7 @@ class TestSnapshotProcessorNotifications(BaseTestSnapshotProcessor):
 
     def test_notifications_for_timeout_job_after_max_retries(self):
         decrement_for_timeout = -10
-        self.config(job_timeout_update_increment_min=decrement_for_timeout,
+        self.config(job_timeout_update_interval_min=decrement_for_timeout,
                     group='snapshot_worker')
         self.config(job_timeout_max_updates=2, group='snapshot_worker')
 
