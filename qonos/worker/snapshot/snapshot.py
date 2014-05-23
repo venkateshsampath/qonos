@@ -50,7 +50,7 @@ snapshot_worker_opts = [
     cfg.IntOpt('job_timeout_max_updates', default=3,
                help=_('How many times to update the timeout before '
                       'considering the job to be failed')),
-    cfg.IntOpt('job_timeout_backoff_factor', default=2,
+    cfg.IntOpt('job_timeout_backoff_factor', default=1,
                help=_('Timeout multiplier to use when an error occurs')),
 ]
 
