@@ -148,6 +148,45 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
 
         self.mox.VerifyAll()
 
+    def test_process_job_should_fail_if_hard_timed_out(self):
+        mox.Reset(self.worker)
+        self.mox.StubOutWithMock(utils, 'generate_notification')
+        now = timeutils.utcnow()
+        self.job['hard_timeout'] = now
+
+        utils.generate_notification(None, 'qonos.job.run.start', mox.IsA(dict),
+                                    mox.IsA(str))
+        self.worker.update_job(fakes.JOB_ID,
+                               'HARD_TIMED_OUT',
+                               timeout=None,
+                               error_message=mox.IsA(str))\
+            .AndReturn({'status': 'HARD_TIMED_OUT',
+                        'timeout': self.job['timeout']})
+        expected_payload = {'job': {'status': 'HARD_TIMED_OUT',
+                   'hard_timeout': self.job['hard_timeout'],
+                   'created_at': self.job['created_at'],
+                   'modified_at': self.job['modified_at'],
+                   'retry_count': 1,
+                   'schedule_id': '33333333-3333-3333-3333-33333333',
+                   'worker_id': '11111111-1111-1111-1111-11111111',
+                   'timeout': self.job['timeout'],
+                   'action': 'snapshot',
+                   'id': '22222222-2222-2222-2222-22222222',
+                   'tenant': '44444444-4444-4444-4444-44444444',
+                   'metadata': {'instance_id':
+                   '55555555-5555-5555-5555-55555555'}}}
+
+        utils.generate_notification(None, 'qonos.job.update', expected_payload,
+                                    mox.IsA(str))
+        self.mox.ReplayAll()
+
+        processor = TestableSnapshotProcessor(self.nova_client)
+        processor.init_processor(self.worker)
+
+        processor.process_job(self.job)
+
+        self.mox.VerifyAll()
+
     def test_process_job_should_cancel_if_no_instance_id(self):
         self._init_qonos_client(schedule=MockSchedule())
         self.mox.StubOutWithMock(utils, 'generate_notification')
@@ -415,6 +454,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         time_seq = [
             base_time,
             base_time,
+            base_time,
             base_time + datetime.timedelta(seconds=305),
             base_time + datetime.timedelta(seconds=605),
             base_time + datetime.timedelta(seconds=905),
@@ -458,6 +498,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         self.mox.VerifyAll()
 
     def test_process_job_should_update_status_and_timestamp(self):
+        timeutils.set_time_override()
         base_time = timeutils.utcnow()
         time_seq = [
             base_time,
@@ -568,6 +609,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         time_seq = [
             base_time,
             base_time,
+            base_time,
             base_time + datetime.timedelta(seconds=305),
             base_time + datetime.timedelta(seconds=605),
             base_time + datetime.timedelta(seconds=905),
@@ -657,6 +699,7 @@ class TestSnapshotProcessor(test_utils.BaseTestCase):
         timeutils.set_time_override(new_now)
         job['status'] = 'ERROR'
         job['retry_count'] = 2
+        job['hard_timeout'] = new_now + datetime.timedelta(minutes=120)
         self._do_test_process_job_should_update_image_error(status,
             include_create=False, include_queued=False, is_retry=True, job=job)
 

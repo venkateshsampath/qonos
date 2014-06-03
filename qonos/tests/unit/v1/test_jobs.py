@@ -33,9 +33,7 @@ from qonos.tests import utils as test_utils
 JOB_ATTRS = ['id', 'schedule_id', 'worker_id', 'retry_count', 'status']
 
 
-def setup_error_job(reached_max_retry=False,
-                    exceeded_hard_timeout=False,
-                    job_cancelled=False):
+def setup_error_job(reached_max_retry=False, job_err_status=None):
     def decorate_job_failure(fn):
         @wraps(fn)
         def wrap_job_failure(*args, **kwargs):
@@ -47,7 +45,7 @@ def setup_error_job(reached_max_retry=False,
 
                 now = timeutils.utcnow()
                 timeout = now + datetime.timedelta(hours=2)
-                if exceeded_hard_timeout:
+                if job_err_status and job_err_status == 'HARD_TIMED_OUT':
                     hard_timeout = now - datetime.timedelta(hours=4)
                 else:
                     hard_timeout = now + datetime.timedelta(hours=4)
@@ -58,7 +56,7 @@ def setup_error_job(reached_max_retry=False,
                     'tenant': unit_utils.TENANT2,
                     'worker_id': unit_utils.WORKER_UUID2,
                     'action': 'snapshot',
-                    'status': 'CANCELLED' if job_cancelled else 'ERROR',
+                    'status': job_err_status if job_err_status else 'ERROR',
                     'timeout': timeout,
                     'hard_timeout': hard_timeout,
                     'retry_count': job_retry_count,
@@ -540,7 +538,7 @@ class TestJobsApi(test_utils.BaseTestCase):
                           self.controller.update_status,
                           request, job_id, body)
 
-    @setup_error_job(reached_max_retry=False, exceeded_hard_timeout=False)
+    @setup_error_job(reached_max_retry=False)
     def test_update_status_for_error_job(self):
         self.config(max_retry=1, group='action_default')
         timeout = datetime.datetime(2012, 11, 16, 22, 0)
@@ -585,12 +583,12 @@ class TestJobsApi(test_utils.BaseTestCase):
             job_payload_matcher,
             'ERROR')
 
-    @setup_error_job(exceeded_hard_timeout=True)
-    def test_error_job_send_failed_notification_on_exceed_hard_timeout(self):
+    @setup_error_job(job_err_status='CANCELLED')
+    def test_error_job_send_failed_notification_on_job_cancelled(self):
         self.config(max_retry=1, group='action_default')
         timeout = datetime.datetime(2012, 11, 16, 22, 0)
         request = unit_utils.get_fake_request(method='PUT')
-        body = {'status': {'status': 'ERROR', 'timeout': str(timeout)}}
+        body = {'status': {'status': 'CANCELLED', 'timeout': str(timeout)}}
         err_job = db_api.job_get_by_id(unit_utils.JOB_UUID6)
         job_status = self.controller.update_status(request,
                                                    err_job['id'],
@@ -606,12 +604,14 @@ class TestJobsApi(test_utils.BaseTestCase):
             job_payload_matcher,
             'ERROR')
 
-    @setup_error_job(job_cancelled=True)
-    def test_error_job_send_failed_notification_on_job_cancelled(self):
+    @setup_error_job(job_err_status='HARD_TIMED_OUT')
+    def test_error_job_send_failed_notification_on_job_hard_timeout_out(self):
         self.config(max_retry=1, group='action_default')
         timeout = datetime.datetime(2012, 11, 16, 22, 0)
         request = unit_utils.get_fake_request(method='PUT')
-        body = {'status': {'status': 'CANCELLED', 'timeout': str(timeout)}}
+        body = {
+            'status': {'status': 'HARD_TIMED_OUT', 'timeout': str(timeout)}
+        }
         err_job = db_api.job_get_by_id(unit_utils.JOB_UUID6)
         job_status = self.controller.update_status(request,
                                                    err_job['id'],
@@ -643,7 +643,8 @@ class ErrorJobPayloadMatcher(object):
             return False
         if err_job['job']['status'] != payload['job']['status']:
             return False
-        if err_job['job']['status'] not in ['ERROR', 'CANCELLED']:
+        job_err_statuses = ['ERROR', 'CANCELLED', 'HARD_TIMED_OUT']
+        if err_job['job']['status'] not in job_err_statuses:
             return False
         job_err_msg = err_job['job'].get('error_message', '')
         if 'error_message' not in payload['job'] \
