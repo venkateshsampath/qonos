@@ -172,7 +172,8 @@ class JobsController(object):
             msg = _('Job %s could not be found.') % job_id
             raise webob.exc.HTTPNotFound(explanation=msg)
 
-        if status['status'].upper() in ['ERROR', 'CANCELLED']:
+        err_statuses = ['ERROR', 'CANCELLED', 'HARD_TIMED_OUT']
+        if status['status'].upper() in err_statuses:
             values = self._get_error_values(status, job)
             self.db_api.job_fault_create(values)
             self.notify_job_failure_if_no_retry(job, values['message'])
@@ -207,10 +208,8 @@ class JobsController(object):
     def notify_job_failure_if_no_retry(self, job_payload, error_message):
         job = copy.deepcopy(job_payload)
         max_retry = api.job_get_max_retry(job['action'])
-        now = timeutils.utcnow()
-        if job['status'] == 'ERROR':
-            if (job['retry_count'] >= max_retry
-                    or job['hard_timeout'] <= now):
+
+        if job['status'] == 'ERROR' and job['retry_count'] >= max_retry:
                 utils.serialize_datetimes(job)
                 job['error_message'] = error_message or ''
                 job = {'job': job}
