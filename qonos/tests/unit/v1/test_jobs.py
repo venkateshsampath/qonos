@@ -33,8 +33,7 @@ from qonos.tests import utils as test_utils
 JOB_ATTRS = ['id', 'schedule_id', 'worker_id', 'retry_count', 'status']
 
 
-def setup_error_job(reached_max_retry=False,
-                    exceeded_hard_timeout=False):
+def setup_error_job(reached_max_retry=False):
     def decorate_job_failure(fn):
         @wraps(fn)
         def wrap_job_failure(*args, **kwargs):
@@ -46,10 +45,7 @@ def setup_error_job(reached_max_retry=False,
 
                 now = timeutils.utcnow()
                 timeout = now + datetime.timedelta(hours=2)
-                if exceeded_hard_timeout:
-                    hard_timeout = now - datetime.timedelta(hours=4)
-                else:
-                    hard_timeout = now + datetime.timedelta(hours=4)
+                hard_timeout = now + datetime.timedelta(hours=4)
 
                 fixture = {
                     'id': unit_utils.JOB_UUID6,
@@ -539,7 +535,7 @@ class TestJobsApi(test_utils.BaseTestCase):
                           self.controller.update_status,
                           request, job_id, body)
 
-    @setup_error_job(reached_max_retry=False, exceeded_hard_timeout=False)
+    @setup_error_job(reached_max_retry=False)
     def test_update_status_for_error_job(self):
         self.config(max_retry=1, group='action_default')
         timeout = datetime.datetime(2012, 11, 16, 22, 0)
@@ -577,27 +573,6 @@ class TestJobsApi(test_utils.BaseTestCase):
         self.assertEqual(1, utils.generate_notification.call_count)
 
         err_job['error_message'] = job_err_msg
-        job_payload_matcher = ErrorJobPayloadMatcher({'job': err_job})
-        utils.generate_notification.assert_called_once_with(
-            None,
-            'qonos.job.failed',
-            job_payload_matcher,
-            'ERROR')
-
-    @setup_error_job(exceeded_hard_timeout=True)
-    def test_error_job_send_failed_notification_on_exceed_hard_timeout(self):
-        self.config(max_retry=1, group='action_default')
-        timeout = datetime.datetime(2012, 11, 16, 22, 0)
-        request = unit_utils.get_fake_request(method='PUT')
-        body = {'status': {'status': 'ERROR', 'timeout': str(timeout)}}
-        err_job = db_api.job_get_by_id(unit_utils.JOB_UUID6)
-        job_status = self.controller.update_status(request,
-                                                   err_job['id'],
-                                                   body)['status']
-        actual_status = job_status['status']
-        actual_timeout = job_status['timeout']
-        self.assertEqual(actual_status, body['status']['status'])
-        self.assertEqual(actual_timeout, timeout)
         job_payload_matcher = ErrorJobPayloadMatcher({'job': err_job})
         utils.generate_notification.assert_called_once_with(
             None,

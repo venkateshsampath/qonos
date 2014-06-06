@@ -108,6 +108,17 @@ class SnapshotProcessor(worker.JobProcessor):
 
         job_id = job['id']
 
+        hard_timed_out = job['hard_timeout'] <= self._get_utcnow()
+        if hard_timed_out:
+            msg = ('Job %(job_id)s has reached/exceeded its'
+                   ' hard timeout: %(hard_timeout)s.' %
+                   {'job_id': job_id, 'hard_timeout': job['hard_timeout']})
+            self._job_hard_timed_out(job, msg)
+            LOG.info(_('Worker %(worker_id)s Job hard timed out: %(msg)s') %
+                     {'worker_id': self.worker.worker_id,
+                      'msg': msg})
+            return
+
         schedule = self._get_schedule(job)
         if schedule is None:
             msg = ('Schedule %(schedule_id)s deleted for job %(job_id)s' %
@@ -425,6 +436,13 @@ class SnapshotProcessor(worker.JobProcessor):
 
     def _job_cancelled(self, job, message):
         response = self.update_job(job['id'], 'CANCELLED',
+                                   error_message=message)
+        if response:
+            self._update_job_with_response(job, response)
+        self.send_notification_job_failed({'job': job})
+
+    def _job_hard_timed_out(self, job, message):
+        response = self.update_job(job['id'], 'HARD_TIMED_OUT',
                                    error_message=message)
         if response:
             self._update_job_with_response(job, response)
