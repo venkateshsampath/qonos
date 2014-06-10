@@ -367,13 +367,6 @@ class SnapshotProcessor(worker.JobProcessor):
 
         return scheduled_images
 
-    def _is_active_status(self, status):
-        job_id = self.current_job['id']
-        job_status = status['job_status']
-        image_status = status['image_status']
-        active = image_status == 'ACTIVE'
-        return active
-
     def _get_image_status(self, image_id):
         """
         Get image status with novaclient
