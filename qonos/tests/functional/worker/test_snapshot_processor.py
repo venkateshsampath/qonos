@@ -357,6 +357,29 @@ class TestSnapshotProcessorJobProcessing(BaseTestSnapshotProcessor):
             }
             self.assert_job_status_values(processor, expected_status_values)
 
+    def test_process_job_should_cancel_if_job_is_max_retried(self):
+        server = self.server_instance_fixture("INSTANCE_ID", "test")
+
+        max_retry_count = 1
+        self.config(max_retry=max_retry_count, group='snapshot_worker')
+        job = self.job_fixture(server.id, retry_count=max_retry_count)
+
+        with TestableSnapshotProcessor(job, server, []) as processor:
+            processor.process_job(job)
+
+            self.assert_update_job_statuses(processor, ['MAX_RETRIED'])
+            self.assertEqual('MAX_RETRIED', job['status'])
+
+            error_msg = ('Job %(job_id)s has reached/exceeded its'
+                         ' max_retry count: %(retry_count)s.' %
+                         {'job_id': job['id'],
+                          'retry_count': job['retry_count']})
+            expected_status_values = {
+                'status': 'MAX_RETRIED',
+                'error_message': error_msg
+            }
+            self.assert_job_status_values(processor, expected_status_values)
+
     def test_process_job_should_cancel_if_schedule_not_exist(self):
         server = self.server_instance_fixture("INSTANCE_ID", "test")
         job = self.job_fixture(server.id)
@@ -755,6 +778,25 @@ class TestSnapshotProcessorNotifications(BaseTestSnapshotProcessor):
             expected_notifications = [
                 ('qonos.job.run.start', 'INFO', 'QUEUED'),
                 ('qonos.job.failed', 'ERROR', 'HARD_TIMED_OUT')]
+            self.assert_job_notification_events(processor,
+                                                expected_notifications)
+
+    def test_notifications_for_cancelled_job_on_max_retry_count_reached(self):
+        server = self.server_instance_fixture("INSTANCE_ID", "test")
+
+        max_retry_count = 1
+        self.config(max_retry=max_retry_count, group='snapshot_worker')
+        job = self.job_fixture(server.id,
+                               status='PROCESSING',
+                               retry_count=max_retry_count)
+
+        with TestableSnapshotProcessor(job, server, []) as processor:
+            processor.process_job(job)
+
+            self.assertEqual('MAX_RETRIED', job['status'])
+            expected_notifications = [
+                ('qonos.job.retry', 'INFO', 'PROCESSING'),
+                ('qonos.job.failed', 'ERROR', 'MAX_RETRIED')]
             self.assert_job_notification_events(processor,
                                                 expected_notifications)
 
