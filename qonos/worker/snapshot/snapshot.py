@@ -99,7 +99,22 @@ class SnapshotProcessor(worker.JobProcessor):
         LOG.debug(_("Worker %(worker_id)s Processing job: %(job)s") %
                   {'worker_id': self.worker.worker_id,
                    'job': str(job)})
+        try:
+            self._process_job(job)
+        except exc.PollingException as e:
+            LOG.exception(e)
+        except Exception:
+            msg = _("Worker %(worker_id)s Error processing job:"
+                    " %(job)s")
+            LOG.exception(msg % {'worker_id': self.worker.worker_id,
+                                 'job': job['id']})
 
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            err_msg = (_('Job Process Failed: %s')
+                       % tb.format_exception_only(exc_type, exc_value))
+            self._job_error_occurred(job, error_message=err_msg)
+
+    def _process_job(self, job):
         payload = {'job': job}
         if job['status'] == 'QUEUED':
             self.send_notification_start(payload)

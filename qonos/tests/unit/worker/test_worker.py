@@ -14,11 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
 import mock
 import mox
+import signal
 import time
 
-from qonos.common import exception
 from qonos.tests.unit import utils as unit_utils
 from qonos.tests.unit.worker import fakes
 from qonos.tests import utils as test_utils
@@ -51,9 +52,22 @@ class TestWorker(test_utils.BaseTestCase):
         self.processor.init_processor.assert_called_once_with(self.worker)
         self.client.create_worker.assert_called_once()
 
-    def test_worker_process_job(self):
-        self.worker.process_job(fakes.JOB['job'])
-        self.processor.process_job.assert_called_once_with(fakes.JOB['job'])
+    @mock.patch('time.time')
+    def test_worker_process_job(self, mtime_time):
+        _proc_title_time = 1403530578
+        mtime_time.return_value = _proc_title_time
+
+        self.worker.procline = mock.MagicMock()
+        job = fakes.JOB['job']
+
+        self.assertIsNone(self.worker._child_pid)
+
+        self.worker.process_job(job)
+
+        _proc_title = ('Processing job %s from %s since %s' %
+                      (job['id'], self.worker.worker_id, _proc_title_time))
+        self.worker.procline.assert_called_once_with(_proc_title)
+        self.processor.process_job.assert_called_once_with(job)
 
     def test_worker_process_job_with_exception(self):
         job = fakes.JOB['job']
@@ -66,19 +80,97 @@ class TestWorker(test_utils.BaseTestCase):
                                                               'ERROR',
                                                               None,
                                                               mock.ANY)
-        self.processor.send_notification_job_update.assert_called_once_with(
-            {'job': job}, level='ERROR')
 
-    def test_worker_process_job_with_polling_exception(self):
-        job = fakes.JOB['job']
-        self.processor.process_job.side_effect = exception. \
-                                                 PollingException('Boom!')
+    def test_worker_should_fork_a_process_on_fork_child_process_is_on(self):
+        with contextlib.nested(
+            mock.patch('os.fork', side_effect=[0]),
+            mock.patch('os.waitpid'),
+            mock.patch('os._exit')
+        ) as (mos_fork, mos_waitpid, mos_exit):
 
-        self.worker.process_job(job)
+            self.config(fork_child_process=True, group='worker')
 
-        self.processor.process_job.assert_called_once_with(job)
-        self.assertFalse(self.client.update_job_status.called)
-        self.assertFalse(self.processor.send_notification_job_update.called)
+            self.assertIsNone(self.worker._child_pid)
+
+            job = fakes.JOB['job']
+            self.worker.process_job(job)
+
+            mos_fork.assert_called_once()
+            self.assertEquals(0, mos_waitpid.call_count)
+            mos_exit.assert_called_once_with(0)
+
+            self.processor.process_job.assert_called_once_with(job)
+
+    def test_worker_should_wait_for_child_process_to_exit(self):
+        with contextlib.nested(
+            mock.patch('os.fork', side_effect=[1234]),
+            mock.patch('os.waitpid'),
+            mock.patch('os._exit')
+        ) as (mos_fork, mos_waitpid, mos_exit):
+
+            self.config(fork_child_process=True, group='worker')
+
+            job = fakes.JOB['job']
+            self.worker.process_job(job)
+
+            expected_child_pid = 1234
+            mos_fork.assert_called_once()
+            mos_waitpid.assert_called_once_with(expected_child_pid, 0)
+            self.assertEquals(0, mos_exit.call_count)
+
+            self.assertEquals(expected_child_pid, self.worker._child_pid)
+            self.assertEquals(0, self.processor.process_job.call_count)
+
+    def test_worker_child_process_main(self):
+        with contextlib.nested(
+            mock.patch('signal.signal'),
+            mock.patch('time.time'),
+            mock.patch('os._exit')
+        ) as (msignal_signal, mtime_time, mos_exit):
+
+            _proc_title_time = 1403530578
+            mtime_time.return_value = _proc_title_time
+
+            mock.MagicMock()
+            self.worker.procline = mock.MagicMock()
+            job = fakes.JOB['job']
+
+            self.worker.child_process_main(job)
+
+            signal_handler_reg_calls = [
+                mock.call(signal.SIGTERM, self.processor.stop_processor),
+                mock.call(signal.SIGHUP, self.processor.stop_processor)
+            ]
+            msignal_signal.assert_has_calls(signal_handler_reg_calls)
+            _proc_title = ('Processing job %s from %s since %s' %
+                          (job['id'], self.worker.worker_id, _proc_title_time))
+            self.worker.procline.assert_called_once_with(_proc_title)
+            mos_exit.assert_called_once_with(0)
+
+            self.processor.process_job.assert_called_once_with(job)
+
+    def test_worker_should_not_fork_a_process_on_fork_child_process_is_off(
+            self):
+        with contextlib.nested(
+            mock.patch('os.fork'),
+            mock.patch('os.waitpid'),
+            mock.patch('os._exit')
+        ) as (mos_fork, mos_waitpid, mos_exit):
+
+            self.worker.procline = mock.MagicMock()
+            self.worker.child_process_main = mock.MagicMock()
+            self.config(fork_child_process=False, group='worker')
+
+            job = fakes.JOB['job']
+            self.worker.process_job(job)
+
+            self.assertEquals(0, self.worker.child_process_main.call_count)
+            self.assertEquals(0, mos_fork.call_count)
+            self.assertEquals(0, mos_waitpid.call_count)
+            self.assertEquals(0, mos_exit.call_count)
+
+            self.assertIsNone(self.worker._child_pid)
+            self.processor.process_job.assert_called_once_with(job)
 
 
 class TestWorkerWithMox(test_utils.BaseTestCase):
@@ -101,6 +193,9 @@ class TestWorkerWithMox(test_utils.BaseTestCase):
     def prepare_client_mock(self, job=fakes.JOB_NONE, empty_jobs=0):
         self.client.create_worker(mox.IsA(str), mox.IsA(int)).\
             AndReturn(fakes.WORKER)
+        self.worker.procline(mox.StrContains(
+            'Worker %s polling for next job since ' % self.worker.worker_id))
+
         # Argh! Mox why you no have "Times(x)" function?!?!
         for i in range(empty_jobs):
             self.client.get_next_job(str(fakes.WORKER_ID), mox.IsA(str)).\
