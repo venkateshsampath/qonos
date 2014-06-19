@@ -743,10 +743,11 @@ class TestSnapshotProcessorNotifications(BaseTestSnapshotProcessor):
             #     ('qonos.job.run.start', 'INFO', 'QUEUED'),
             #     ('qonos.job.update', 'INFO', 'PROCESSING'),
             #     ('qonos.job.update', 'INFO', 'CANCELLED')]
-            self.assert_update_job_statuses(processor, ['PROCESSING', 'ERROR'])
+            self.assertEqual('ERROR', job['status'])
             expected_notifications = [
                 ('qonos.job.run.start', 'INFO', 'QUEUED'),
-                ('qonos.job.update', 'INFO', 'PROCESSING')]
+                ('qonos.job.update', 'INFO', 'PROCESSING'),
+                ('qonos.job.update', 'ERROR', 'ERROR')]
             self.assert_job_notification_events(processor,
                                                 expected_notifications)
 
@@ -769,10 +770,11 @@ class TestSnapshotProcessorNotifications(BaseTestSnapshotProcessor):
             #     ('qonos.job.run.start', 'INFO', 'QUEUED'),
             #     ('qonos.job.update', 'INFO', 'PROCESSING'),
             #     ('qonos.job.update', 'INFO', 'CANCELLED')]
-            self.assert_update_job_statuses(processor, ['PROCESSING', 'ERROR'])
+            self.assertEqual('ERROR', job['status'])
             expected_notifications = [
                 ('qonos.job.run.start', 'INFO', 'QUEUED'),
-                ('qonos.job.update', 'INFO', 'PROCESSING')]
+                ('qonos.job.update', 'INFO', 'PROCESSING'),
+                ('qonos.job.update', 'ERROR', 'ERROR')]
             self.assert_job_notification_events(processor,
                                                 expected_notifications)
 
@@ -785,9 +787,11 @@ class TestSnapshotProcessorNotifications(BaseTestSnapshotProcessor):
             self.assertRaises(exception.PollingException,
                               processor.process_job, job)
 
+            self.assertEqual('ERROR', job['status'])
             expected_notifications = [
                 ('qonos.job.run.start', 'INFO', 'QUEUED'),
-                ('qonos.job.update', 'INFO', 'PROCESSING')]
+                ('qonos.job.update', 'INFO', 'PROCESSING'),
+                ('qonos.job.update', 'ERROR', 'ERROR')]
             self.assert_job_notification_events(processor,
                                                 expected_notifications)
 

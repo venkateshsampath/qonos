@@ -17,7 +17,9 @@
 import os
 import signal
 import socket
+import sys
 import time
+import traceback as tb
 
 from oslo.config import cfg
 
@@ -97,13 +99,25 @@ class Worker(object):
             self.processor.process_job(job)
         except exception.PollingException as e:
             LOG.exception(e)
-        except Exception as e:
+        except Exception:
             msg = _("Worker %(worker_id)s Error processing job:"
                     " %(job)s")
             LOG.exception(msg % {'worker_id': self.worker_id,
                                  'job': job['id']})
-            self.update_job(job['id'], 'ERROR',
-                            error_message=unicode(e))
+
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            err_msg = (_('Job Process Failed: %s')
+                       % tb.format_exception_only(exc_type, exc_value))
+            response = self.update_job(job['id'],
+                                       'ERROR',
+                                       error_message=err_msg)
+            if self.processor:
+                if response:
+                    job['status'] = response.get('status')
+                    job['timeout'] = response.get('timeout')
+                job['error_message'] = err_msg
+                self.processor.send_notification_job_update({'job': job},
+                                                            level='ERROR')
 
     def _run_loop(self, run_once=False, poll_once=False):
         self.init_worker()
@@ -113,7 +127,10 @@ class Worker(object):
 
             job = self._poll_for_next_job(poll_once)
             if job:
-                self.process_job(job)
+                try:
+                    self.process_job(job)
+                except Exception as e:
+                    LOG.exception(e)
 
             time_after = time.time()
 
