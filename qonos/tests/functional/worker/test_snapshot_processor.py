@@ -722,7 +722,7 @@ class TestSnapshotProcessorNotifications(BaseTestSnapshotProcessor):
             self.assertEqual('CANCELLED', job['status'])
             expected_notifications = [
                 ('qonos.job.run.start', 'INFO', 'QUEUED'),
-                ('qonos.job.update', 'INFO', 'CANCELLED')]
+                ('qonos.job.failed', 'ERROR', 'CANCELLED')]
             self.assert_job_notification_events(processor,
                                                 expected_notifications)
 
